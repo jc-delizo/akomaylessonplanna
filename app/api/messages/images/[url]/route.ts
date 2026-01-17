@@ -8,9 +8,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { url: string } }
+  { params }: { params: Promise<{ url: string }> }
 ) {
   try {
+    const { url } = await params
     const supabase = await createClient()
 
     // Check authentication
@@ -23,7 +24,7 @@ export async function DELETE(
     }
 
     // Decode URL to get path
-    const imagePath = decodeURIComponent(params.url)
+    const imagePath = decodeURIComponent(url)
 
     // Extract path from full URL if needed
     // Path format: {conversationId}/{userId}/{timestamp}-{random}.{ext}

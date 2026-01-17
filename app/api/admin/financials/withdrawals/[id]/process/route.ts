@@ -12,7 +12,7 @@ import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireSuperAdmin(request)
@@ -20,8 +20,8 @@ export async function POST(
       return authResult.response
     }
 
+    const { id: withdrawalId } = await params
     const supabase = await createClient()
-    const withdrawalId = params.id
     const body = await request.json()
 
     // Get withdrawal request

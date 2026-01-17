@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     // Verify user owns this product
     const { data: libraryItem, error: libraryError } = await supabase
       .from('user_library')
-      .select('id, user_id, product_id, order_item_id')
+      .select('id, user_id, product_id, order_item_id, download_count')
       .eq('user_id', user.id)
       .eq('product_id', productId)
       .single()
@@ -157,12 +157,13 @@ export async function GET(request: Request, { params }: RouteParams) {
           if (productData && userData?.email) {
             // Schedule email for 24 hours from now
             // In production, this would be added to email_queue with send_after timestamp
+            const seller = Array.isArray(productData.seller) ? productData.seller[0] : productData.seller
             await sendReviewReminderEmail({
               buyerName: userData.name || 'Teacher',
               buyerEmail: userData.email,
               productTitle: productData.title,
               productCoverImage: productData.cover_image_url || undefined,
-              sellerName: productData.seller?.name || 'Seller',
+              sellerName: seller?.name || 'Seller',
               reviewLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/library/${orderItem.product_id}/review`,
             })
           }

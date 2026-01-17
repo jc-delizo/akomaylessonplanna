@@ -12,7 +12,7 @@ import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -20,8 +20,8 @@ export async function POST(
       return authResult.response
     }
 
+    const { id: productId } = await params
     const supabase = await createClient()
-    const productId = params.id
     const body = await request.json()
     const { reason, allow_resubmission = true } = body
 

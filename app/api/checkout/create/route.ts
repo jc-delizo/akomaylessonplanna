@@ -46,7 +46,10 @@ export async function POST(request: Request) {
 
     // Validate all products are published
     const invalidProducts = cartItems.filter(
-      (item) => item.product.status !== 'published'
+      (item) => {
+        const product = Array.isArray(item.product) ? item.product[0] : item.product
+        return product?.status !== 'published'
+      }
     )
     if (invalidProducts.length > 0) {
       return NextResponse.json(
@@ -60,7 +63,9 @@ export async function POST(request: Request) {
     const orderItemsData: any[] = []
 
     for (const cartItem of cartItems) {
-      const product = cartItem.product
+      const product = Array.isArray(cartItem.product) ? cartItem.product[0] : cartItem.product
+      if (!product) continue
+      
       totalAmount += product.price
 
       // Get seller's commission rate (20% default, 15% for Pioneers)

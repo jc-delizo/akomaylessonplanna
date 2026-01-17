@@ -284,6 +284,5 @@ export default function CategoryPage() {
           </main>
         </div>
       </div>
-    </div>
   )
 }

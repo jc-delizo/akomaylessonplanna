@@ -8,7 +8,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,12 +16,8 @@ export async function POST(
       return authResult.response
     }
 
+    const { id: conversationId } = await params
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    const conversationId = params.id
 
     // Get conversation
     const { data: conversation, error: convError } = await supabase
@@ -41,11 +37,11 @@ export async function POST(
     // We'll use a system message to indicate admin joined
     const { error: msgError } = await supabase.from('messages').insert({
       conversation_id: conversationId,
-      sender_id: user.id,
+      sender_id: authResult.admin.userId,
       content: 'Admin has joined this conversation to help resolve the issue.',
       message_type: 'admin',
       admin_joined: true,
-      admin_id: user.id,
+      admin_id: authResult.admin.userId,
     })
 
     if (msgError) {

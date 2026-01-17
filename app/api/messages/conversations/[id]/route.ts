@@ -7,9 +7,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -18,8 +19,6 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
 
     // Get conversation
     const { data: conversation, error: convError } = await supabase
@@ -102,9 +101,10 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -113,8 +113,6 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
 
     // Get conversation to verify ownership
     const { data: conversation, error: convError } = await supabase

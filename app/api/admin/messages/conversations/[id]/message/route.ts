@@ -9,7 +9,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -17,12 +17,8 @@ export async function POST(
       return authResult.response
     }
 
+    const { id: conversationId } = await params
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    const conversationId = params.id
     const body = await request.json()
     const { content } = body
 
@@ -59,11 +55,11 @@ export async function POST(
       .from('messages')
       .insert({
         conversation_id: conversationId,
-        sender_id: user.id,
+        sender_id: authResult.admin.userId,
         content: content.trim(),
         message_type: 'admin',
         admin_joined: true,
-        admin_id: user.id,
+        admin_id: authResult.admin.userId,
         is_read: false,
       })
       .select(

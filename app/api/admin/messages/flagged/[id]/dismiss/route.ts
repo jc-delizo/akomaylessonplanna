@@ -8,7 +8,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,12 +16,11 @@ export async function PUT(
       return authResult.response
     }
 
+    const { id: messageId } = await params
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    const messageId = params.id
 
     // Unflag message
     const { data: updated, error: updateError } = await supabase

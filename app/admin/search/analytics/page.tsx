@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/admin/dashboard/metric-cards'
 import { Search, TrendingUp, AlertTriangle } from 'lucide-react'
 

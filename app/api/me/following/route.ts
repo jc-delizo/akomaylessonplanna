@@ -50,18 +50,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Format response
-    const following = follows?.map((follow) => ({
-      id: follow.seller.id,
-      name: follow.seller.name,
-      username: follow.seller.username,
-      avatar_url: follow.seller.avatar_url,
-      bio: follow.seller.bio,
-      is_verified_teacher: follow.seller.is_verified_teacher,
-      subscription_tier: follow.seller.subscription_tier,
-      is_pioneer: follow.seller.is_pioneer,
-      followers_count: follow.seller.followers_count,
-      followed_at: follow.created_at,
-    }))
+    const following = follows?.map((follow) => {
+      const seller = Array.isArray(follow.seller) ? follow.seller[0] : follow.seller
+      if (!seller) return null
+      return {
+        id: seller.id,
+        name: seller.name,
+        username: seller.username,
+        avatar_url: seller.avatar_url,
+        bio: seller.bio,
+        is_verified_teacher: seller.is_verified_teacher,
+        subscription_tier: seller.subscription_tier,
+        is_pioneer: seller.is_pioneer,
+        followers_count: seller.followers_count,
+        followed_at: follow.created_at,
+      }
+    }).filter(Boolean)
 
     return NextResponse.json({
       following: following || [],

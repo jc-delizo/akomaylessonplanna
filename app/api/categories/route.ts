@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const uniqueTypes = Array.from(new Set((productTypes || []).map((p: any) => p.product_type)))
       .map(type => ({
         slug: type.replace('_', '-'),
-        name: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        name: type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         type: 'product_type',
         count: productTypes?.filter((p: any) => p.product_type === type).length || 0
       }))

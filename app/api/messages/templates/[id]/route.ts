@@ -8,9 +8,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: templateId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -19,8 +20,6 @@ export async function PUT(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const templateId = params.id
     const body = await request.json()
     const { name, content } = body
 
@@ -98,9 +97,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: templateId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -109,8 +109,6 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const templateId = params.id
 
     // Get template to verify ownership
     const { data: template, error: templateError } = await supabase

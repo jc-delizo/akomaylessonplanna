@@ -8,7 +8,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,16 +16,14 @@ export async function DELETE(
       return authResult.response
     }
 
+    const { id: messageId } = await params
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
 
     // Check if Super Admin (not just any admin)
     const { data: userData } = await supabase
       .from('users')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', authResult.admin.userId)
       .single()
 
     if (userData?.role !== 'admin') {
@@ -35,14 +33,12 @@ export async function DELETE(
       )
     }
 
-    const messageId = params.id
-
     // Soft delete message
     const { error: updateError } = await supabase
       .from('messages')
       .update({
         is_deleted: true,
-        deleted_by: user.id,
+        deleted_by: authResult.admin.userId,
         deleted_at: new Date().toISOString(),
       })
       .eq('id', messageId)

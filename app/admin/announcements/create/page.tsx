@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
 
 export default async function CreateAnnouncementPage() {
   const supabase = await createClient()
@@ -35,7 +34,12 @@ export default async function CreateAnnouncementPage() {
           {/* Announcement Type */}
           <div>
             <Label htmlFor="type">Announcement Type</Label>
-            <Select name="type" id="type" defaultValue="platform_update">
+            <select
+              name="type"
+              id="type"
+              defaultValue="platform_update"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <option value="system_maintenance">System Maintenance</option>
               <option value="new_feature">New Feature</option>
               <option value="platform_update">Platform Update</option>
@@ -43,7 +47,7 @@ export default async function CreateAnnouncementPage() {
               <option value="urgent_notice">Urgent Notice</option>
               <option value="educational">Educational</option>
               <option value="other">Other</option>
-            </Select>
+            </select>
           </div>
 
           {/* Title */}
@@ -77,14 +81,19 @@ export default async function CreateAnnouncementPage() {
           {/* Target Audience */}
           <div>
             <Label htmlFor="audience">Target Audience</Label>
-            <Select name="audience" id="audience" defaultValue="all">
+            <select
+              name="audience"
+              id="audience"
+              defaultValue="all"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <option value="all">All Users</option>
               <option value="buyers">Buyers Only</option>
               <option value="sellers">Sellers Only</option>
               <option value="verified_sellers">Verified Sellers</option>
               <option value="pro">Pro Subscribers</option>
               <option value="pioneer">Pioneers</option>
-            </Select>
+            </select>
             <p className="text-xs text-gray-500 mt-1">
               Advanced segmentation will be implemented here
             </p>
@@ -108,11 +117,16 @@ export default async function CreateAnnouncementPage() {
           {/* Priority */}
           <div>
             <Label htmlFor="priority">Priority</Label>
-            <Select name="priority" id="priority" defaultValue="normal">
+            <select
+              name="priority"
+              id="priority"
+              defaultValue="normal"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <option value="normal">Normal</option>
               <option value="important">Important</option>
               <option value="urgent">Urgent</option>
-            </Select>
+            </select>
           </div>
 
           {/* Scheduling */}
@@ -140,14 +154,19 @@ export default async function CreateAnnouncementPage() {
           {/* Display Duration */}
           <div>
             <Label htmlFor="duration">Display Duration</Label>
-            <Select name="duration" id="duration" defaultValue="7">
+            <select
+              name="duration"
+              id="duration"
+              defaultValue="7"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <option value="1">1 Day</option>
               <option value="3">3 Days</option>
               <option value="7">7 Days</option>
               <option value="14">14 Days</option>
               <option value="30">30 Days</option>
               <option value="never">Never Expire</option>
-            </Select>
+            </select>
           </div>
 
           {/* Actions */}

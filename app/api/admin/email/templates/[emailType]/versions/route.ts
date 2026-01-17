@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { emailType: string } }
+  { params }: { params: Promise<{ emailType: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,13 +16,14 @@ export async function GET(
       return authResult.response
     }
 
+    const { emailType } = await params
     const supabase = createAdminClient()
 
     // Get template
     const { data: template, error: templateError } = await supabase
       .from('email_templates')
       .select('id')
-      .eq('email_type', params.emailType)
+      .eq('email_type', emailType)
       .single()
 
     if (templateError || !template) {

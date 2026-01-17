@@ -92,14 +92,14 @@ export async function POST(request: NextRequest) {
       })
 
     // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:78',message:'Storage upload result',data:{hasError:!!uploadError,errorMessage:uploadError?.message||'none',errorStatus:uploadError?.statusCode||'none',errorName:uploadError?.name||'none',hasData:!!uploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:78',message:'Storage upload result',data:{hasError:!!uploadError,errorMessage:uploadError?.message||'none',errorName:uploadError?.name||'none',hasData:!!uploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
 
     if (uploadError) {
       console.error('Error uploading avatar:', uploadError)
       
       // Check if it's an RLS policy error
-      if (uploadError.message?.includes('row-level security') || uploadError.statusCode === '403') {
+      if (uploadError.message?.includes('row-level security') || uploadError.message?.includes('403')) {
         return NextResponse.json(
           { 
             error: 'Storage permissions not configured. Please run migration 006_storage_buckets_and_policies.sql',
@@ -109,6 +109,10 @@ export async function POST(request: NextRequest) {
         )
       }
       
+      return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
+    }
+
+    if (!uploadData) {
       return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
     }
 

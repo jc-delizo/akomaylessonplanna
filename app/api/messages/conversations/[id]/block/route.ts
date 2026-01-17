@@ -7,9 +7,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -18,8 +19,6 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
 
     // Get conversation
     const { data: conversation, error: convError } = await supabase

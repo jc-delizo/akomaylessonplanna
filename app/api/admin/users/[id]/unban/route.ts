@@ -9,7 +9,7 @@ import { hasPermission } from '@/lib/utils/admin-permissions'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -22,8 +22,8 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id: userId } = await params
     const supabase = await createClient()
-    const userId = params.id
 
     // Get current ban reason for audit log
     const { data: currentUser } = await supabase

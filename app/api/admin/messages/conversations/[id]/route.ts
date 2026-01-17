@@ -8,7 +8,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,9 +16,8 @@ export async function GET(
       return authResult.response
     }
 
+    const { id: conversationId } = await params
     const supabase = await createClient()
-
-    const conversationId = params.id
 
     // Get conversation with full details
     const { data: conversation, error: convError } = await supabase

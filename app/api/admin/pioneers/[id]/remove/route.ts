@@ -11,7 +11,7 @@ import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -27,8 +27,8 @@ export async function DELETE(
       )
     }
 
+    const { id: userId } = await params
     const supabase = await createClient()
-    const userId = params.id
     const body = await request.json()
     const { reason } = body
 

@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { emailType: string } }
+  { params }: { params: Promise<{ emailType: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -16,12 +16,13 @@ export async function GET(
       return authResult.response
     }
 
+    const { emailType } = await params
     const supabase = createAdminClient()
 
     const { data: template, error } = await supabase
       .from('email_templates')
       .select('*')
-      .eq('email_type', params.emailType)
+      .eq('email_type', emailType)
       .single()
 
     if (error) {
@@ -48,7 +49,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { emailType: string } }
+  { params }: { params: Promise<{ emailType: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -56,6 +57,7 @@ export async function PUT(
       return authResult.response
     }
 
+    const { emailType } = await params
     const supabase = createAdminClient()
     const body = await request.json()
     const {
@@ -72,7 +74,7 @@ export async function PUT(
     const { data: currentTemplate, error: fetchError } = await supabase
       .from('email_templates')
       .select('*')
-      .eq('email_type', params.emailType)
+      .eq('email_type', emailType)
       .single()
 
     if (fetchError || !currentTemplate) {

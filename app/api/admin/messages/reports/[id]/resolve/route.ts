@@ -9,7 +9,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAdmin(request)
@@ -17,12 +17,8 @@ export async function PUT(
       return authResult.response
     }
 
+    const { id: reportId } = await params
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    const reportId = params.id
     const body = await request.json()
     const { resolution, status } = body
 
@@ -53,7 +49,7 @@ export async function PUT(
       .update({
         status,
         resolution: resolution || null,
-        reviewed_by: user.id,
+        reviewed_by: authResult.admin.userId,
         resolved_at: new Date().toISOString(),
       })
       .eq('id', reportId)

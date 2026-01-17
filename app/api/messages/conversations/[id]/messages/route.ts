@@ -10,9 +10,10 @@ import { createMessageNotification } from '@/lib/messaging/notification-integrat
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -21,8 +22,6 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
     const { searchParams } = new URL(request.url)
     const before = searchParams.get('before') // timestamp
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
@@ -109,9 +108,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: conversationId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -120,8 +120,6 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const conversationId = params.id
     const body = await request.json()
     const { content, attachments } = body
 
