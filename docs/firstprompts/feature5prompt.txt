@@ -1,0 +1,320 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Features 01, 02, 02.5, 03, and 04. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+- Design document: `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+
+### Feature 02.5 (Grade & Subject Management) - ENHANCED ✅
+
+**Key Outcomes:**
+- Many-to-many relationship between grades and subjects
+- Subjects change dynamically based on grade level selected
+- Admin-managed (responds to DepEd curriculum changes)
+- Database tables: `grades`, `subjects`, `grade_subjects`
+- Admin interface for curriculum management
+- Bulk import/export for major curriculum updates
+
+**Documentation:**
+- Enhanced in Feature 02 document and main design summary
+
+### Feature 03 (Product Listings & Product Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- All products can have images (covers for consistency)
+- Multi-step upload wizard (5 steps)
+- Comprehensive product detail pages (hybrid layout for images/documents)
+- Homepage with hero + featured + new arrivals + trending + all products
+- Advanced filtering: Product Type, Grade, Subject (dynamic), Quarter, Weeks (multi-select), Price, Rating, File Type
+- Automatic preview generation (first 3 pages) with watermark
+- Version management system with buyer notifications
+- Tiered analytics (Free vs Pro/Pioneer)
+- Product status workflow (6 states: draft, pending_review, published, rejected, suspended, deleted)
+- First 3 products require manual review (24-48 hours)
+- Bulk upload DEFERRED (future feature)
+
+**Product Types & Filters:**
+1. **Exams** - Periodical Exam, Summative Test | Filters: Grade, Subject, Quarter
+2. **Lesson Plans** - DLL, DLP | Filters: Grade, Subject, Quarter, Weeks (1-8, multi-select)
+3. **RPMS** - Cover pages | Filters: Theme (Safari, Abstract, Floral, etc.)
+4. **Posters** | Filters: Theme, Size
+5. **Tarpaulins** | Filters: Season, Occasion, Size
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+
+### Feature 04 (Shopping Cart & Checkout Flow) - COMPLETED ✅
+
+**Key Outcomes:**
+- Shopping cart with one copy per product (digital goods)
+- Wishlist feature (heart icon, separate page)
+- Multi-step checkout (2 steps: review → payment)
+- GCash and Maya payment integration
+- 15-minute payment timeout with unlimited retries
+- Thank You page with immediate downloads
+- User library with unlimited downloads
+- Watermarking on all downloads (buyer email)
+- Cart abandonment email recovery (24 hours)
+- Seller dashboard with orders and earnings
+- Manual withdrawal requests with automatic processing
+- Refund policy: all sales final, 7-day exception window
+- Refund process: buyer contacts seller first, 48-hour response
+- Automatic refund processing via GCash/Maya API
+
+**Key Decisions:**
+- Account required for purchase (no guest checkout in MVP)
+- Coupons/discount codes deferred to post-launch
+- Unlimited downloads, no time limit
+- Sellers see anonymized buyer info ("Teacher Maria M.")
+- Full earnings breakdown shown to sellers
+- Email + in-app notifications for sales and refunds
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md`
+- Updated in main design summary
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### CONFIRMED USER FLOW (UPDATED)
+
+**From Feature 04 session:**
+1. User logs in → Homepage/Marketplace
+2. Browse products (grid: 2/3/4 responsive columns)
+3. User clicks product → Product Detail Page
+4. Product Detail Page: Preview, reviews (COMING SOON), "View Seller Profile", Add to Cart/Buy Now
+5. User clicks "Add to Cart" → Shopping Cart → Checkout → Payment → Thank You → Library
+6. After purchase, buyer can **rate and review** products → **THIS FEATURE (Feature 05)**
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 04: Shopping Cart & Checkout Flow.
+
+**Starting Point:** Feature 05 - Reviews & Ratings
+
+**Why this next:** Now that buyers can complete purchases, they need a way to:
+- Rate products they've purchased
+- Leave written reviews
+- Help other buyers make informed decisions
+- Provide feedback to sellers for improvement
+- Build trust in the marketplace
+
+**Note:** Reviews are critical for marketplace success (social proof, quality control, seller improvement)
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 05: Reviews & Ratings in detail.
+
+### Please read this section from the design document:
+
+The reviews section is covered in the database schema and throughout the design doc. Key references:
+- Database Schema → reviews table (lines 408-419)
+- User Experience → Buyer Journey → "Rate and review purchased items"
+- Seller Journey → "Respond to reviews and questions"
+- Admin Panel → User Management (can moderate reviews)
+- Development Roadmap → Week 13: Reviews & Ratings (lines 1930-1935)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for reviews and ratings:
+
+**1. Rating System:**
+- 5-star scale only? (★★★★★)
+- Or half-star support? (★★★★☆.5)
+- Or 10-point scale? (8.5/10)
+- Should we require a rating to submit a review? (can review without rating?)
+- Minimum character count for written reviews? (to prevent "good" spam)
+
+**2. Review Eligibility:**
+- Who can leave reviews? (verified purchasers only)
+- When can they review? (immediately after purchase? after download? after X days?)
+- Can buyers update their reviews? (change rating/text later?)
+- Can buyers delete their reviews?
+- Should we require download before reviewing? (prevent review without using product)
+
+**3. Review Content & Structure:**
+- Required fields? (rating required, text optional?)
+- Structured feedback categories? (quality, accuracy, ease of use)
+- Photo/video attachments in reviews? (show product in use)
+- Character limit for review text? (500 chars? 1000 chars?)
+- Helpful/unhelpful voting on reviews? (community moderation)
+
+**4. Seller Responses:**
+- Can sellers respond to reviews? (YES from Feature 02)
+- Character limit for seller responses?
+- Can buyers reply to seller responses? (conversation thread)
+- Editable seller responses? (can update later)
+- Notification when seller responds? (buyer gets notified)
+
+**5. Review Display & Sorting:**
+- Where to show reviews? (product detail page, seller profile)
+- How many reviews to show initially? (top 3, then "load more")
+- Sorting options? (newest, highest rated, most helpful)
+- Review summary card? (average rating, distribution chart)
+- Show "verified purchase" badge on reviews?
+
+**6. Review Moderation:**
+- Automatic flagging for inappropriate content? (profanity filter)
+- Who can flag reviews? (anyone, seller only, admin only)
+- What happens when flagged? (hidden until reviewed, visible but marked)
+- Can sellers report unfair reviews? (yes, with reason)
+- Admin moderation queue? (all flagged reviews)
+- Deletion criteria? (spam, abuse, not verified purchase)
+
+**7. Review Editing & Deletion:**
+- Can buyers edit their reviews? (time limit? any time?)
+- Can buyers delete their reviews? (any time? within 30 days?)
+- Version history for edited reviews? (to prevent abuse)
+- Seller notification when review edited/deleted?
+
+**8. Review Reminders:**
+- Send reminder emails to leave reviews? (after purchase)
+- When to send? (24 hours? 7 days? 14 days?)
+- How many reminders? (one-time? multiple?)
+- Incentivize reviews? (reward points? discount? - careful not to bias)
+
+**9. Impact on Seller Stats:**
+- Do reviews affect seller score/rating? (separate seller rating from product rating)
+- Review count displayed on seller profile? (from Feature 02)
+- Average rating displayed on seller profile? (yes, from Feature 02)
+- Can low-rated sellers be penalized? (suspension, lower visibility)
+
+**10. Review Analytics for Sellers:**
+- What analytics should sellers see? (rating distribution, common keywords, trends)
+- Export reviews feature? (for testimonials)
+- Respond rate tracking? (how many reviews seller has responded to)
+- Review response time SLA? (from Feature 02: response_time_hours)
+
+**11. Fake Review Prevention:**
+- How to prevent fake reviews? (verified purchase only helps)
+- Can family members/friends review? (same risk as all marketplaces)
+- Review streak detection? (multiple 5-star reviews from same buyer)
+- Seller review of own products? (prevent with database check)
+- Buyer review of own product? (if they're also a seller)
+
+**12. Review on Seller Profile:**
+- Show seller's average rating across all products? (yes, from Feature 02)
+- Show review count? (yes, from Feature 02)
+- Show recent reviews on seller profile? (from all their products?)
+- Or just product-specific reviews on product pages?
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the Reviews section from the design document (database schema, user journey)
+3. For each of the 12 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Gumroad, Etsy, Amazon)
+   - Your reasoning for recommendations
+   - Filipino market context (teacher community culture)
+
+4. After we discuss and finalize all review decisions:
+   - Update the design document's Reviews section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want authentic reviews (build trust, help buyers decide)
+- I want to minimize fake/spam reviews
+- I want sellers to be able to respond and improve
+- I want to keep moderation manageable (not overwhelming for admin)
+- I want reviews to be fair (both to buyers and sellers)
+- I prefer proven solutions over custom implementations
+- I want mobile-first (many teachers use phones for reviews)
+- I want to encourage reviews (but not incentivize/bias them)
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - but stunning on desktop (2/3/4 column grid)
+- **PWA** - will be installable as app on phones
+- **Feature 02.5 (Grade & Subject Management)** provides pre-defined dropdowns
+- **Feature 03 (Product Listings)** is complete - products ready to be reviewed
+- **Feature 04 (Shopping Cart)** is complete - buyers can purchase and then review
+- **Database schema not final yet** - we can add fields as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+- **Direct GCash/Maya integration** (no payment gateway - saves ~₱16 per ₱50 sale)
+- **Verified purchase badge** - show which reviews are from verified buyers
+
+## REVIEWS & RATINGS CONTEXT
+
+**Why This Matters:**
+- Reviews are the #1 factor in purchase decisions (surveys show 90%+ read reviews)
+- Reviews build trust in new marketplace (no reviews = suspicious)
+- Reviews help sellers improve their products
+- Reviews create community engagement
+- Reviews improve SEO (user-generated content)
+
+**Current Database Schema (reviews table):**
+```sql
+id (UUID, PK)
+product_id (UUID, FK → products)
+buyer_id (UUID, FK → users)
+rating (INTEGER, 1-5)
+comment (TEXT)
+verified_purchase (BOOLEAN)
+seller_response (TEXT)
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+```
+
+**From Feature 02 (Seller Profile):**
+- Profile shows: `avg_rating`, `reviews_count`
+- Sellers can respond to reviews
+- `response_time_hours` tracks average response time
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

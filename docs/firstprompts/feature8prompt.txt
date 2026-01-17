@@ -1,0 +1,326 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Features 01-07. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+
+### Feature 02.5 (Grade & Subject Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Many-to-many relationship between grades and subjects
+- Subjects change dynamically based on grade level selected
+- Admin-managed (responds to DepEd curriculum changes)
+- Database tables: `grades`, `subjects`, `grade_subjects`
+- Admin interface for curriculum management
+- Bulk import/export for major curriculum updates
+
+**Documentation:**
+- Enhanced in Feature 02 document and main design summary
+
+### Feature 03 (Product Listings & Product Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- All products can have images (covers for consistency)
+- Multi-step upload wizard (5 steps)
+- Comprehensive product detail pages (hybrid layout for images/documents)
+- Homepage with hero + featured + new arrivals + trending + all products
+- Advanced filtering: Product Type, Grade, Subject (dynamic), Quarter, Weeks (multi-select), Price, Rating, File Type
+- Automatic preview generation (first 3 pages) with watermark
+- Version management system with buyer notifications
+- Tiered analytics (Free vs Pro/Pioneer)
+- Product status workflow (6 states: draft, pending_review, published, rejected, suspended, deleted)
+- First 3 products require manual review (24-48 hours)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+
+### Feature 04 (Shopping Cart & Checkout Flow) - COMPLETED ✅
+
+**Key Outcomes:**
+- Shopping cart with one copy per product (digital goods)
+- Wishlist feature (heart icon, separate page)
+- Multi-step checkout (2 steps: review → payment)
+- GCash and Maya payment integration
+- 15-minute payment timeout with unlimited retries
+- Thank You page with immediate downloads
+- User library with unlimited downloads
+- Watermarking on all downloads (buyer email)
+- Cart abandonment email recovery (24 hours)
+- Seller dashboard with orders and earnings
+- Manual withdrawal requests with automatic processing
+- Refund policy: all sales final, 7-day exception window
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md`
+
+### Feature 05 (Reviews & Ratings System) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5-star rating system (simple scale, no half-stars)
+- Review eligibility: after download only (verified purchase + download_count > 0)
+- Rating required, comment optional (500 char max)
+- Seller responses allowed (500 char limit, one-level chain only)
+- Top 3 most recent reviews displayed + "See all reviews" link
+- Review summary card (average rating + distribution chart)
+- Automatic flagging system (profanity filter, spam patterns)
+- Admin moderation queue (flagged reviews hidden immediately)
+- 7-day edit window (no deletion), shows "Edited on [date]" timestamp
+- Single 24h reminder email (no incentives, unbiased reviews)
+- Seller reputation: simple average calculation (transparent)
+- Enhanced analytics for Pro/Pioneer (rating distribution, keywords, trends)
+- Reviews on seller profile (hybrid - from all products with product links)
+- Trust-based approach (no rate limiting, teachers are honest)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/7-feature-05-reviews-and-ratings.md`
+
+### Feature 06 (Social Features) - COMPLETED ✅
+
+**Key Outcomes:**
+- In-app notifications (bell icon + dropdown + notifications page)
+- Email notifications (8 types: sales, reviews, followers, approvals, rejections, price drops, new products, announcements)
+- Simple on/off toggle for email notifications (in-app always on)
+- Admin panel for system announcements (create, schedule, track stats)
+- Social sharing: Facebook, Messenger, Copy Link
+- Share buttons on product pages and seller profiles
+- Share tracking analytics (platform breakdown)
+- Recently viewed items (homepage section, product page sidebar, dedicated page)
+- Tracks last 20 items for 30 days
+- Social proof elements (static badges: Trending, Bestseller, Popular, New)
+- View counts, sales counts, wishlist counts (hourly updates, not real-time)
+- Mobile-first responsive design
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/8-feature-06-social-features.md`
+
+### Feature 07 (Seller Dashboard & Analytics) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Dashboard Overview:** Balanced layout with 4 metric cards (Revenue, Sales, Views, Rating) with time range selector (Today/Week/Month/All/Custom) and sparkline indicators (Free) or interactive charts (Pro/Pioneer)
+- **Product Management:** Grid view (2/3/4 columns responsive, 2 columns on mobile) with quick actions, view toggle (Grid/List), bulk actions (Unpublish, Delete), duplicate product feature, performance indicators (Pro/Pioneer: Trending, Low conversion warnings)
+- **Order History:** Enhanced with buyer location (region only), order detail modal, filters (Status, Date range, Product, Location), export to CSV, "Contact Buyer" button
+- **Earnings & Payouts:** Split by tier - Free: 3 cards (Available, Pending, Lifetime), withdrawal history; Pro/Pioneer: Interactive charts (Revenue by Month, Sales by Category, Earnings Trend), projected earnings, monthly PDF reports
+- **Analytics Tiers - CRITICAL:** Free tier: Table-only metrics, sparklines, CSV export; Pro/Pioneer: Interactive visual charts (Revenue over time, Sales by product, Conversion funnel, Traffic sources, Buyer demographics), performance score (0-100), percentile rankings, performance recommendations, Excel/PDF exports, scheduled reports (email weekly/monthly)
+- **Performance Metrics:** 6 core (Free) to 15+ (Pro/Pioneer): Revenue, Net Earnings, Orders, Products, Rating, Views, Conversion + Repeat customer rate, Average order value, Response time, Followers, Wishlist adds, Profile views, Traffic sources, Percentile rankings
+- **Navigation:** Sidebar (desktop) with Overview, Products, Orders, Earnings, Analytics (Pro badge), Reviews, Messages, Settings; Bottom tab bar (mobile PWA): Home, Products, Orders, Earnings, Profile
+- **Data Strategy:** Smart hybrid - Dashboard metrics 15-min cache, Orders 5-min cache, Real-time push notifications, "Refresh" button + pull-to-refresh (mobile), Pre-calculated heavy analytics (nightly)
+- **Mobile Experience:** Full dashboard (not simplified) - Bottom tab bar, metric cards stacked, 2-column product grid, charts fullscreen on tap, swipe actions, pull-to-refresh, bottom sheets
+- **Export & Reports:** Split by tier - Free: CSV only (Orders, Products, Earnings); Pro/Pioneer: Excel + PDF + monthly performance summary + scheduled reports (email automation)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 07: Seller Dashboard & Analytics.
+
+**Starting Point:** Feature 08 - Advanced Search & Discovery
+
+**Why this next:**
+- Feature 03 established basic search and filtering
+- Now we need to enhance search with advanced features
+- Better search = better product discovery = more sales
+- Critical for marketplace success
+- Supports both buyers (finding resources) and sellers (getting found)
+- Feature 09 (Admin Panel) will depend on having searchable content
+
+**Note:** This feature partially exists (basic search from Feature 03). We're expanding it into a comprehensive advanced search system.
+
+### CONFIRMED USER FLOW (UPDATED)
+
+**Buyer Journey (so far):**
+1. User signs up → Browse homepage (Feature 03)
+2. Searches for products → Basic filtering (Feature 03)
+3. Adds to cart → Purchases (Feature 04)
+4. Downloads from library (Feature 04)
+5. Leaves review → (Feature 05)
+6. **NOW: Buyer needs BETTER search to** → Find exactly what they need faster → **THIS FEATURE (Feature 08)**
+
+**Seller Journey (so far):**
+1. User signs up → Teacher verification → Profile (Features 01 & 02)
+2. Uploads products → Dashboard analytics (Feature 07)
+3. **NOW: Seller needs** → Products to be discoverable → Better SEO and search visibility → **THIS FEATURE (Feature 08)**
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 08: Advanced Search & Discovery in detail.
+
+### Please read these sections from the design document:
+
+- Development Roadmap → Week 16: Search & Discovery (lines 2314-2319)
+- User Experience → Buyer Journey → "Browse & Discover"
+- Homepage & Marketplace sections from Feature 03
+- Database Schema → `products` table (searchable fields)
+- SEO & Discovery section (lines 1907-2013)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for advanced search:
+
+**1. Search Algorithm & Relevance:**
+- How should search results be ranked? (Relevance score, popularity, recency, sales count, rating, seller reputation)
+- Should we use full-text search (PostgreSQL full-text search) or a search engine (Algolia, Elasticsearch)?
+- How to handle typos and misspellings? (Fuzzy search, suggestions, autocorrect)
+- Search autocomplete: Product titles, subjects, sellers, categories?
+- Search history: Save recent searches, show popular searches?
+
+**2. Advanced Search Operators:**
+- Should we support advanced search syntax? ("grade 7 math" -science, exact match "quotes", OR operator)
+- Or keep it simple with filters only? (Teachers may not be tech-savvy)
+- Filter combinations: AND/OR logic? (Match ALL filters vs match ANY filters)
+- Saved searches: Let users save search queries with filters for quick access?
+
+**3. Search Results Page:**
+- Layout: Grid view vs List view vs Both with toggle?
+- Results per page: 20, 50, 100? User selectable?
+- Sort options: Relevance, Newest, Bestselling, Price (low-high, high-low), Highest Rated, Most Viewed?
+- No results behavior: Show suggestions, popular products, related categories?
+- "Did you mean?" suggestions for misspellings
+
+**4. Filter System Enhancement:**
+- From Feature 03 we have: Product Type, Grade, Subject (dynamic), Quarter, Weeks, Price, Rating, File Type
+- Should we add more filters?
+  - Seller verification status (Verified only)
+  - Date added (Last 7 days, Last 30 days)
+  - Price range presets (Under ₱50, ₱50-₱100, ₱100-₱300, Over ₱300)
+  - Language (English, Filipino, Bilingual)
+  - File size (Small under 10MB, Medium 10-50MB, Large over 50MB)
+- Filter behavior: Show number of results per filter option? ("Math (124)")?
+- Active filters display: Chips or list? "Clear all filters" button?
+
+**5. Category Pages & Browse:**
+- Should we create dedicated category pages? (/products/lesson-plans, /products/exams, /products/grade-7)
+- What should category pages show? (Hero section, Featured products, All products in category, Filter sidebar)
+- Subcategory navigation: Breadcrumbs, sidebar, tabs?
+- Category-specific filters? (Only show Quarter filter for Lesson Plans, Only show Theme filter for RPMS)
+
+**6. Product Recommendations:**
+- "Related Products" section on product page: Based on what? (Same grade, same subject, same seller, bought together, viewed together)
+- "You might also like" on homepage: Personalized recommendations? (Based on browsing history, purchase history, popular in your grade level)
+- "Similar Products" on search results: If no exact matches, show close alternatives
+- Collaborative filtering: "Teachers who bought this also bought..." (requires purchase data)
+
+**7. Search Analytics for Sellers:**
+- Should sellers see what keywords buyers use to find their products? (Search term report)
+- Search volume: How many people searched for "grade 7 math" this month?
+- Click-through rate: How many times did product appear in search vs clicked?
+- Ranking position: Where does my product rank for keyword "grade 7 math"?
+- Search performance tips: "Your product appears on page 3 for 'grade 7 math'. Add 'Quarter 1' to title to improve ranking."
+
+**8. SEO & Discoverability:**
+- Product URL structure: /products/grade-7-math-dll-q1 or /products/[id]?
+- Meta tags: Dynamic meta title, description, Open Graph for social sharing
+- Schema.org markup: Product, Seller, AggregateRating structured data?
+- Sitemap: Auto-generated XML sitemap for products and sellers
+- Canonical URLs: Prevent duplicate content issues
+
+**9. Search Performance & Caching:**
+- Search results caching: How long? (1 minute, 5 minutes, no cache?)
+- Popular searches cache: Pre-compute results for top 100 searches?
+- Database indexing: Which fields need indexes? (title, description, grade, subject, tags)
+- Search query optimization: Avoid slow LIKE queries, use full-text search
+- Handling 10,000+ products: Performance considerations
+
+**10. Mobile Search Experience:**
+- Search bar behavior: Sticky at top, always visible?
+- Voice search: Add microphone icon for voice input? (Useful for teachers on-the-go)
+- Camera search: Scan textbook or curriculum guide to find related products? (Too complex for MVP?)
+- Search suggestions on mobile: Show 5-10 suggestions, scrollable list
+- Filter drawer: Slide-out from left (like e-commerce apps)
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the Search & Discovery sections from the design document
+3. For each of the 10 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Lazada, Shopee, Amazon)
+   - Your reasoning for recommendations
+   - Filipino market context (teacher behavior, technical sophistication, search patterns)
+
+4. After we discuss and finalize all search decisions:
+   - Update the design document's Search & Discovery section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want search to be FAST (results under 1 second)
+- I want search to be ACCURATE (find what teachers need)
+- I want SIMPLICITY over advanced features (teachers are busy, not tech-savvy)
+- I want MOBILE-FIRST (70%+ Filipino users on mobile)
+- I want products to be DISCOVERABLE (SEO, categories, recommendations)
+- I want SELLERS to understand how to optimize their products
+- I want to avoid overwhelming users with too many filters
+- I prefer proven solutions over custom implementations
+- I want to balance POWER FEATURES with USABILITY
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - but stunning on desktop (2/3/4 column grid)
+- **PWA** - will be installable as app on phones
+- **Feature 03** already has basic search and filtering
+- **Feature 07** has seller analytics (can integrate search performance)
+- **Database schema not final yet** - we can add fields as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+- **Performance is critical** - search speed affects user satisfaction
+- **SEO matters** - teachers discover marketplace via Google search
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

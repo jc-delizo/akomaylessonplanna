@@ -1,0 +1,376 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Features 01-08. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+
+### Feature 02.5 (Grade & Subject Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Many-to-many relationship between grades and subjects
+- Subjects change dynamically based on grade level selected
+- Admin-managed (responds to DepEd curriculum changes)
+- Database tables: `grades`, `subjects`, `grade_subjects`
+- Admin interface for curriculum management
+- Bulk import/export for major curriculum updates
+
+**Documentation:**
+- Enhanced in Feature 02 document and main design summary
+
+### Feature 03 (Product Listings & Product Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- All products can have images (covers for consistency)
+- Multi-step upload wizard (5 steps)
+- Comprehensive product detail pages (hybrid layout for images/documents)
+- Homepage with hero + featured + new arrivals + trending + all products
+- Advanced filtering: Product Type, Grade, Subject (dynamic), Quarter, Weeks (multi-select), Price, Rating, File Type
+- Automatic preview generation (first 3 pages) with watermark
+- Version management system with buyer notifications
+- Tiered analytics (Free vs Pro/Pioneer)
+- Product status workflow (6 states: draft, pending_review, published, rejected, suspended, deleted)
+- First 3 products require manual review (24-48 hours)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+
+### Feature 04 (Shopping Cart & Checkout Flow) - COMPLETED ✅
+
+**Key Outcomes:**
+- Shopping cart with one copy per product (digital goods)
+- Wishlist feature (heart icon, separate page)
+- Multi-step checkout (2 steps: review → payment)
+- GCash and Maya payment integration
+- 15-minute payment timeout with unlimited retries
+- Thank You page with immediate downloads
+- User library with unlimited downloads
+- Watermarking on all downloads (buyer email)
+- Cart abandonment email recovery (24 hours)
+- Seller dashboard with orders and earnings
+- Manual withdrawal requests with automatic processing
+- Refund policy: all sales final, 7-day exception window
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md`
+
+### Feature 05 (Reviews & Ratings System) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5-star rating system (simple scale, no half-stars)
+- Review eligibility: after download only (verified purchase + download_count > 0)
+- Rating required, comment optional (500 char max)
+- Seller responses allowed (500 char limit, one-level chain only)
+- Top 3 most recent reviews displayed + "See all reviews" link
+- Review summary card (average rating + distribution chart)
+- Automatic flagging system (profanity filter, spam patterns)
+- Admin moderation queue (flagged reviews hidden immediately)
+- 7-day edit window (no deletion), shows "Edited on [date]" timestamp
+- Single 24h reminder email (no incentives, unbiased reviews)
+- Seller reputation: simple average calculation (transparent)
+- Enhanced analytics for Pro/Pioneer (rating distribution, keywords, trends)
+- Reviews on seller profile (hybrid - from all products with product links)
+- Trust-based approach (no rate limiting, teachers are honest)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/7-feature-05-reviews-and-ratings.md`
+
+### Feature 06 (Social Features) - COMPLETED ✅
+
+**Key Outcomes:**
+- In-app notifications (bell icon + dropdown + notifications page)
+- Email notifications (8 types: sales, reviews, followers, approvals, rejections, price drops, new products, announcements)
+- Simple on/off toggle for email notifications (in-app always on)
+- Admin panel for system announcements (create, schedule, track stats)
+- Social sharing: Facebook, Messenger, Copy Link
+- Share buttons on product pages and seller profiles
+- Share tracking analytics (platform breakdown)
+- Recently viewed items (homepage section, product page sidebar, dedicated page)
+- Tracks last 20 items for 30 days
+- Social proof elements (static badges: Trending, Bestseller, Popular, New)
+- View counts, sales counts, wishlist counts (hourly updates, not real-time)
+- Mobile-first responsive design
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/8-feature-06-social-features.md`
+
+### Feature 07 (Seller Dashboard & Analytics) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Dashboard Overview:** Balanced layout with 4 metric cards (Revenue, Sales, Views, Rating) with time range selector and sparklines/charts (tier-based)
+- **Product Management:** Grid view (2/3/4 columns responsive, 2 columns on mobile) with view toggle, bulk actions, duplicate product, performance indicators
+- **Order History:** Enhanced with buyer location (region), filters, export to CSV, "Contact Buyer" button
+- **Earnings & Payouts:** Split by tier - Free: 3 cards (Available, Pending, Lifetime); Pro/Pioneer: Interactive charts, projected earnings, monthly PDF reports
+- **Analytics Tiers:** Free: Per-product metrics tables, sparklines, CSV export; Pro/Pioneer: Interactive charts, performance score (0-100), percentile rankings, scheduled reports
+- **Navigation:** Sidebar (desktop) with Overview, Products, Orders, Earnings, Analytics (Pro badge), Reviews, Messages, Settings; Bottom tab bar (mobile PWA)
+- **Data Strategy:** Smart hybrid - Dashboard metrics 15-min cache, Orders 5-min cache, Real-time notifications, Pre-calculated heavy analytics (nightly)
+- **Mobile Experience:** Full dashboard mobile - Bottom tab bar, metric cards stacked, 2-column product grid, charts fullscreen, swipe actions, pull-to-refresh
+- **Export & Reports:** Free: CSV only; Pro/Pioneer: Excel + PDF + monthly summary + scheduled reports
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md`
+
+### Feature 08 (Advanced Search & Discovery) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Search Algorithm:** PostgreSQL full-text search with weighted relevance (40% text, 25% sales, 20% rating, 10% recency, 5% reputation)
+- **Autocomplete:** 8 suggestions (3 titles, 2 subjects, 2 sellers, 1 popular)
+- **Search History:** Last 10 searches, "Recent" dropdown, "Popular this week" section
+- **No Advanced Syntax:** Filters only (AND logic), saved searches (Pro/Pioneer)
+- **Results Page:** Grid/list toggle, 24 per page (desktop), 20 per page (mobile), 8 sort options, "Load More" button
+- **Filter System:** 11 filters (3 new: Seller Status, Date Added, Language), filter counts, removable chips, mobile drawer
+- **Category Pages:** Dedicated pages with hero, tabs + breadcrumbs, category-specific filters, featured pages
+- **Recommendations:** Related products (detail page), personalized (homepage), similar (search fallback), new from followed sellers
+- **Search Analytics:** Tiered - Free: terms report, ranking, basic chart; Pro/Pioneer: insights, competitor comparison, trends, opportunities, performance score
+- **SEO Strategy:** Friendly URLs, dynamic meta, Schema.org, XML sitemap, canonical, robots.txt, image SEO, Core Web Vitals
+- **Performance:** 1-min cache (Redis), popular searches 5-min pre-computed, target < 500ms, database indexes, query optimization, edge caching
+- **Mobile Experience:** Sticky search bar, suggestions bottom sheet, filter drawer, swipe gestures, 44×44px touch targets, lazy loading (75% faster)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/10-feature-08-advanced-search-and-discovery.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 08: Advanced Search & Discovery.
+
+**Starting Point:** Feature 09 - Admin Panel & Content Moderation
+
+**Why this next:**
+- Feature 01, 02, and 03 already have admin approval workflows (teacher verification, first 3 products review, profile management)
+- Feature 05 has review moderation (flagged reviews queue)
+- Feature 06 has system announcements management
+- We need to consolidate all admin functions into a comprehensive admin panel
+- Admin panel is critical for platform safety, quality control, and operations
+- This feature ties together many approval workflows from previous features
+
+**Note:** This feature partially exists (basic admin functions from Features 01, 02, 03, 05). We're consolidating and expanding it into a comprehensive admin center.
+
+### CONFIRMED USER FLOW (UPDATED)
+
+**Admin Journey (so far):**
+1. New user signs up → Teacher verification required (Feature 01)
+2. Admin reviews PRC ID → Approves/rejects (Feature 01)
+3. Seller uploads first 3 products → Pending review (Feature 03)
+4. Admin reviews products → Approves/rejects (Feature 03)
+5. Buyers leave reviews → Some get flagged (Feature 05)
+6. Admin moderates flagged reviews → Approves/dismiss/delete (Feature 05)
+7. **NOW: Admin needs central panel to** → View all pending queues, manage users, handle reports, track platform metrics → **THIS FEATURE (Feature 09)**
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 09: Admin Panel & Content Moderation in detail.
+
+### Please read these sections from the design document:
+
+- Development Roadmap → Week 17-20: Admin & Pioneer (lines 2382-2380)
+- User Experience → Admin Panel section (lines 1338-1440)
+- Database Schema → All tables with admin references
+- Security & Compliance → Content Moderation section
+- Admin Panel sections from Features 01, 02, 03, 05, 06
+
+### Discussion Questions
+
+I need your help to finalize these decisions for the admin panel:
+
+**1. Admin Panel Overview & Navigation:**
+- What should appear on the main admin dashboard? (platform metrics, pending queues, quick stats)
+- Sidebar navigation vs top tabs?
+- Main sections: Dashboard, Users, Products, Reviews, Reports, Financials, Settings, Announcements?
+- Breadcrumbs for deep pages?
+- Quick navigation shortcuts to frequently used actions?
+
+**2. Dashboard Overview Metrics:**
+- Key metrics: Total revenue (commission), Orders, Signups, Products listed, Sellers active?
+- Time range selectors: today, week, month, all time, custom?
+- Visual layout: Card-based metrics at top with trend indicators?
+- Charts: Revenue over time, user growth, product approvals?
+- Real-time vs cached data?
+
+**3. User Management Section:**
+- User list with search and filters (role, verification status, tier, banned status)?
+- Quick actions: Edit tier/commission, ban/unban, verify teacher, reset password?
+- User detail modal/view: Full profile, purchase history, sales history (if seller), verification documents?
+- Bulk actions: Ban multiple users, change tier for multiple users?
+- Teacher ID verification queue: Approve/reject with notes, grace period tracking (3-year validity, 1-month grace)?
+- Audit log viewing: All admin actions for this user?
+
+**4. Product Moderation (Pending Reviews Queue):**
+- Queue display: All pending products (first 3 from new sellers)
+- Product preview: View files, cover image, preview images, product details?
+- Approve/reject workflow: One-click approve, reject with required reason (dropdown + custom text)?
+- Filter queue: By product type, grade, subject, date submitted, seller?
+- Bulk actions: Approve multiple, reject multiple?
+- Seller notification: Automatic email on approve/reject?
+- Resubmission tracking: Show how many times product has been resubmitted (max 3 attempts)?
+- Suspended products management: View suspension reason, reinstate option?
+
+**5. Content Moderation (Reviews & Reports):**
+- Flagged reviews queue (from Feature 05): View flagged content, flag reason, context?
+- Review moderation: Approve (dismiss flag), Delete review, Edit review (emergency only)?
+- User reports queue: Inappropriate content, reselling, fraud, other?
+- Report details: Reporter info, reported content, evidence, severity level?
+- Report resolution: Dismiss, Take action (ban user, remove content), Notes field?
+- Response time tracking: How long reports take to resolve?
+- Escalation system: High-priority reports (fraud, harassment) vs low-priority?
+
+**6. Pioneer Management:**
+- Pioneer list with performance metrics (sales count, commission saved)?
+- Add Pioneer: Invite-only workflow, max 20 slots, counter (12/20)?
+- Remove Pioneer: Manual removal, reason tracking, what happens to commission (reverts to 20%)?
+- Pioneer benefits management: Custom commission rate editing (15% for Pioneers)?
+- Pioneer performance comparison: Top Pioneers vs regular sellers?
+
+**7. Financial Overview:**
+- Total revenue (commission collected) over time?
+- Withdrawal requests queue: Process withdrawals (automatic via GCash/Maya API)?
+- Payout tracking: Pending, processing, completed withdrawals?
+- Top sellers and products by revenue?
+- Financial reports: Monthly commission breakdown, growth trends?
+- Export financial data: CSV/Excel for accounting?
+
+**8. System Announcements Management:**
+- Announcement creation: Title, message, target audience (all, buyers, sellers, Pro/Pioneer)?
+- Scheduling: Send immediately vs schedule for later?
+- Announcement stats: Views, clicks, engagement rate?
+- Rich text support: Bold, links, formatting?
+- Announcement history: Past announcements, performance data?
+
+**9. Settings & Configuration:**
+- Platform settings: Default commission rates, platform fees, maintenance mode?
+- Feature flags: Enable/disable features (beta features, new features)?
+- Email settings: SMTP configuration, email templates?
+- Webhook logs: GCash/Maya payment webhooks, error tracking?
+- Bulk data operations: Bulk import grades/subjects (from Feature 02.5)?
+- Admin account management: Create admin accounts, assign roles (super admin, moderator)?
+
+**10. Admin Roles & Permissions:**
+- Super Admin: Full access (user management, commission edits, financial data, ban users)
+- Moderator: Product moderation, handle reports, ban users (requires approval), view basic analytics
+- Content Manager: Product approvals, announcements, basic moderation
+- Should we have more granular permissions?
+- Audit logging: All admin actions tracked (who, what, when, why)?
+
+**11. Search & Discovery Admin:**
+- View popular searches: Top search terms, search volume?
+- Category management: Create/edit category pages, featured products?
+- SEO tools: Meta tag overrides, sitemap management?
+- Search analytics: Platform-wide search performance?
+
+**12. Mobile Admin Experience:**
+- Full admin panel on mobile vs simplified mobile view?
+- Key admin actions on mobile (approve products, moderate reviews)?
+- Push notifications for urgent items (high-priority reports, many pending reviews)?
+- Mobile-specific navigation?
+
+**13. Data & Analytics:**
+- Platform growth charts: Users, products, orders over time?
+- Seller performance: Top sellers, active sellers vs inactive?
+- Buyer behavior: Purchase patterns, popular categories?
+- Geographic distribution: Users by region (Philippines)?
+- Conversion funnels: Signups → verified sellers → first product → first sale?
+
+**14. Admin Support & Communication:**
+- Internal admin notes system: Add notes to user profiles (other admins can see)?
+- Admin communication: Tag other admins in notes, @mentions?
+- Dispute resolution: Platform mediates between buyer/seller (from design doc)?
+- Ticket system: Support requests from users?
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the Admin Panel sections from the design document
+3. For each of the 14 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Gumroad, Etsy)
+   - Your reasoning for recommendations
+   - Filipino market context (admin workload, safety concerns)
+
+4. After we discuss and finalize all admin panel decisions:
+   - Update the design document's Admin Panel section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want admin panel to be powerful but not overwhelming
+- I want quick approval workflows (minimize admin time)
+- I want comprehensive audit logging (accountability)
+- I want mobile admin access for urgent actions
+- I want to prioritize safety and quality control
+- I want clear role separation (Super Admin vs Moderator)
+- I want data-driven insights for platform growth
+- I want to avoid admin burnout (too many pending items)
+- I prefer automation where possible (auto-processing withdrawals)
+- I want clear escalation paths for urgent issues
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - but stunning on desktop (2/3/4 column grid)
+- **PWA** - will be installable as app on phones
+- **Feature 01** has teacher ID verification workflow (admin approval)
+- **Feature 02** has admin profile management with audit logging
+- **Feature 03** has first 3 products review queue
+- **Feature 05** has flagged reviews moderation queue
+- **Feature 06** has system announcements management
+- **Feature 07** has seller analytics (admin can view)
+- **Database schema not final yet** - we can add fields as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+- **Admin workload consideration:** Start small, scale admin team as platform grows
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

@@ -1,0 +1,177 @@
+# Feature 06: Social Features - Brainstorming Session Prompt
+
+**Date:** January 12, 2026
+**Feature:** Social Features
+**Session Goal:** Finalize all design decisions for social features to build community engagement
+
+---
+
+## Context
+
+We've completed Features 01-05:
+- ✅ Feature 01: Authentication & User Management
+- ✅ Feature 02: User Profiles & Profile Management
+- ✅ Feature 02.5: Grade & Subject Management
+- ✅ Feature 03: Product Listings & Product Management
+- ✅ Feature 04: Shopping Cart & Checkout Flow
+- ✅ Feature 05: Reviews & Ratings
+
+**Now:** Feature 06 - Social Features
+
+This feature builds on existing functionality (wishlist in Feature 04, follow/unfollow in Feature 02) and adds new social engagement features to create a vibrant community of Filipino teachers.
+
+---
+
+## Discussion Areas
+
+Please lead us through finalizing decisions for the following areas:
+
+### 1. Social Sharing Buttons
+- Where should share buttons appear? (Product pages, seller profiles, homepage)
+- Which platforms to support? (Facebook, Messenger, Twitter/X, Pinterest, WhatsApp, email)
+- Share button UI style (icons, text buttons, both?)
+- Copy link to clipboard functionality
+- QR code sharing for mobile
+
+### 2. Share Content Customization
+- What gets shared? (Product image, title, price, seller name, description preview)
+- Open Graph metadata for social previews
+- Custom message input for user to add their own message
+- UTM tracking for share analytics
+
+### 3. Recently Viewed Items
+- Where should recently viewed appear? (Homepage section, sidebar, separate page?)
+- How many items to track? (10, 20, 50?)
+- Persistence behavior (session-only, 7 days, 30 days, forever?)
+- Anonymous users (track via localStorage? require login?)
+- Privacy option (opt-out of tracking?)
+
+### 4. Notification System
+This is a MAJOR component. Types to consider:
+- **Seller Notifications:**
+  - New sale (already in Feature 04)
+  - New review (already in Feature 05)
+  - New follower (from Feature 02)
+  - Product update published
+  - Withdrawal completed
+  - Low stock alerts (for digital, not needed)
+
+- **Buyer Notifications:**
+  - Price drop on wishlist items
+  - Seller you follow uploaded new product
+  - Seller responded to your review
+  - Cart abandonment (already in Feature 04)
+  - Review reminder (already in Feature 05)
+
+- **System Notifications:**
+  - Platform announcements
+  - Maintenance notices
+  - Feature updates
+  - Policy changes
+
+**Notification Delivery:**
+- In-app notifications (bell icon with count)
+- Email notifications (digest vs immediate)
+- Push notifications (PWA, future feature?)
+- SMS (not needed for MVP)
+
+**Notification Preferences:**
+- Per-type toggles (user can choose which to receive)
+- Frequency controls (immediate, daily digest, weekly digest, off)
+- Email vs in-app selection
+
+### 5. Activity Feed
+- Should we have a "Feed" of activity? (Similar to Facebook/Twitter)
+  - Show followed sellers' new products
+  - Show reviews from people you follow (if we add following buyers)
+  - Show system announcements
+- Or keep it simple (notifications only, no feed)?
+
+### 6. "Tell a Friend" Feature
+- Send product recommendation via email
+- Pre-filled message with product link
+- User can customize message
+- Track referrals (for future reward system?)
+
+### 7. Social Proof Elements
+- "X people viewing this product now" (real-time counter)
+- "X people added this to wishlist" (wishlist count visible)
+- "Recently purchased by Teacher Maria M." (social proof on product page)
+- "Trending in Grade 7 Math" (category trends)
+
+### 8. Gift Purchases (Future Feature)
+- Buy product as gift for another teacher
+- Gift wrapping/digital card
+- Scheduled delivery
+- **Decision:** Include in MVP or defer to post-launch?
+
+### 9. Community Features (Future)
+- Teacher forums/discussion boards
+- Q&A section for products
+- Teacher groups/communities
+- **Decision:** Include in MVP or defer to post-launch?
+
+---
+
+## Key Questions to Resolve
+
+1. **Notification Architecture:** In-app + email, or email-only for MVP?
+2. **Recently Viewed:** Track for everyone or logged-in users only?
+3. **Share Platforms:** Which ones are essential for Filipino teachers? (Facebook, Messenger must-haves?)
+4. **Activity Feed:** Worth the complexity, or keep it simple with notifications?
+5. **Social Proof Display:** Real-time counters (expensive) or static badges (simpler)?
+6. **Gift Purchases:** MVP or post-launch?
+7. **Referral Tracking:** Implement now or later for reward program?
+
+---
+
+## Design Considerations
+
+**Filipino Teacher Behavior:**
+- Heavy Facebook/Messenger usage (80%+ penetration)
+- Love sharing discoveries with colleagues
+- Trust peer recommendations highly
+- Active in teacher Facebook groups
+- Mobile-first usage
+
+**Technical Constraints:**
+- Real-time features (view counters) require WebSockets/Server-Sent Events
+- Push notifications require service workers (PWA)
+- Email delivery reliability critical
+- Notification spam risk (need smart defaults)
+
+**Privacy:**
+- Recently viewed = potentially sensitive
+- Notification preferences = user control
+- Social proof = anonymized ("Teacher Maria", not "Maria Santos")
+
+---
+
+## Success Metrics
+
+Post-launch, we'll measure:
+- Share rate (shares per 1,000 page views)
+- Notification open/click rate
+- Recently viewed click-through rate
+- Social proof conversion impact
+
+---
+
+## Notes
+
+- Many components already exist (wishlist, follow/unfollow from previous features)
+- Focus on NEW social features and integration
+- Notification system is the biggest component - prioritize decisions there
+- Keep it simple: Facebook/Messenger essential, others optional
+
+---
+
+**Your Role:**
+Lead us through each discussion area one by one. Ask questions, present options, make recommendations. Help us finalize ALL decisions so Feature 06 is fully designed by end of session.
+
+**Deliverable:**
+Complete design document for Feature 06: Social Features, ready for implementation.
+
+---
+
+Let's begin! Start with whichever area you think makes sense to discuss first.

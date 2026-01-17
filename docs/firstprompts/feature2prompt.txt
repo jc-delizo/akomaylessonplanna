@@ -1,0 +1,172 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSION
+
+I've just completed an extensive planning session and finalized Feature 01 (Authentication & User Management). Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication) - COMPLETED ✅
+
+We just finalized all authentication decisions. Key outcomes:
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions documented in: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+- Design document: `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+- Development phases: `docs/dev/README.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 01: Authentication & User Management.
+
+**Starting Point:** Feature 02 - User Profiles & Profile Management
+
+**Why this next:** After users can authenticate, they need to be able to view and manage their profiles, browse other users' profiles, and for Pro/Pioneer tier sellers, have enhanced profile features.
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 02: User Profiles & Profile Management in detail.
+
+### Please read this section from the design document:
+
+The user profiles section is partially covered in the database schema (users table) and throughout the design doc. Key references:
+- Database Schema → users table (lines 229-250)
+- User Experience → Seller Journey (lines 842-863)
+- Admin Panel → User Management (lines 915-921)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for user profiles:
+
+**1. Profile Privacy & Visibility:**
+- What information is PUBLIC (visible to everyone)?
+- What information is PRIVATE (only account owner)?
+- Should unauthenticated users be able to view profiles?
+- Can users see who viewed their profile?
+- Profile privacy settings (public profile vs private)?
+
+**2. Seller Profile Pages:**
+- What should appear on a seller's public profile page?
+- Products display (featured products? all products? pagination)?
+- Seller stats (sales count, ratings, products listed)?
+- Verification badge display?
+- "About me" section layout?
+- Social links integration?
+- Reviews from buyers showcased?
+- Response time indicator?
+
+**3. Profile Customization:**
+- What can users customize on their profile?
+- Banner image dimensions and placement?
+- Profile picture size and cropping?
+- Bio character limit?
+- Can users rearrange profile sections?
+- Can users highlight specific products?
+- Custom accent colors for Pro/Pioneer?
+
+**4. Profile Completion:**
+- What constitutes a "complete" profile?
+- Profile completion percentage calculator?
+- Incentives for completing profile?
+- When to prompt for incomplete profile?
+- "Complete your profile" checklist?
+- Minimum profile requirements for sellers?
+
+**5. Search & Discovery:**
+- Can users search for other teachers by name?
+- Filter by subjects taught, grade levels, location?
+- "Similar sellers" recommendation algorithm?
+- Featured sellers on homepage?
+- Top sellers leaderboard?
+
+**6. Profile Badges & Achievements:**
+- "Verified Teacher" badge styling and placement?
+- "Pioneer Seller" badge (gold/special styling)?
+- "Pro Seller" badge?
+- "Top Seller" badge (based on sales threshold)?
+- "Fast Responder" badge (response time)?
+- "Rising Star" badge (new sellers with good ratings)?
+- Badge display rules (show all? highlight most important?)?
+
+**7. User-to-User Interactions:**
+- Follow/unfollow functionality (where is button placed)?
+- Contact seller button (messaging system)?
+- Report user button?
+- Share profile to social media?
+- "View all products by this seller" link?
+
+**8. Admin Profile Management:**
+- What can admins edit on user profiles?
+- Can admins change verification status manually?
+- Can admins ban users and display message on profile?
+- Can admins feature specific sellers?
+- Admin notes (internal only - not visible to users)?
+
+**9. Profile Analytics (for sellers viewing their own profile):**
+- Profile views count?
+- Profile views graph (daily/weekly)?
+- Where traffic coming from?
+- Most viewed products?
+- Conversion rate (profile views → sales)?
+- Compare to other sellers?
+
+**10. Technical Implementation:**
+- Public profile routes (/sellers/[username])?
+- Profile image optimization (Next.js Image)?
+- Lazy loading for profile sections?
+- Caching strategy for public profiles?
+- Real-time updates for profile stats?
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the User Profiles section from the design document
+3. For each of the 10 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Gumroad, Teachers Pay Teachers, Etsy)
+   - Your reasoning for recommendations
+
+4. After we discuss and finalize all profile decisions:
+   - Update the design document's User Profiles section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want user-friendly UX (teachers may not be tech-savvy)
+- I want to incentivize Pro/Pioneer subscriptions with enhanced profile features
+- I want sellers to be able to showcase their work effectively
+- I want buyers to be able to trust sellers (badges, reviews, verification)
+- I prefer proven solutions over custom implementations
+- I want profiles to look professional and trustworthy
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

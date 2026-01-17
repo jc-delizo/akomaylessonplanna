@@ -1,0 +1,898 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## IMPORTANT: WE ARE READY TO DESIGN THE DATABASE!
+
+After extensive planning, we have **finalized Features 01-11** and are now ready to create the **comprehensive database schema** that will be the foundation for the entire platform.
+
+---
+
+## PROJECT OVERVIEW
+
+**Name:** AKOMAYLESSONPLANNA
+**Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+**Tech Stack:**
+- **Framework:** Next.js 14 with TypeScript
+- **Database:** Supabase (PostgreSQL)
+- **Styling:** Tailwind CSS, shadcn/ui
+- **Payment:** GCash, Maya (Philippines e-wallets)
+- **Authentication:** Supabase Auth
+- **Storage:** Supabase Storage
+- **Development Tool:** Cursor AI
+- **MCP Servers:** Supabase MCP (for database operations)
+
+**Commission Model:** 20% platform commission (15% for Pioneer tier)
+**Timeline:** 8-10 months (part-time: 20-30 hours/week)
+**Current Status:** shadcn/ui template already set up, ready to start development
+
+---
+
+## COMPLETED FEATURE DESIGNS (Features 01-11)
+
+We have designed **11 complete features** with full specifications. Each feature has:
+- Complete design document in `docs/brainstorming/`
+- Database table definitions (some enhanced, some new)
+- API endpoint specifications
+- UI/UX designs
+- Integration points with other features
+
+### Feature 01: Authentication & User Management ✅
+**Documentation:** `docs/brainstorming/2-feature-01-authentication-user-management.md`
+- Email/password auth + Google + Facebook OAuth
+- PRC ID verification for sellers
+- User roles (buyer, seller, admin)
+- Rich profiles with bio, subjects, grades, location
+- Session management (90-day "remember me")
+- 5 failed attempts = 30min lockout
+
+### Feature 02: User Profiles & Profile Management ✅
+**Documentation:** `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+- Open profiles (anyone can view)
+- Storefront layout with stats, badges, products, reviews
+- Badge system (Verified, Pro, Pioneer, achievements)
+- Profile completion calculator
+- Follow system
+- Profile analytics (views, followers)
+- Admin management tools
+- Username field for SEO-friendly URLs (/sellers/[username])
+
+### Feature 02.5: Grade & Subject Management ✅
+**Documentation:** Enhanced in Feature 02 document and design summary
+- Many-to-many relationship (grades ↔ subjects)
+- Dynamic subject selection based on grade
+- Admin-managed curriculum
+- Tables: `grades`, `subjects`, `grade_subjects`
+
+### Feature 03: Product Listings & Product Management ✅
+**Documentation:** `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- Multi-step upload wizard (5 steps)
+- Advanced filtering (product type, grade, subject, quarter, weeks, price, rating, file type)
+- Automatic preview generation (first 3 pages with watermark)
+- Version management system with buyer notifications
+- Product status workflow (draft → pending_review → published → rejected/suspended/deleted)
+- First 3 products require manual review
+- Tiered analytics (Free vs Pro/Pioneer)
+
+### Feature 04: Shopping Cart & Checkout Flow ✅
+**Documentation:** `docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md`
+- Shopping cart (one copy per product)
+- Wishlist (heart icon, separate page)
+- Multi-step checkout (review → payment)
+- GCash and Maya payment integration
+- 15-minute payment timeout with unlimited retries
+- Thank You page with immediate downloads
+- User library with unlimited downloads
+- Watermarking on all downloads (buyer email)
+- Cart abandonment email (24 hours)
+- Seller dashboard with orders and earnings
+- Withdrawal requests with automatic processing
+- Refund policy: all sales final, 7-day exception window
+
+### Feature 05: Reviews & Ratings System ✅
+**Documentation:** `docs/brainstorming/7-feature-05-reviews-and-ratings.md`
+- 5-star rating system (simple scale, no half-stars)
+- Review eligibility: after download only
+- Rating required, comment optional (500 char max)
+- Seller responses allowed (500 char limit, one-level chain)
+- Top 3 most recent reviews displayed
+- Review summary card (average rating + distribution chart)
+- Automatic flagging system (profanity filter, spam patterns)
+- Admin moderation queue (flagged reviews hidden immediately)
+- 7-day edit window (no deletion), shows "Edited on [date]"
+- Single 24h reminder email (no incentives)
+- Seller reputation: simple average calculation
+- Enhanced analytics for Pro/Pioneer
+- Reviews on seller profile
+
+### Feature 06: Social Features ✅
+**Documentation:** `docs/brainstorming/8-feature-06-social-features.md`
+- In-app notifications (bell icon + dropdown + notifications page)
+- Email notifications (8 types: sales, reviews, followers, approvals, rejections, price drops, new products, announcements)
+- Simple on/off toggle for email notifications
+- Admin panel for system announcements (create, schedule, track stats)
+- Social sharing: Facebook, Messenger, Copy Link
+- Share tracking analytics
+- Recently viewed items (last 20 items for 30 days)
+- Social proof elements (static badges: Trending, Bestseller, Popular, New)
+- View counts, sales counts, wishlist counts
+
+### Feature 07: Seller Dashboard & Analytics ✅
+**Documentation:** `docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md`
+- **Dashboard Overview:** 4 metric cards (Revenue, Sales, Views, Rating) with time range selector and sparklines/charts
+- **Product Management:** Grid view with bulk actions, duplicate product, performance indicators
+- **Order History:** Buyer location (region), filters, export to CSV, "Contact Buyer" button
+- **Earnings & Payouts:** Free tier (3 cards), Pro/Pioneer (interactive charts, monthly PDF reports)
+- **Analytics Tiers:** Free (tables, CSV), Pro/Pioneer (charts, performance score, scheduled reports)
+- **Mobile Experience:** Full dashboard mobile with bottom tab bar, swipe actions, pull-to-refresh
+
+### Feature 08: Advanced Search & Discovery ✅
+**Documentation:** `docs/brainstorming/10-feature-08-advanced-search-and-discovery.md`
+- **Search Algorithm:** PostgreSQL full-text search with weighted relevance (40% text, 25% sales, 20% rating, 10% recency, 5% reputation)
+- **Autocomplete:** 8 suggestions (3 titles, 2 subjects, 2 sellers, 1 popular)
+- **Search History:** Last 10 searches, "Popular this week"
+- **Results Page:** Grid/list toggle, 24 per page (desktop), 20 per page (mobile), 8 sort options
+- **Filter System:** 11 filters, filter counts, removable chips, mobile filter drawer
+- **Category Pages:** Dedicated pages with hero, tabs, breadcrumbs, featured products
+- **Recommendations:** Related products, personalized, similar, new from followed sellers
+- **Search Analytics:** Tiered - Free (basic), Pro/Pioneer (insights, competitor comparison, trends)
+- **SEO Strategy:** Friendly URLs, dynamic meta, Schema.org, XML sitemap
+- **Performance:** 1-min cache (Redis), target < 500ms
+
+### Feature 09: Admin Panel & Content Moderation ✅
+**Documentation:** `docs/brainstorming/11-feature-09-admin-panel-and-content-moderation.md`
+- **Navigation:** Sidebar with top bar, Quick Action badges, Breadcrumb navigation
+- **Dashboard Overview:** 8 metric cards, 4 charts, Activity feed
+- **User Management:** 4 tabs (All Users, Verification Queue, Banned Users, Admin Notes)
+- **Product Moderation:** Pending reviews queue, bulk approval, product preview modal
+- **Content Moderation:** Flagged reviews queue, user reports queue, 7-day appeal process
+- **Pioneer Management:** 20-slot hard limit, invite-only, 15% commission
+- **Financial Overview:** Super Admin only, manual withdrawal processing, 5 financial report types
+- **System Announcements:** Full rich text editor, advanced segmentation, templates system
+- **Settings:** Commission rates, feature flags, maintenance mode, email template editor
+- **Admin Roles:** 3 roles (Super Admin, Moderator, Content Manager) with approval workflows
+- **Search & Discovery Admin:** Search analytics, category management, SEO tools
+- **Data & Analytics:** Real-time analytics, 1-year retention, platform growth charts
+
+### Feature 10: Email System ✅
+**Documentation:** `docs/brainstorming/12-feature-10-email-system-transactional-and-notification-emails.md`
+- **Hybrid Approach:** Supabase Auth (4 auth emails) + Resend (22+ transactional/marketing emails)
+- **26 Email Types:** Authentication (4), Product Management (5), Shopping Cart (6), Reviews (3), Social Features (5), Admin Panel (3)
+- **Two-Tier Preferences:** User preferences (4 categories), Admin configuration (26 toggles)
+- **Email Queue System:** Priority-based queue (1-10), rate limiting, scheduled emails, retry logic
+- **Template Management:** Rich text editor, version control, preview & test send
+- **Email Analytics:** Delivery rate, open rate, click rate, bounce rate
+- **Security:** SPF, DKIM, DMARC, DPA compliance, one-click unsubscribe
+- **Cost:** $20/month (50,000 emails) → $40/month (100,000 emails)
+
+### Feature 11: Messaging System ✅
+**Documentation:** `docs/brainstorming/13-feature-11-messaging-system.md`
+- **Buyer-Seller Messaging:** Messenger-like UX, 30-second polling
+- **Conversation Organization:** One per buyer-seller-product pair, 3 states (Active/Archived/Blocked)
+- **Privacy & Safety:** Anonymized, auto-flag external links, profanity filter, block/report
+- **Seller Tools:** 5 quick reply templates, custom templates (Pro/Pioneer), response time tracking, away messages
+- **UI:** Desktop (two-column), Mobile (full-screen like Messenger, swipe actions)
+- **Admin Tools:** Flagged messages queue, dispute resolution (admin joins as mediator)
+- **Success Metric:** Conversation → Purchase rate (target: 15%+)
+- **Database Tables:** conversations, messages, message_templates, message_reports, user_blocks, seller_response_times
+
+---
+
+## EXISTING DATABASE DESIGN
+
+### Check This First:
+**File:** `docs/dev/phase-1-foundation/`
+
+Look for any existing database design files or schema definitions in this folder. We need to:
+1. Review what's already designed
+2. Consolidate all table definitions from Features 01-11
+3. Identify any conflicts or inconsistencies
+4. Create a unified, comprehensive database schema
+
+### Design Summary:
+**File:** `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+
+This file contains:
+- **Database Schema section** - All tables from Features 01-09 are defined
+- **API Endpoints section** - All endpoints from Features 01-11 are listed
+- **Security & Compliance section** - RLS policies, authentication, data protection
+- **Payment Integration section** - GCash/Maya integration details
+- **File Handling & Watermarking** - Storage, watermarking implementation
+- **Dispute Resolution** - Refund workflows
+- **Analytics & KPIs** - Metrics tracking
+- **SEO & Discovery** - Search optimization
+- **Development Roadmap** - Implementation phases
+
+**Last Updated:** January 13, 2026
+**Version:** 1.2
+**Features Completed:** 01-11 (11 features designed)
+
+---
+
+## DATABASE TABLES SO FAR (From Design Summary)
+
+### Core Tables (Already Defined):
+
+**1. users** - User accounts with profiles, roles, subscriptions
+**2. teacher_id_verifications** - PRC ID verification for sellers
+**3. products** - Product listings with categorization, analytics, versioning
+**4. product_updates** - Product version history
+**5. product_views** - Product view tracking
+**6. orders** - Customer orders with payment, refund, buyer info
+**7. order_items** - Individual items in orders
+**8. user_library** - User's purchased products
+**9. reviews** - Product reviews with moderation
+**9b. review_flags** - Flagged reviews
+**10. cart_items** - Shopping cart items
+**11. wishlist** - User's wishlist
+**12. recently_viewed** - Recently viewed items
+**13. followers** - Social following system
+**14. categories** - Product categories
+**14a. grades** - Grade levels (K-12)
+**14b. subjects** - School subjects
+**14c. grade_subjects** - Many-to-many relationship
+**15. seasonal_collections** - Seasonal product collections
+**16. collection_items** - Items in collections
+**17. withdrawal_requests** - Seller withdrawal requests
+**18. reports** - User reports (content moderation)
+**19. notifications** - In-app notifications
+**20. conversations** - Buyer-seller messaging (Feature 11)
+**20b. messages** - Message content (Feature 11)
+**20c. message_templates** - Quick reply templates (Feature 11)
+**20d. message_reports** - Reported messages (Feature 11)
+**20e. user_blocks** - Blocked users (Feature 11)
+**20f. seller_response_times** - Response time analytics (Feature 11)
+**21. profile_views** - Profile view tracking
+**22. admin_notes** - Internal admin communication
+**23. audit_log** - Admin action audit trail
+**24. user_sessions** - Session management
+**25. search_analytics** - Search performance tracking
+**26. search_queries** - Search query tracking
+
+### Email System Tables (Feature 10):
+
+**From Feature 10 design:**
+**27. email_queue** - Queue for sending emails
+**28. email_templates** - Template definitions
+**29. email_template_versions** - Version history
+**30. email_configuration** - Admin settings per email type
+**31. user_email_preferences** - User preferences (4 categories)
+**32. email_analytics** - Delivery and engagement metrics
+**33. email_daily_stats** - Daily aggregations
+**34. email_suppression_list** - Hard bounces, spam complaints
+
+**Total: ~34 tables defined**
+
+---
+
+## WHAT WE NEED FROM YOU
+
+### Task: Create Comprehensive Database Schema Document
+
+**Goal:** Create a single, authoritative database design document that will be used throughout development with Cursor and Supabase MCP.
+
+### Step 1: Review All Existing Designs
+
+**Please read and analyze:**
+
+1. **Feature Design Documents:**
+   - All files in `docs/brainstorming/` (Features 01-11)
+   - Extract ALL table definitions from each feature
+   - Note any relationships between tables
+   - Identify any conflicts or inconsistencies
+
+2. **Design Summary:**
+   - `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+   - Focus on the "Database Schema" section
+   - Note all tables, columns, relationships, indexes
+
+3. **Existing Dev Folder:**
+   - `docs/dev/phase-1-foundation/`
+   - Check if there's already a database design file
+   - Review any existing schema definitions
+
+### Step 2: Create Comprehensive Database Schema
+
+**Create a new document:** `docs/dev/database-schema-complete.md`
+
+**Include the following sections:**
+
+#### 2.1. Overview
+- Database name
+- Database provider (Supabase PostgreSQL)
+- Schema version
+- Total table count
+- Design principles (e.g., "One conversation per buyer-seller-product pair")
+
+#### 2.2. All Tables (Alphabetical or Logical Order)
+
+**For EACH table, provide:**
+
+**Table Name:**
+```
+Table: table_name
+Purpose: What this table stores
+Feature: Which feature(s) use this table
+```
+
+**Columns:**
+```sql
+CREATE TABLE table_name (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- Foreign Keys
+  foreign_key_id UUID REFERENCES related_table(id) ON DELETE CASCADE,
+
+  -- Data Columns
+  column_name VARCHAR(255) NOT NULL,
+  another_column TEXT,
+
+  -- Metadata
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  -- Constraints
+  CHECK (column_name > 0),
+  UNIQUE(foreign_key_id, column_name)
+);
+```
+
+**Include:**
+- Column name
+- Data type (VARCHAR, TEXT, INTEGER, UUID, TIMESTAMP, BOOLEAN, JSONB, ARRAY, etc.)
+- Constraints (NOT NULL, UNIQUE, DEFAULT, CHECK)
+- Foreign keys with ON DELETE behavior (CASCADE, SET NULL, RESTRICT, NO ACTION)
+- Indexes (which columns are indexed, unique indexes, composite indexes)
+- Enum values (if applicable)
+
+**Relationships:**
+- One-to-One: `users ← teacher_id_verifications` (one user, one verification)
+- One-to-Many: `users → products` (one seller, many products)
+- Many-to-Many: `products ↔ tags` (junction table)
+- Self-referential: `users → followers` (users follow users)
+
+#### 2.3. Indexes
+
+**For EACH table, list all indexes:**
+```sql
+CREATE INDEX idx_table_name_column ON table_name(column_name);
+CREATE UNIQUE INDEX idx_table_name_unique ON table_name(column_a, column_b);
+CREATE INDEX idx_table_name_composite ON table_name(column_a, column_b, column_c);
+```
+
+**Explain WHY each index exists:**
+- Performance optimization (faster queries)
+- Uniqueness constraint
+- Foreign key lookup optimization
+- Search optimization (full-text search)
+
+#### 2.4. Row Level Security (RLS) Policies
+
+**Supabase uses RLS for data security. Define policies:**
+
+**For EACH table with RLS, provide:**
+```sql
+-- Enable RLS
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can see their own data
+CREATE POLICY "Users can view own table_name"
+ON table_name
+FOR SELECT
+USING (user_id = auth.uid());
+
+-- Policy: Sellers can insert their own products
+CREATE POLICY "Sellers can insert products"
+ON products
+FOR INSERT
+WITH CHECK (seller_id = auth.uid());
+
+-- Policy: Admins can do everything
+CREATE POLICY "Admins have full access"
+ON table_name
+FOR ALL
+USING (auth.jwt() ->> 'role' = 'admin');
+```
+
+**Cover:**
+- SELECT policies (who can read)
+- INSERT policies (who can create)
+- UPDATE policies (who can modify)
+- DELETE policies (who can remove)
+- Admin bypass policies
+
+#### 2.5. Foreign Key Relationships
+
+**Visual representation of relationships:**
+
+```
+users (1) ──────< (many) products
+  │                    │
+  │                    (1)
+  │                    │
+ (1)                  orders
+  │                    │
+  │                    (many)
+  │                    │
+teacher_id_verifications  order_items
+```
+
+**List ALL relationships:**
+- Table A → Table B (One-to-Many)
+- Table A ↔ Table B (Many-to-Many with junction table)
+- Table A → Table B (One-to-One)
+- Self-referential relationships
+
+**Include ON DELETE behavior:**
+- CASCADE: Delete related records
+- SET NULL: Set foreign key to NULL
+- RESTRICT: Prevent deletion if related records exist
+- NO ACTION: Do nothing (defer to database)
+
+#### 2.6. Enums and Custom Types
+
+**List all ENUMs:**
+```sql
+CREATE TYPE user_role AS ENUM ('buyer', 'seller', 'admin');
+CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'pioneer');
+CREATE TYPE product_status AS ENUM ('draft', 'pending_review', 'published', 'rejected', 'suspended', 'deleted');
+-- etc.
+```
+
+**Explain:**
+- What each enum represents
+- Valid values
+- Default values
+- Which tables use each enum
+
+#### 2.7. Triggers and Functions
+
+**List all database triggers:**
+```sql
+-- Trigger: Update last_message_at when new message sent
+CREATE TRIGGER update_conversation_last_message_at
+AFTER INSERT ON messages
+FOR EACH ROW
+EXECUTE FUNCTION update_last_message_at();
+```
+
+**Include:**
+- Trigger name
+- When it fires (BEFORE/AFTER INSERT/UPDATE/DELETE)
+- What it does
+- Which function it calls
+
+**List all custom functions:**
+```sql
+CREATE OR REPLACE FUNCTION update_last_message_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE conversations
+  SET last_message_at = NOW()
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### 2.8. Full-Text Search Configuration
+
+**From Feature 08, we use PostgreSQL full-text search:**
+
+**Document search configuration:**
+```sql
+-- Enable extensions
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Full-text search index on products
+CREATE INDEX idx_products_fts ON products
+USING GIN (to_tsvector('english', title || ' ' || description));
+
+-- Trigram index for fuzzy matching
+CREATE INDEX idx_products_title_trgm ON products
+USING GIN (title gin_trgm_ops);
+```
+
+**Include:**
+- Extensions enabled (pg_trgm, etc.)
+- Search indexes
+- Search configuration (language, weights)
+- Fuzzy matching setup
+
+#### 2.9. Data Constraints & Validation
+
+**List all business rules enforced at database level:**
+
+**Examples:**
+```sql
+-- Price must be positive
+ALTER TABLE products ADD CHECK (price >= 50);
+
+-- Rating must be 1-5
+ALTER TABLE reviews ADD CHECK (rating BETWEEN 1 AND 5);
+
+-- One review per product per buyer
+ALTER TABLE reviews ADD UNIQUE (product_id, buyer_id);
+
+-- Cannot block yourself
+ALTER TABLE user_blocks ADD CHECK (blocker_id != blocked_id);
+```
+
+**Categorize:**
+- Price constraints (min/max values)
+- Rating constraints
+- Uniqueness constraints
+- Check constraints
+- Business logic constraints
+
+#### 2.10. Performance Optimizations
+
+**Document performance-related decisions:**
+
+**Indexes:** (already covered in 2.4)
+- Which queries are optimized
+- Query performance targets (< 500ms for 95% of searches)
+
+**Caching Strategy:**
+- Redis cache for search results (1-minute cache)
+- Popular searches pre-computed (5-minute cache)
+- Application-level caching (dashboard metrics: 15-minute cache)
+
+**Partitioning:**
+- Do any tables need partitioning? (e.g., orders by date, search_analytics by date)
+- If yes, which tables and how?
+
+**Vacuum & Analyze:**
+- Auto-vacuum settings
+- Manual analyze schedule (nightly?)
+
+#### 2.11. Security Considerations
+
+**Beyond RLS policies:**
+
+**Input Validation:**
+- Max length for VARCHAR columns
+- Email format validation
+- URL validation
+- SQL injection prevention (parameterized queries)
+
+**Data Encryption:**
+- Columns encrypted at rest (Supabase handles this)
+- Columns encrypted in transit (HTTPS/TLS)
+- PII protection (phone numbers, GCash numbers)
+
+**Audit Logging:**
+- audit_log table (already defined)
+- What actions are logged (ALL admin actions)
+- How long to keep logs (1 year)
+
+**Rate Limiting:**
+- How rate limiting is enforced (application-level, not database)
+- Tables that support rate limiting (email_queue)
+
+#### 2.12. Migration Strategy
+
+**How to create the database:**
+
+**Development:**
+```bash
+# Supabase CLI
+supabase migration new initial_schema
+# Edit migration file
+supabase db push
+```
+
+**Production:**
+- Run migrations in order
+- Test migrations on staging first
+- Rollback strategy
+
+**Migration Files:**
+- `001_initial_schema.sql` - Core tables (users, products, orders, etc.)
+- `002_messaging_system.sql` - Feature 11 tables
+- `003_email_system.sql` - Feature 10 tables
+- `004_indexes_and_constraints.sql` - All indexes
+- `005_rls_policies.sql` - Security policies
+- etc.
+
+#### 2.13. Database Diagrams
+
+**Include visual diagrams:**
+
+**Option A: ERD (Entity-Relationship Diagram)**
+- Show all tables
+- Show relationships (lines with crow's foot notation)
+- Show cardinality (1:1, 1:N, M:N)
+
+**Option B: SchemaSpy or dbdiagram.io**
+- Use ASCII art if image not possible
+- Or describe the diagram in text
+
+**Option C: Mermaid.js Diagram**
+```mermaid
+erDiagram
+    USERS ||--o{ PRODUCTS : sells
+    USERS ||--o{ ORDERS : places
+    PRODUCTS ||--o{ ORDER_ITEMS : contains
+    USERS ||--o{ REVIEWS : writes
+    USERS ||--o{ CONVERSATIONS : participates
+```
+
+#### 2.14. Data Dictionary
+
+**For EVERY column, provide:**
+
+| Table | Column | Type | Nullable | Default | Description | Example |
+|------|--------|------|----------|---------|-------------|---------|
+| users | id | UUID | NO | uuid_generate_v4() | Primary key | 123e4567-e89b... |
+| users | email | VARCHAR(255) | NO | - | User's email (unique) | teacher@gmail.com |
+| users | role | user_role | NO | 'buyer' | User's role | seller |
+| etc. | | | | | | |
+
+**Include:**
+- All tables
+- All columns
+- Data types
+- Nullable/Not Null
+- Default values
+- Descriptions
+- Example values
+
+#### 2.15. SQL Migration Scripts
+
+**Provide ready-to-run SQL scripts:**
+
+**Script 1: Create Extension**
+```sql
+-- Enable UUID generation
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Enable full-text search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Enable trigram matching
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+**Script 2: Create Enums**
+```sql
+CREATE TYPE user_role AS ENUM ('buyer', 'seller', 'admin');
+CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'pioneer');
+CREATE TYPE product_status AS ENUM ('draft', 'pending_review', 'published', 'rejected', 'suspended', 'deleted');
+-- etc.
+```
+
+**Script 3: Create Core Tables**
+```sql
+-- Users table
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT,
+  name VARCHAR(255),
+  username VARCHAR(50) UNIQUE,
+  -- etc.
+);
+```
+
+**And so on for all tables...**
+
+---
+
+## SPECIAL CONSIDERATIONS
+
+### Supabase-Specific Features:
+
+**1. Supabase Auth Integration:**
+- `auth.users` table (Supabase managed)
+- Custom `public.users` table (linked to auth.users)
+- Row Level Security (RLS) with `auth.uid()`
+
+**2. Supabase Storage:**
+- Storage buckets: `products`, `avatars`, `message-images`, etc.
+- Storage policies (who can upload/download)
+- Image transformation API (resize, crop, watermark)
+
+**3. Supabase Realtime:**
+- Realtime subscriptions (not used in MVP, but available)
+- Can enable for: notifications, messages (if polling upgraded)
+
+**4. Supabase Edge Functions:**
+- Serverless functions for background jobs
+- Use for: email queue processing, bulk operations, webhooks
+
+**5. Supabase MCP (Model Context Protocol):**
+- You'll use Supabase MCP server with Cursor
+- MCP provides AI-assisted database operations
+- Can query schema, generate migrations, optimize queries via AI
+
+### Cursor-Specific Considerations:
+
+**1. Cursor AI Development:**
+- Cursor will help write SQL migrations
+- Cursor will help implement RLS policies
+- Cursor will help generate TypeScript types from database schema
+- Cursor will help write API routes based on database schema
+
+**2. TypeScript Integration:**
+- Generate TypeScript types from database:
+  ```bash
+  supabase gen types typescript
+    --project-id YOUR_PROJECT_ID
+    --schema public
+    > types/supabase.ts
+  ```
+- Use these types in Next.js API routes
+- Use in frontend components for type safety
+
+**3. Development Workflow:**
+- Local development: Supabase CLI (`supabase start`)
+- Migrations: `supabase migration new`
+- Push to local: `supabase db push`
+- Push to remote: `supabase db push --remote`
+
+---
+
+## VALIDATION CHECKLIST
+
+After creating the database schema document, verify:
+
+**✅ Completeness:**
+- [ ] All 34+ tables included
+- [ ] All columns defined with correct data types
+- [ ] All foreign keys defined with correct ON DELETE behavior
+- [ ] All indexes listed with justification
+- [ ] All RLS policies defined
+- [ ] All ENUMs defined
+- [ ] All triggers/functions listed
+
+**✅ Consistency:**
+- [ ] No conflicting table definitions across features
+- [ ] No duplicate table names
+- [ ] No orphaned foreign keys
+- [ ] No missing relationships
+- [ ] Naming conventions consistent (snake_case for DB, camelCase for code)
+
+**✅ Accuracy:**
+- [ ] Tables match feature design documents
+- [ ] Columns match requirements (e.g., 1000 char max for messages)
+- [ ] Constraints match business rules (e.g., price >= 50)
+- [ ] Relationships match feature integration points
+
+**✅ Performance:**
+- [ ] All frequently-queried columns indexed
+- [ ] All foreign keys indexed
+- [ ] All unique constraints have indexes
+- [ ] No over-indexing (only necessary indexes)
+- [ ] Full-text search configured correctly
+
+**✅ Security:**
+- [ ] RLS enabled on all user-facing tables
+- [ ] Admin policies defined
+- [ ] No security gaps (users can't see other users' data)
+- [ ] PII protected
+- [ ] Audit logging configured
+
+**✅ Documentation:**
+- [ ] Every table has purpose description
+- [ ] Every column has description
+- [ ] Every index has justification
+- [ ] Every relationship is documented
+- [ ] Data dictionary complete
+- [ ] Migration scripts ready
+
+**✅ Cursor-Ready:**
+- [ ] SQL scripts ready for Cursor to use
+- [ ] TypeScript types can be generated
+- [ ] Migration files organized
+- [ ] Clear deployment instructions
+
+---
+
+## OUTPUT FORMAT
+
+**Create a single document:** `docs/dev/database-schema-complete.md`
+
+**Structure:**
+```markdown
+# AKOMAYLESSONPLANNA - Complete Database Schema
+
+**Version:** 1.0
+**Date:** January 13, 2026
+**Database:** Supabase PostgreSQL 15
+**Total Tables:** 34
+
+## Table of Contents
+1. Overview
+2. Database Tables
+3. Indexes
+4. Relationships
+5. RLS Policies
+6. Enums & Custom Types
+7. Triggers & Functions
+8. Full-Text Search
+9. Performance Optimizations
+10. Security & RLS
+11. Migration Scripts
+12. Data Dictionary
+13. Database Diagrams
+
+---
+
+[Each section detailed as specified above]
+```
+
+**Include:**
+- SQL code blocks (ready to run)
+- Mermaid diagrams (if possible)
+- Tables for data dictionary
+- Clear explanations for design decisions
+
+---
+
+## YOUR APPROACH
+
+1. **Read First:** Review all 11 feature documents + design summary
+2. **Extract:** Pull out all table definitions, relationships, indexes
+3. **Consolidate:** Merge into single, unified database schema
+4. **Validate:** Check for conflicts, inconsistencies, missing pieces
+5. **Document:** Create comprehensive document as specified
+6. **Verify:** Go through validation checklist above
+
+---
+
+## IMPORTANT REMINDERS
+
+- **Cursor + Supabase MCP:** You're using Cursor AI with Supabase MCP server. The database schema should be clean, well-documented, and ready for AI-assisted development.
+- **TypeScript Generation:** Schema should be compatible with `supabase gen types typescript` command.
+- **Migration-First:** Design migrations that can run incrementally (not one giant script).
+- **Production-Ready:** This is the database that will run in production. Get it right now.
+- **No Shortcuts:** Don't skip indexes, constraints, or RLS policies "for now." Do it right from day one.
+- **Filipino Context:** Remember this is for Filipino teachers (Tagalog text search, PRC license validation, etc.).
+- **Mobile-First:** Database should support PWA mobile usage (efficient queries, minimal data transfer).
+- **Performance Matters:** Slow database = slow platform. Index correctly from the start.
+- **Security First:** RLS policies prevent data leaks. Test them before deploying.
+
+---
+
+## NEXT STEPS AFTER DATABASE DESIGN
+
+Once database schema is complete:
+
+1. **Generate TypeScript Types:**
+   ```bash
+   supabase gen types typescript --project-id YOUR_PROJECT_ID --schema public > types/supabase.ts
+   ```
+
+2. **Create Supabase Project:**
+   - Go to supabase.com
+   - Create new project
+   - Get project URL and anon key
+
+3. **Run Migrations:**
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_ID
+   supabase db push
+   ```
+
+4. **Set Up Storage:**
+   - Create buckets: `products`, `avatars`, `message-images`
+   - Set storage policies
+
+5. **Configure Auth:**
+   - Enable email/password auth
+   - Enable Google OAuth
+   - Enable Facebook OAuth
+
+6. **Start Development with Cursor:**
+   - Connect Cursor to Supabase
+   - Use MCP server for database operations
+   - Build API routes
+   - Build frontend components
+
+---
+
+Let's design the database! This is the foundation for everything. If we get this right, the rest of development will be smooth. If we get this wrong, we'll have painful migrations and refactoring later.
+
+Take your time. Be thorough. Ask questions if anything is unclear. I'm here to help.
+
+Let's begin! 🚀

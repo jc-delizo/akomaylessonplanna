@@ -1,0 +1,294 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Features 01, 02, and 03. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+- Design document: `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+
+### Feature 02.5 (Grade & Subject Management) - ENHANCED ✅
+
+**Key Outcomes:**
+- Many-to-many relationship between grades and subjects
+- Subjects change dynamically based on grade level selected
+- Admin-managed (responds to DepEd curriculum changes)
+- Database tables: `grades`, `subjects`, `grade_subjects`
+- Admin interface for curriculum management
+- Bulk import/export for major curriculum updates
+
+**Documentation:**
+- Enhanced in Feature 02 document and main design summary
+
+### Feature 03 (Product Listings & Product Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- All products can have images (covers for consistency)
+- Multi-step upload wizard (5 steps)
+- Comprehensive product detail pages (hybrid layout for images/documents)
+- Homepage with hero + featured + new arrivals + trending + all products
+- Advanced filtering: Product Type, Grade, Subject (dynamic), Quarter, Weeks (multi-select), Price, Rating, File Type
+- Automatic preview generation (first 3 pages) with watermark
+- Version management system with buyer notifications
+- Tiered analytics (Free vs Pro/Pioneer)
+- Product status workflow (6 states: draft, pending_review, published, rejected, suspended, deleted)
+- First 3 products require manual review (24-48 hours)
+- Bulk upload DEFERRED (future feature)
+
+**Product Types & Filters:**
+1. **Exams** - Periodical Exam, Summative Test | Filters: Grade, Subject, Quarter
+2. **Lesson Plans** - DLL, DLP | Filters: Grade, Subject, Quarter, Weeks (1-8, multi-select)
+3. **RPMS** - Cover pages | Filters: Theme (Safari, Abstract, Floral, etc.)
+4. **Posters** | Filters: Theme, Size
+5. **Tarpaulins** | Filters: Season, Occasion, Size
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### CONFIRMED USER FLOW
+
+**From Feature 03 session:**
+1. User logs in → Homepage/Marketplace
+2. Browse products (grid: 2/3/4 responsive columns)
+3. User clicks product → Product Detail Page
+4. Product Detail Page: Preview, "View Seller Profile", Add to Cart/Buy Now → **THIS FEATURE**
+5. User clicks "Add to Cart" → Shopping Cart → Checkout → Payment → Library
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 03: Product Listings & Product Management.
+
+**Starting Point:** Feature 04 - Shopping Cart & Checkout Flow
+
+**Why this next:** Users can now browse and view products. They need to be able to:
+- Add products to cart
+- View cart
+- Update quantities (if applicable)
+- Remove from cart
+- Proceed to checkout
+- Select payment method (GCash/Maya)
+- Complete payment
+- Receive products in library
+
+**Note:** Digital products = no shipping, no physical delivery
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 04: Shopping Cart & Checkout Flow in detail.
+
+### Please read this section from the design document:
+
+The shopping and order sections are covered in the database schema and throughout the design doc. Key references:
+- Database Schema → cart_items table (lines 378-384)
+- Database Schema → orders table (lines 332-342)
+- Database Schema → order_items table (lines 343-353)
+- Database Schema → user_library table (lines 355-363)
+- User Experience → Buyer Journey (lines 889-908)
+- Payment Integration section (lines 772-831)
+- Development Roadmap → Week 7-8: Basic Shopping Experience (lines 1820-1826)
+- Development Roadmap → Week 9-12: Payments & Library (lines 1828-1857)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for shopping cart and checkout:
+
+**1. Shopping Cart Features:**
+- Maximum items in cart? (limit or unlimited?)
+- Quantity selector: Do users need to buy multiple copies of the same digital product? (e.g., for colleagues, for multiple classes)
+- Or: 1 of each product only? (since it's digital, they can download multiple times)
+- Cart persistence: Save cart for logged-in users? (returning users see their previous cart)
+- Guest checkout: Can buyers purchase without account? (or force sign up first?)
+- Cart UI: Side drawer (like Amazon) or separate page?
+- "Add to Cart" vs "Buy Now": Both options? (Buy Now skips cart, goes straight to checkout)
+- Wishlist: Heart icon → saves for later (but separate from cart)
+
+**2. Checkout Page Flow:**
+- Single page checkout or multi-step wizard?
+- Required information to collect from buyer:
+  - Already logged in: Just email confirmation?
+  - Not logged in: Email + name? Force signup first?
+- Order summary: Show items, quantities, individual prices, total
+- Platform commission calculation: How to show (or hide) from buyer?
+- Any fees to buyer? (processing fees, service fees, etc.)
+
+**3. Payment Method Selection:**
+- How to present GCash vs Maya? (radio buttons, logos, dropdown?)
+- Show payment instructions before or after clicking "Pay"?
+- GCash flow: Enter mobile number → receive push notification → approve in app → webhook confirmation
+- Maya flow: Enter mobile number → enter OTP → confirm → webhook confirmation
+- Payment timeout: How long to wait for payment? (15 min? 30 min?)
+- Failed payment: What happens? (retry option, clear cart, hold order?)
+- Payment retry: How many attempts? (3? unlimited?)
+
+**4. Order Confirmation & Fulfillment:**
+- Successful payment → What happens next?
+  - Redirect to "Thank You" page?
+  - Send email confirmation immediately?
+  - Add products to user library immediately?
+  - Notify seller? (email, notification)
+- Order receipt: Show order ID, items, prices, date, download links
+- Can buyer download immediately? (redirect to library)
+- Email content: What to include? (download links, receipt, seller contact)
+
+**5. User Library (After Purchase):**
+- Library shows: All purchased products with download buttons
+- Download history: Track downloads per product
+- Version updates: If seller updates product, does buyer get notified? (Feature 03 covers this)
+- Download limits: Unlimited downloads or limit per product? (prevent abuse)
+- Offline access: PWA download for offline viewing? (future feature)
+- Share purchases: Can buyer share with colleagues? (NO - watermarking prevents this)
+
+**6. Cart Abandonment Recovery:**
+- Remind users about items in cart? (email after 24 hours?)
+- "You left items in your cart" email with CTA
+- Discount incentive to complete purchase? (optional)
+- How long to keep abandoned carts? (30 days? 7 days?)
+
+**7. Coupon/Discount Codes (Optional):**
+- Should we implement in MVP? (or defer to post-launch?)
+- If MVP: Simple code-based discounts (percent off, fixed amount)
+- Who can create codes? (admin only, or sellers too?)
+- Discount for first-time buyers? (incentive to complete first purchase)
+
+**8. Order Management for Sellers:**
+- Seller dashboard: Show orders for their products
+- Order details: Buyer info (anonymized?), items, revenue, commission
+- Can seller see buyer email? (for support - or platform handles all support?)
+- Seller payout calculation: When does seller get paid? (immediately? after buyer refund period?)
+- Payout frequency: Weekly? Monthly? On demand?
+
+**9. Refunds & Disputes:**
+- Refund policy: All sales final for digital goods?
+- Exceptions: Defective products, not as described, technical issues
+- Refund window: How many days? (7 days? 14 days? 30 days?)
+- Refund process: Buyer contacts seller → seller approves → platform processes
+- Refund to GCash/Maya: How to process? (manual transfer? API refund?)
+- Dispute escalation: What if seller refuses? (platform mediates)
+- Buyer's refund: How long to process? (5-7 business days?)
+
+**10. Mobile Checkout Experience:**
+- PWA-specific considerations: App-like checkout flow
+- Simplified checkout on mobile? (fewer fields, faster)
+- Mobile payment integrations: GCash/Maya app deep links?
+- One-tap buy for returning buyers? (save payment details - NOT possible with GCash/Maya)
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the Shopping & Orders sections from the design document
+3. For each of the 10 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Gumroad, Etsy, Amazon)
+   - Your reasoning for recommendations
+   - Filipino market context (GCash/Maya specific considerations)
+
+4. After we discuss and finalize all checkout decisions:
+   - Update the design document's Shopping & Orders section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want frictionless checkout (digital products = impulse buys)
+- I want to minimize abandoned carts
+- I want clear payment flow (GCash/Maya unfamiliar to some)
+- I want buyers to feel safe (receipts, confirmation, order tracking)
+- I want sellers to get paid promptly (incentivizes them)
+- I want to minimize refund disputes (clear product descriptions help)
+- I prefer proven solutions over custom implementations
+- I want mobile-first (many teachers use phones for purchases)
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - but stunning on desktop (2/3/4 column grid)
+- **PWA** - will be installable as app on phones
+- **Feature 02.5 (Grade & Subject Management)** provides pre-defined dropdowns
+- **Feature 03 (Product Listings)** is complete - products ready to be purchased
+- **Database schema not final yet** - we can add fields as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+- **Direct GCash/Maya integration** (no payment gateway - saves ~₱16 per ₱50 sale)
+
+## PAYMENT INTEGRATION CONTEXT
+
+**Direct Integration Benefits:**
+- No payment gateway fees (~1.5-2% vs 2.5% + ₱15-25 with gateway)
+- Example: ₱50 sale
+  - Direct integration: ~₱1 fee (2%) → Seller keeps ₱49
+  - Payment gateway: ₱1.25 (2.5%) + ₱15 = ₱16.25 fee → Seller keeps ₱33.75
+
+**Payment Flow (from design doc):**
+
+**For GCash:**
+1. Buyer selects GCash payment
+2. Buyer enters GCash mobile number
+3. System initiates via GCash API
+4. Buyer receives push notification in app
+5. Buyer approves (PIN/biometric)
+6. GCash sends webhook confirmation
+7. Order completed, products delivered
+
+**For Maya:**
+1. Buyer selects Maya payment
+2. Buyer enters Maya mobile number
+3. System initiates via Maya API
+4. Buyer receives OTP in app
+5. Buyer enters OTP to confirm
+6. Maya sends webhook confirmation
+7. Order completed, products delivered
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

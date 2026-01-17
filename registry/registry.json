@@ -1,0 +1,951 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "local-registry",
+  "homepage": "./registry",
+  "items": [
+    {
+      "name": "accordion",
+      "type": "registry:component",
+      "title": "Accordion",
+      "description": "A vertically stacked set of interactive headings that each reveal a section of content. Use for FAQ sections, collapsible content areas, or any expandable/collapsible UI pattern. This is a base UI component.",
+      "category": "disclosure",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/accordion/accordion.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "alert",
+      "type": "registry:component",
+      "title": "Alert",
+      "description": "Displays a callout for user attention. Use for important messages, warnings, or informational content. This is a base UI component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/alert/alert.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "aspect-ratio",
+      "type": "registry:component",
+      "title": "Aspect Ratio",
+      "description": "Displays content within a desired ratio. Use for images, videos, or any content that needs to maintain a specific aspect ratio. This is a base UI component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/aspect-ratio/aspect-ratio.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "avatar",
+      "type": "registry:component",
+      "title": "Avatar",
+      "description": "An image element with a fallback for representing the user. Use for user profiles, comments, or any context where a user's image is displayed. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/avatar/avatar.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "badge",
+      "type": "registry:component",
+      "title": "Badge",
+      "description": "Displays a badge or a component that looks like a badge. Use for labels, tags, status indicators, or counts. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/badge/badge.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": []
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:component",
+      "title": "Breadcrumb",
+      "description": "Displays the path to the current resource using a hierarchy of links. Use for navigation context in deep site structures. This is a base UI component.",
+      "category": "navigation",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/breadcrumb/breadcrumb.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "button",
+      "type": "registry:component",
+      "title": "Button",
+      "description": "Displays a button or a component that looks like a button. Use for actions, form submissions, or navigation. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/button/button.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "registryDependencies": []
+    },
+    {
+      "name": "button-group",
+      "type": "registry:component",
+      "title": "Button Group",
+      "description": "Groups multiple buttons together with connected borders. Use for related actions that should appear as a single unit. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/button-group/button-group.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": ["button"]
+    },
+    {
+      "name": "calendar",
+      "type": "registry:component",
+      "title": "Calendar",
+      "description": "A date field component that allows users to enter and edit date. Use for date selection in forms or date pickers. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/calendar/calendar.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["react-day-picker", "lucide-react"],
+      "registryDependencies": ["button"]
+    },
+    {
+      "name": "card",
+      "type": "registry:component",
+      "title": "Card",
+      "description": "Displays a card with header, content, and footer. Use for grouping related content and actions. This is a base UI component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/card/card.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "carousel",
+      "type": "registry:component",
+      "title": "Carousel",
+      "description": "A carousel with motion and swipe built using Embla. Use for image galleries, product showcases, or any scrollable content. This is a base UI component.",
+      "category": "media",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/carousel/carousel.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"]
+    },
+    {
+      "name": "chart",
+      "type": "registry:component",
+      "title": "Chart",
+      "description": "Chart components built with Recharts. Use for data visualization, analytics dashboards, or any graphical representation of data. This is a compound UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/chart/chart.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:component",
+      "title": "Checkbox",
+      "description": "A control that allows the user to toggle between checked and not checked. Use for binary choices, multiple selections, or agreement checkboxes. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/checkbox/checkbox.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "collapsible",
+      "type": "registry:component",
+      "title": "Collapsible",
+      "description": "An interactive component which expands/collapses a panel. Use for accordions, expandable sections, or any collapsible content. This is a base UI component.",
+      "category": "disclosure",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/collapsible/collapsible.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "combobox",
+      "type": "registry:component",
+      "title": "Combobox",
+      "description": "Autocomplete input and command palette with a list of suggestions. Use for search inputs, command palettes, or autocomplete fields. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/combobox/combobox.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": ["button", "input"]
+    },
+    {
+      "name": "command",
+      "type": "registry:component",
+      "title": "Command",
+      "description": "Fast, composable, unstyled command menu for React. Use for command palettes, search interfaces, or keyboard-driven navigation. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/command/command.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["cmdk", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "context-menu",
+      "type": "registry:component",
+      "title": "Context Menu",
+      "description": "Displays a menu to the user — such as a set of actions or functions — triggered by a right-click. Use for contextual actions, right-click menus, or secondary actions. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/context-menu/context-menu.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-context-menu", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "data-table",
+      "type": "registry:component",
+      "title": "Data Table",
+      "description": "Powerful table and datagrid built with TanStack Table. Use for displaying tabular data with sorting, filtering, and pagination. This is a compound UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/data-table/data-table.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "select", "table"]
+    },
+    {
+      "name": "date-picker",
+      "type": "registry:component",
+      "title": "Date Picker",
+      "description": "A date picker component with a calendar popup. Use for date selection in forms or any context requiring date input. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/date-picker/date-picker.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["date-fns", "lucide-react"],
+      "registryDependencies": ["button", "calendar", "popover"]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:component",
+      "title": "Dialog",
+      "description": "A window overlaid on either the primary window or another dialog window. Use for modals, confirmations, or focused content. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/dialog/dialog.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "drawer",
+      "type": "registry:component",
+      "title": "Drawer",
+      "description": "A drawer component for mobile. Use for mobile navigation, side panels, or bottom sheets. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/drawer/drawer.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["vaul"],
+      "registryDependencies": []
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:component",
+      "title": "Dropdown Menu",
+      "description": "Displays a menu to the user — such as a set of actions or functions — triggered by a button. Use for action menus, user menus, or contextual options. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/dropdown-menu/dropdown-menu.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "empty",
+      "type": "registry:component",
+      "title": "Empty",
+      "description": "Displays an empty state when there is no data to show. Use for empty lists, search results, or any context with no content. This is a base UI component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/empty/empty.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "field",
+      "type": "registry:component",
+      "title": "Field",
+      "description": "A form field component with label, description, and error handling. Use for form inputs with associated labels and validation. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/field/field.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["class-variance-authority"],
+      "registryDependencies": ["label", "separator"]
+    },
+    {
+      "name": "form",
+      "type": "registry:component",
+      "title": "Form",
+      "description": "Building forms with React Hook Form and Zod. Use for complex forms with validation, error handling, and submission. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/form/form.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": ["button"]
+    },
+    {
+      "name": "hover-card",
+      "type": "registry:component",
+      "title": "Hover Card",
+      "description": "For sighted users to preview content available behind a link. Use for user profiles, previews, or additional context on hover. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/hover-card/hover-card.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-hover-card"],
+      "registryDependencies": []
+    },
+    {
+      "name": "input",
+      "type": "registry:component",
+      "title": "Input",
+      "description": "Displays a form input field or a component that looks like an input field. Use for text input, email, password, or any single-line input. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/input/input.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "input-group",
+      "type": "registry:component",
+      "title": "Input Group",
+      "description": "Groups input with addons like icons or buttons. Use for inputs with prefixes, suffixes, or action buttons. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/input-group/input-group.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": ["input", "button"]
+    },
+    {
+      "name": "input-otp",
+      "type": "registry:component",
+      "title": "Input OTP",
+      "description": "Accessible one-time password component with copy paste functionality. Use for verification codes, 2FA, or any OTP input. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/input-otp/input-otp.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["input-otp"],
+      "registryDependencies": []
+    },
+    {
+      "name": "item",
+      "type": "registry:component",
+      "title": "Item",
+      "description": "A generic item component for lists and menus. Use for list items, menu items, or any selectable item in a collection. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/item/item.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "kbd",
+      "type": "registry:component",
+      "title": "Kbd",
+      "description": "Displays keyboard keys or a sequence of keyboard keys. Use for keyboard shortcuts, hotkeys, or keyboard instructions. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/kbd/kbd.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "label",
+      "type": "registry:component",
+      "title": "Label",
+      "description": "Renders an accessible label associated with controls. Use for form labels, input labels, or any text associated with a control. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/label/label.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "menubar",
+      "type": "registry:component",
+      "title": "Menubar",
+      "description": "A menu that sits on top of an application window. Use for application menus, navigation bars, or persistent menu interfaces. This is an overlay component.",
+      "category": "navigation",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/menubar/menubar.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-menubar", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "native-select",
+      "type": "registry:component",
+      "title": "Native Select",
+      "description": "A native HTML select element styled to match the design system. Use for simple dropdowns, form selects, or native browser select behavior. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/native-select/native-select.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "navigation-menu",
+      "type": "registry:component",
+      "title": "Navigation Menu",
+      "description": "A collection of links for navigating websites. Use for main navigation, site menus, or hierarchical navigation structures. This is an overlay component.",
+      "category": "navigation",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/navigation-menu/navigation-menu.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-navigation-menu", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "pagination",
+      "type": "registry:component",
+      "title": "Pagination",
+      "description": "Pagination with page navigation, previous/next buttons, and page numbers. Use for paginated lists, tables, or any content split across multiple pages. This is a compound UI component.",
+      "category": "navigation",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/pagination/pagination.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button"]
+    },
+    {
+      "name": "popover",
+      "type": "registry:component",
+      "title": "Popover",
+      "description": "Displays rich content in a portal, triggered by a button. Use for tooltips, dropdowns, or any floating content. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/popover/popover.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "progress",
+      "type": "registry:component",
+      "title": "Progress",
+      "description": "Displays an indicator showing the completion status of a task. Use for loading states, upload progress, or any task completion indicator. This is a base UI component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/progress/progress.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:component",
+      "title": "Radio Group",
+      "description": "A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time. Use for single-choice selections, options, or mutually exclusive choices. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/radio-group/radio-group.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "resizable",
+      "type": "registry:component",
+      "title": "Resizable",
+      "description": "Accessible resizable panel groups and layouts with keyboard support. Use for resizable panels, split views, or adjustable layouts. This is a compound UI component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/resizable/resizable.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "scroll-area",
+      "type": "registry:component",
+      "title": "Scroll Area",
+      "description": "Augments native scroll functionality for custom, cross-browser styling. Use for custom scrollbars, scrollable containers, or styled scroll areas. This is a base UI component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/scroll-area/scroll-area.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-scroll-area"],
+      "registryDependencies": []
+    },
+    {
+      "name": "select",
+      "type": "registry:component",
+      "title": "Select",
+      "description": "Displays a list of options for the user to pick from—triggered by a button. Use for dropdowns, form selects, or any single-choice selection. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/select/select.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "separator",
+      "type": "registry:component",
+      "title": "Separator",
+      "description": "Visually or semantically separates content. Use for dividers, section separators, or visual breaks. This is a base UI component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/separator/separator.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "sheet",
+      "type": "registry:component",
+      "title": "Sheet",
+      "description": "Extends the Dialog component to display content that complements the main content of the screen. Use for side panels, drawers, or slide-over content. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/sheet/sheet.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["vaul", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "sidebar",
+      "type": "registry:component",
+      "title": "Sidebar",
+      "description": "A sidebar component with navigation and content areas. Use for application sidebars, navigation panels, or persistent side content. This is a layout component.",
+      "category": "layout",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/sidebar/sidebar.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:component",
+      "title": "Skeleton",
+      "description": "Use to show a placeholder while content is loading. Use for loading states, content placeholders, or skeleton screens. This is a base UI component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/skeleton/skeleton.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "slider",
+      "type": "registry:component",
+      "title": "Slider",
+      "description": "An input where the user selects a value from within a given range. Use for volume controls, range inputs, or any numeric value selection. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/slider/slider.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-slider"],
+      "registryDependencies": []
+    },
+    {
+      "name": "sonner",
+      "type": "registry:component",
+      "title": "Sonner",
+      "description": "An opinionated toast component for React. Use for notifications, success messages, or temporary feedback. This is a feedback component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/sonner/sonner.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["sonner", "next-themes"],
+      "registryDependencies": []
+    },
+    {
+      "name": "spinner",
+      "type": "registry:component",
+      "title": "Spinner",
+      "description": "A loading spinner component. Use for loading states, async operations, or any context indicating progress. This is a base UI component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/spinner/spinner.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "switch",
+      "type": "registry:component",
+      "title": "Switch",
+      "description": "A control that allows the user to toggle between checked and not checked. Use for on/off toggles, settings, or binary choices. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/switch/switch.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-switch"],
+      "registryDependencies": []
+    },
+    {
+      "name": "table",
+      "type": "registry:component",
+      "title": "Table",
+      "description": "A responsive table component. Use for displaying tabular data, lists, or structured information. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/table/table.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "tabs",
+      "type": "registry:component",
+      "title": "Tabs",
+      "description": "A set of layered sections of content—known as tab panels—that are displayed one at a time. Use for tabbed interfaces, content organization, or sectioned content. This is a compound UI component.",
+      "category": "navigation",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/tabs/tabs.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@base-ui/react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "textarea",
+      "type": "registry:component",
+      "title": "Textarea",
+      "description": "Displays a form textarea or a component that looks like a textarea. Use for multi-line text input, comments, or longer text entry. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/textarea/textarea.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "toast",
+      "type": "registry:component",
+      "title": "Toast",
+      "description": "A succinct message that is displayed temporarily. Use for notifications, alerts, or temporary feedback messages. This is a feedback component.",
+      "category": "feedback",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/toast/toast.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-toast", "lucide-react"],
+      "registryDependencies": []
+    },
+    {
+      "name": "toggle",
+      "type": "registry:component",
+      "title": "Toggle",
+      "description": "A two-state button that can be either on or off. Use for toggle buttons, state switches, or binary controls. This is a base UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/toggle/toggle.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-toggle", "class-variance-authority"],
+      "registryDependencies": []
+    },
+    {
+      "name": "toggle-group",
+      "type": "registry:component",
+      "title": "Toggle Group",
+      "description": "A set of two-state buttons that can be toggled on or off. Use for multiple toggles, option groups, or multi-select toggles. This is a compound UI component.",
+      "category": "forms",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/toggle-group/toggle-group.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-toggle-group"],
+      "registryDependencies": []
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:component",
+      "title": "Tooltip",
+      "description": "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it. Use for hints, additional information, or contextual help. This is an overlay component.",
+      "category": "overlays",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/tooltip/tooltip.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": ["@radix-ui/react-tooltip"],
+      "registryDependencies": []
+    },
+    {
+      "name": "typography",
+      "type": "registry:component",
+      "title": "Typography",
+      "description": "Typography components for headings, paragraphs, lists, and text elements. Use for consistent text styling, headings, or text content. This is a base UI component.",
+      "category": "data-display",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/typography/typography.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    {
+      "name": "auth-login-block",
+      "type": "registry:block",
+      "title": "Auth Login Block",
+      "description": "A complete authentication login block with email and password fields, form validation, and error handling. Use for login pages, authentication forms, or user sign-in interfaces. This is a block component.",
+      "category": "blocks",
+      "tags": ["free"],
+      "files": [
+        {
+          "path": "registry/default/auth-login-block/auth-login-block.tsx",
+          "type": "registry:block"
+        }
+      ],
+      "dependencies": [],
+      "registryDependencies": ["button", "card", "input", "label", "field"]
+    }
+  ]
+}

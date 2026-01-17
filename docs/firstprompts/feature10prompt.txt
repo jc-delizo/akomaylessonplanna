@@ -1,0 +1,445 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Features 01-09. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+
+### Feature 02.5 (Grade & Subject Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Many-to-many relationship between grades and subjects
+- Subjects change dynamically based on grade level selected
+- Admin-managed (responds to DepEd curriculum changes)
+- Database tables: `grades`, `subjects`, `grade_subjects`
+- Admin interface for curriculum management
+- Bulk import/export for major curriculum updates
+
+**Documentation:**
+- Enhanced in Feature 02 document and main design summary
+
+### Feature 03 (Product Listings & Product Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5 product types: Exams, Lesson Plans, RPMS, Posters, Tarpaulins
+- All products can have images (covers for consistency)
+- Multi-step upload wizard (5 steps)
+- Comprehensive product detail pages (hybrid layout for images/documents)
+- Homepage with hero + featured + new arrivals + trending + all products
+- Advanced filtering: Product Type, Grade, Subject (dynamic), Quarter, Weeks (multi-select), Price, Rating, File Type
+- Automatic preview generation (first 3 pages) with watermark
+- Version management system with buyer notifications
+- Tiered analytics (Free vs Pro/Pioneer)
+- Product status workflow (6 states: draft, pending_review, published, rejected, suspended, deleted)
+- First 3 products require manual review (24-48 hours)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/5-feature-03-product-listings-and-management.md`
+
+### Feature 04 (Shopping Cart & Checkout Flow) - COMPLETED ✅
+
+**Key Outcomes:**
+- Shopping cart with one copy per product (digital goods)
+- Wishlist feature (heart icon, separate page)
+- Multi-step checkout (2 steps: review → payment)
+- GCash and Maya payment integration
+- 15-minute payment timeout with unlimited retries
+- Thank You page with immediate downloads
+- User library with unlimited downloads
+- Watermarking on all downloads (buyer email)
+- Cart abandonment email recovery (24 hours)
+- Seller dashboard with orders and earnings
+- Manual withdrawal requests with automatic processing
+- Refund policy: all sales final, 7-day exception window
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md`
+
+### Feature 05 (Reviews & Ratings System) - COMPLETED ✅
+
+**Key Outcomes:**
+- 5-star rating system (simple scale, no half-stars)
+- Review eligibility: after download only (verified purchase + download_count > 0)
+- Rating required, comment optional (500 char max)
+- Seller responses allowed (500 char limit, one-level chain only)
+- Top 3 most recent reviews displayed + "See all reviews" link
+- Review summary card (average rating + distribution chart)
+- Automatic flagging system (profanity filter, spam patterns)
+- Admin moderation queue (flagged reviews hidden immediately)
+- 7-day edit window (no deletion), shows "Edited on [date]" timestamp
+- Single 24h reminder email (no incentives, unbiased reviews)
+- Seller reputation: simple average calculation (transparent)
+- Enhanced analytics for Pro/Pioneer (rating distribution, keywords, trends)
+- Reviews on seller profile (hybrid - from all products with product links)
+- Trust-based approach (no rate limiting, teachers are honest)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/7-feature-05-reviews-and-ratings.md`
+
+### Feature 06 (Social Features) - COMPLETED ✅
+
+**Key Outcomes:**
+- In-app notifications (bell icon + dropdown + notifications page)
+- Email notifications (8 types: sales, reviews, followers, approvals, rejections, price drops, new products, announcements)
+- Simple on/off toggle for email notifications (in-app always on)
+- Admin panel for system announcements (create, schedule, track stats)
+- Social sharing: Facebook, Messenger, Copy Link
+- Share buttons on product pages and seller profiles
+- Share tracking analytics (platform breakdown)
+- Recently viewed items (homepage section, product page sidebar, dedicated page)
+- Tracks last 20 items for 30 days
+- Social proof elements (static badges: Trending, Bestseller, Popular, New)
+- View counts, sales counts, wishlist counts (hourly updates, not real-time)
+- Mobile-first responsive design
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/8-feature-06-social-features.md`
+
+### Feature 07 (Seller Dashboard & Analytics) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Dashboard Overview:** Balanced layout with 4 metric cards (Revenue, Sales, Views, Rating) with time range selector and sparklines/charts (tier-based)
+- **Product Management:** Grid view (2/3/4 columns responsive, 2 columns on mobile) with view toggle, bulk actions, duplicate product, performance indicators
+- **Order History:** Enhanced with buyer location (region), filters, export to CSV, "Contact Buyer" button
+- **Earnings & Payouts:** Split by tier - Free: 3 cards (Available, Pending, Lifetime); Pro/Pioneer: Interactive charts, projected earnings, monthly PDF reports
+- **Analytics Tiers:** Free: Per-product metrics tables, sparklines, CSV export; Pro/Pioneer: Interactive charts, performance score (0-100), percentile rankings, scheduled reports
+- **Navigation:** Sidebar (desktop) with Overview, Products, Orders, Earnings, Analytics (Pro badge), Reviews, Messages, Settings; Bottom tab bar (mobile PWA)
+- **Data Strategy:** Smart hybrid - Dashboard metrics 15-min cache, Orders 5-min cache, Real-time notifications, Pre-calculated heavy analytics (nightly)
+- **Mobile Experience:** Full dashboard mobile - Bottom tab bar, metric cards stacked, 2-column product grid, charts fullscreen, swipe actions, pull-to-refresh
+- **Export & Reports:** Free: CSV only; Pro/Pioneer: Excel + PDF + monthly summary + scheduled reports
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md`
+
+### Feature 08 (Advanced Search & Discovery) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Search Algorithm:** PostgreSQL full-text search with weighted relevance (40% text, 25% sales, 20% rating, 10% recency, 5% reputation)
+- **Autocomplete:** 8 suggestions (3 titles, 2 subjects, 2 sellers, 1 popular)
+- **Search History:** Last 10 searches, "Recent" dropdown, "Popular this week" section
+- **No Advanced Syntax:** Filters only (AND logic), saved searches (Pro/Pioneer)
+- **Results Page:** Grid/list toggle, 24 per page (desktop), 20 per page (mobile), 8 sort options, "Load More" button
+- **Filter System:** 11 filters (3 new: Seller Status, Date Added, Language), filter counts, removable chips, mobile drawer
+- **Category Pages:** Dedicated pages with hero, tabs + breadcrumbs, category-specific filters, featured pages
+- **Recommendations:** Related products (detail page), personalized (homepage), similar (search fallback), new from followed sellers
+- **Search Analytics:** Tiered - Free: terms report, ranking, basic chart; Pro/Pioneer: insights, competitor comparison, trends, opportunities, performance score
+- **SEO Strategy:** Friendly URLs, dynamic meta, Schema.org, XML sitemap, canonical, robots.txt, image SEO, Core Web Vitals
+- **Performance:** 1-min cache (Redis), popular searches 5-min pre-computed, target < 500ms, database indexes, query optimization, edge caching
+- **Mobile Experience:** Sticky search bar, suggestions bottom sheet, filter drawer, swipe gestures, 44×44px touch targets, lazy loading (75% faster)
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/10-feature-08-advanced-search-and-discovery.md`
+
+### Feature 09 (Admin Panel & Content Moderation) - COMPLETED ✅
+
+**Key Outcomes:**
+- **Navigation:** Sidebar with top bar, Quick Action badges, Breadcrumb navigation
+- **Dashboard Overview:** 8 metric cards, 4 charts, Activity feed, Time range selector
+- **User Management:** 4 tabs (All Users, Verification Queue, Banned Users, Admin Notes)
+  - User list with search/filters/bulk actions (instant with 10-sec undo)
+  - Teacher ID verification queue (oldest first, unlimited resubmission)
+  - User detail modal (7 tabs: Overview, Products, Orders, Sales, Reviews, Activity Log, Admin Notes)
+  - Admin notes system (@mentions, 500 chars, shared across admins)
+- **Product Moderation:** Pending reviews queue, bulk approval, product preview modal
+- **Content Moderation:** Flagged reviews queue, user reports queue, formal 7-day appeal process
+- **Pioneer Management:** 20-slot hard limit, invite-only, 15% commission standard
+- **Financial Overview:** Super Admin only, manual withdrawal processing, 5 financial report types
+- **System Announcements:** Full rich text editor, advanced segmentation, templates system
+- **Settings:** Commission rates, feature flags, maintenance mode, email template editor
+- **Admin Roles:** 3 roles (Super Admin, Moderator, Content Manager) with approval workflows
+- **Search & Discovery Admin:** Search analytics, category management, SEO tools
+- **Data & Analytics:** Real-time analytics, 1-year retention, platform growth charts
+- **Admin Support & Communication:** Email-only support, dispute resolution, activity log
+- **Mobile Admin:** Responsive design (MVP), mobile optimization deferred to Phase 2
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/11-feature-09-admin-panel-and-content-moderation.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 09: Admin Panel & Content Moderation.
+
+**Starting Point:** Feature 12 - Email System (Transactional & Notification Emails)
+
+**Why this next:**
+- Feature 06 mentioned "8 types of email notifications" but we didn't design the actual email system
+- Feature 01 (password reset), Feature 04 (order confirmation, cart abandonment), Feature 05 (review reminders), and Feature 09 (announcements) all reference emails
+- We need to design the email infrastructure, templates, delivery system, and management
+- Email is critical for user engagement, security, and platform operations
+- Need to decide on email service provider (Resend, SendGrid, AWS SES, etc.)
+- Email templates need to be designed and managed (possibly in admin panel from Feature 09)
+
+**Note:** Feature 09 admin panel has "Email template editor (edit in admin panel, no coding)" - we need to design how this works and what templates exist.
+
+### CONFIRMED USER FLOW (UPDATED)
+
+**Email Touchpoints (so far):**
+1. **Authentication (Feature 01):**
+   - Welcome email after signup
+   - Email verification for sellers (before uploading)
+   - Password reset request
+   - Password reset confirmation
+
+2. **Product Management (Feature 03):**
+   - Product submitted for review (first 3 products)
+   - Product approved notification
+   - Product rejected notification (with reason)
+   - Product update notification (for buyers who purchased)
+
+3. **Shopping Cart & Checkout (Feature 04):**
+   - Cart abandonment reminder (24 hours)
+   - Order confirmation (immediate after purchase)
+   - Payment successful
+   - Payment failed
+   - Download ready (Thank You page)
+
+4. **Reviews (Feature 05):**
+   - Review reminder (24h after download, single email)
+   - Review response notification (when seller responds)
+   - Review flagged notification (to seller, if content removed)
+
+5. **Social Features (Feature 06):**
+   - New follower notification
+   - New product from followed seller
+   - Price drop notification
+   - System announcement (8 types mentioned)
+   - Seller reached milestone (optional)
+
+6. **Admin Panel (Feature 09):**
+   - Teacher verification approved/rejected
+   - Product suspension notification
+   - Account ban notification (with appeal process info)
+   - Admin system announcements
+
+**NOW: We need to design the complete email system** → Infrastructure, templates, delivery, management, analytics, unsubscribe, preferences → **THIS FEATURE (Feature 12)**
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 12: Email System (Transactional & Notification Emails) in detail.
+
+### Please read these sections from the design document:
+- User Experience → Email sections across all features
+- Security & Compliance → Email security, unsubscribe requirements
+- Database Schema → Any email-related tables
+- Admin Panel → Email template editor (from Feature 09)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for the email system:
+
+**1. Email Service Provider & Infrastructure:**
+- Which email service to use? (Resend, SendGrid, Mailgun, AWS SES, Postmark)
+- Considerations: Cost, deliverability in Philippines, ease of use, API quality
+- Should we use a dedicated IP or shared?
+- Backup/failover strategy?
+- Email authentication setup (SPF, DKIM, DMARC)?
+
+**2. Email Categories & Types:**
+Based on features 01-09, we have these email categories:
+  - **Transactional (Critical):** Password reset, email verification, order confirmation, download links
+  - **Marketing (Optional):** System announcements, new products, price drops
+  - **Behavioral (Triggered):** Cart abandonment, review reminders, product updates
+  - **Administrative:** Approval/rejection notifications, account status changes
+
+Should we add more email types? Remove any? How to categorize for user preferences?
+
+**3. Email Template Design:**
+- Template structure: Header, body, footer, unsubscribe link
+- Brand consistency: Colors, logo, fonts, tone
+- Personalization variables: {{user_name}}, {{product_title}}, {{seller_name}}, etc.
+- Plain text vs HTML (both recommended)
+- Mobile-responsive templates?
+- Preview mode in admin panel?
+
+**4. Email Template Management (from Feature 09):**
+- Admin can edit templates in admin panel (no coding)
+- What template editor to use? (Rich text editor, markdown, custom blocks)
+- Version control: Track template changes, revert to previous version?
+- Template variables: How to define and validate?
+- Multi-language support for templates (English/Filipino)?
+- Template testing: Send test email before publishing changes?
+
+**5. Email Preferences & Unsubscribe:**
+- User can toggle email notifications in settings (Feature 06: "Simple on/off toggle")
+- Should preferences be granular per email type or categories?
+- How to handle transactional emails (can't unsubscribe from password reset)?
+- One-click unsubscribe link (legal requirement in many jurisdictions)?
+- Re-subscribe flow?
+- Email preference page design?
+- Respect preferences for announcements (Feature 09 decision: "respect email preferences")?
+
+**6. Email Delivery & Scheduling:**
+- Immediate emails: Order confirmation, password reset
+- Scheduled emails: Cart abandonment (24 hours), review reminder (24h after download)
+- Batch sending: System announcements (send to all users at once)
+- Rate limiting: Don't overwhelm email service or trigger spam filters
+- Timezone handling: Send at user's local time?
+- Queue system: How to handle email failures, retries?
+- Dead letter queue: What to do with permanently failed emails?
+
+**7. Email Security & Compliance:**
+- Email authentication (SPF, DKIM, DMARC) - mandatory for deliverability
+- Data Privacy Act compliance (Philippines)
+- Unsubscribe link in all non-transactional emails
+- Don't sell/share email data (explicit privacy policy)
+- Email verification before sending (optional for buyers, mandatory for sellers?)
+- Rate limiting per user (prevent spam)
+- Detect and block suspicious email activity?
+
+**8. Email Analytics & Monitoring:**
+- Track metrics: Delivery rate, open rate, click rate, bounce rate, unsubscribe rate
+- Which metrics to track per email type?
+- Dashboard for email analytics (in admin panel)?
+- Alert system: High bounce rates, delivery failures?
+- A/B testing for email templates (post-launch)?
+- Email list health: Clean invalid emails, handle bounces?
+- User engagement: Track which emails drive conversions?
+
+**9. Specific Email Template Specifications:**
+For each email type mentioned in Features 01-09, we need to define:
+  - Subject line
+  - Key content/sections
+  - Call-to-action (button/link)
+  - When to send (trigger)
+  - Who receives it (target audience)
+  - Template variables needed
+
+Should we design all templates now or create a framework and design templates during implementation?
+
+**10. Error Handling & Edge Cases:**
+- What happens if email service is down?
+- Retry logic: How many times, how long between retries?
+- Bounce handling: Soft bounces (full inbox) vs hard bounces (invalid email)?
+- Complaint handling: User marks email as spam?
+- Email changes: User updates email address, verify new email?
+- Suppression list: Don't email addresses that bounced/complained?
+
+**11. Cost & Budget Considerations:**
+- Email volume estimation: How many emails per month at launch? At 1,000 users? 10,000 users?
+- Cost per email: Free tier limits, paid plans?
+- Budget-friendly options for startup?
+- When to upgrade email service plan?
+- Monitor costs to avoid surprises?
+
+**12. Implementation Priority (MVP vs Post-Launch):**
+Which email types are critical for MVP vs can be added post-launch?
+  - **MVP Critical:** Password reset, order confirmation, product approved/rejected, cart abandonment, review reminder
+  - **Post-Launch:** Advanced analytics, A/B testing, behavioral emails (price drops, new products)
+
+Should we start with basic email system and enhance post-launch, or build comprehensive system from day one?
+
+**13. Localization & Filipino Context:**
+- English vs Filipino (Tagalog) vs regional languages?
+- Cultural considerations: Tone, formality, imagery?
+- Holiday scheduling: Don't send emails during major Philippines holidays?
+- Timezone: Philippines Time (PHT) as default?
+- Local email service providers vs international (better deliverability)?
+
+**14. Email Template Editor (Admin Panel):**
+From Feature 09, admin can edit email templates in admin panel:
+- What level of customization? (Subject line only vs full HTML)
+- Locked sections: Footer, unsubscribe link, logo (can't edit)
+- Flexible sections: Body text, call-to-action
+- Template cloning: Create new template from existing?
+- Template preview: See how it looks before publishing?
+- Template variables: Auto-suggest, validation (required vs optional)?
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Compile all email references from Features 01-09
+3. For each of the 14 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Gumroad, Etsy)
+   - Your reasoning for recommendations
+   - Filipino market context (deliverability, cost, user expectations)
+
+4. After we discuss and finalize all email system decisions:
+   - Update the design document's Email System section
+   - Create a detailed feature specification
+   - List all email templates with specifications
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want reliable email delivery (high deliverability in Philippines)
+- I want cost-effective solution for startup (don't overspend on email service)
+- I want simple but professional email templates
+- I want admin to edit templates without coding (from Feature 09)
+- I want users to control their email preferences (reduce spam complaints)
+- I want to comply with privacy laws (unsubscribe, data protection)
+- I want to track email performance (open rates, click rates)
+- I want to handle bounces and failures gracefully
+- I want to prioritize MVP-critical emails first (order confirmations, password reset)
+- I want scalable solution (can grow from 100 to 10,000 users)
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - emails must look good on phones
+- **PWA** - users will access on mobile devices
+- **Feature 01** has password reset flow
+- **Feature 04** has cart abandonment email (24 hours)
+- **Feature 05** has review reminder email (24h after download)
+- **Feature 06** has email notification toggle (8 types)
+- **Feature 09** admin panel has email template editor
+- **Database schema not final yet** - we can add email-related tables as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+- **Email is critical** - broken email system = broken platform (passwords, orders, notifications all depend on it)
+- **Philippines context** - consider email deliverability, cost, local preferences
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

@@ -1,0 +1,223 @@
+I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+## CONTEXT FROM PREVIOUS PLANNING SESSIONS
+
+I've completed extensive planning and finalized Feature 01 and Feature 02. Here's what's been established:
+
+### Project Overview
+- **Name:** AKOMAYLESSONPLANNA
+- **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+- **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+- **Commission Model:** 20% platform commission (15% for Pioneer tier)
+- **Payment Methods:** GCash, Maya (Philippines e-wallets)
+- **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+- **Current Status:** shadcn/ui template already set up
+
+### Feature 01 (Authentication & User Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Email/password auth + Google + Facebook OAuth
+- No email verification upfront (only for sellers before uploading)
+- Single role system: buyers can become sellers (keep buyer abilities)
+- PRC ID verification only (manual admin approval, 3-year validity, 1-month grace period)
+- 90-day "remember me" sessions
+- No 2FA initially, 5 failed attempts = 30min lockout
+- CAPTCHA on signup only
+- Rich optional profiles (avatar, bio, subjects, grades, location, social links)
+- Enhanced profiles for Pro/Pioneer tier
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/2-feature-01-authentication-user-management.md`
+
+### Feature 02 (User Profiles & Profile Management) - COMPLETED ✅
+
+**Key Outcomes:**
+- Open profiles (anyone can view, maximum discoverability)
+- Comprehensive storefront layout (stats, badges, products, reviews)
+- Mobile-first responsive design (2/3/4 column grid)
+- Badge system: Verified (all sellers) + Pro/Pioneer + achievements
+- Profile completion calculator with incentives
+- Follow system, contact seller, share functionality
+- Seller search & discovery with filters
+- "Similar Sellers" recommendations
+- Profile analytics for sellers
+- Complete admin management tools with audit logging
+- Username field added for SEO-friendly URLs (/sellers/[username])
+
+**Documentation:**
+- Full decisions: `docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md`
+- Design document: `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+
+### CRITICAL PROCESS DECISION
+
+We decided: **Finalize ALL features before creating database schema**
+
+**Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+**Our Workflow:**
+1. Discuss each feature in detail (all ~45 features)
+2. Update the design document based on each discussion
+3. After ALL features finalized, THEN create comprehensive database schema
+4. Create detailed implementation plans per feature
+
+### CONFIRMED USER FLOW
+
+**From Feature 02 session:**
+1. User logs in → Homepage/Marketplace
+2. Homepage shows product grid (2/3/4 columns responsive)
+3. User clicks product → Product Detail Page (THIS FEATURE)
+4. Product Detail Page: Preview button, "View Seller Profile" button, Add to Cart/Buy Now
+5. User clicks "View Seller Profile" → Seller Profile Page (Feature 02)
+
+### WHERE WE LEFT OFF
+
+We just completed Feature 02: User Profiles & Profile Management.
+
+**Starting Point:** Feature 03 - Product Listings & Product Management
+
+**Why this next:** Users can now authenticate and have profiles. They need to be able to:
+- View products on the homepage/marketplace
+- View product detail pages
+- Upload and manage their own products (sellers)
+- Access product previews
+- Bulk upload products
+
+## WHAT I NEED FROM YOU
+
+Let's discuss Feature 03: Product Listings & Product Management in detail.
+
+### Please read this section from the design document:
+
+The products section is covered in the database schema (products table) and throughout the design doc. Key references:
+- Database Schema → products table (lines 290-305)
+- Database Schema → product_updates table (lines 288-296)
+- User Experience → Buyer Journey (lines 889-908)
+- User Experience → Seller Journey (lines 910-931)
+- Development Roadmap → Week 5-6: Core Product Features (lines 1810-1818)
+
+### Discussion Questions
+
+I need your help to finalize these decisions for products:
+
+**1. Product Detail Page Layout:**
+- What sections should appear on a product detail page?
+- Product thumbnail/gallery - how many images?
+- Preview functionality - how to show first 3 pages?
+- Where to place "View Seller Profile" button?
+- Product description - character limit? HTML support?
+- File type badges (PDF, DOCX, PPTX, ZIP)?
+- Related products section - how to select?
+- Reviews section on product page or separate?
+- Mobile vs desktop layout differences?
+
+**2. Homepage/Marketplace Product Grid:**
+- How to feature products on homepage?
+- Seasonal collections - how to manage?
+- "New Arrivals" section - time threshold (7 days? 30 days?)
+- "Trending Products" - how to calculate?
+- "Featured Products" - admin selection or algorithm?
+- Product card information: thumbnail, title, price, rating, sales count?
+- Filter options on homepage?
+- Search bar prominence and placement?
+
+**3. Product Upload Interface (Sellers):**
+- Single product upload - step-by-step wizard?
+- Required fields vs optional fields?
+- File upload limits (size per file, total files)?
+- Supported file types - allow all or restrict?
+- Thumbnail generation - automatic or manual?
+- Preview generation - automatic first 3 pages?
+- Category selection - dropdowns or search?
+- Grade level and subject selection (from Feature 02.5 system)?
+- Draft vs published workflow?
+- First 3 products require manual review - how to indicate?
+
+**4. Bulk Upload (Pro/Pioneer):**
+- How to initiate bulk upload (ZIP file? multiple files?)?
+- Spreadsheet template for metadata?
+- Validation during bulk upload - what errors to catch?
+- Progress indicator for bulk uploads?
+- Partial success handling - some succeed, some fail?
+- Bulk edit after upload?
+
+**5. Product Version Management:**
+- When seller updates file, what happens to buyers?
+- Buyers notified of updates?
+- Buyers can download old versions?
+- Version numbering - automatic or manual?
+- Changelog requirement?
+- "Update history" visible to buyers?
+
+**6. Product Categorization:**
+- How many category levels (1-level, 2-level, 3-level)?
+- Category structure - by subject? by grade? by resource type?
+- Multiple categories per product or single?
+- Categories managed by admins or seller-created tags?
+- Category browsing experience?
+
+**7. Search and Filter:**
+- Search bar searches: title, description, tags?
+- Filter options: subject, grade level, price range, rating, file type, seller?
+- Sort options: newest, best-selling, price low-high, price high-low, highest rated?
+- Advanced search - power user features?
+- Search suggestions/autocomplete?
+- Saved search alerts (notify when new products match)?
+
+**8. Product Analytics (For Sellers):**
+- What metrics to show: views, clicks, add-to-cart rate, conversion rate?
+- Time range filters (today, this week, this month, all time)?
+- Sales graph visualization?
+- Top performing products highlighted?
+- Comparison to other sellers?
+- Download tracking (which products downloaded most)?
+
+**9. Preview Functionality:**
+- How to generate previews (first 3 pages as images)?
+- Preview on product detail page - modal or lightbox?
+- Preview watermarking needed?
+- Preview download protection (right-click save)?
+- Video previews for video products?
+- Preview file size optimization?
+
+**10. Product Status Workflow:**
+- Draft → Pending Review → Published (for first 3 products)
+- Draft → Published (after approved)
+- Rejected products - can seller edit and resubmit?
+- Suspended products - admin action?
+- Deleted products - soft delete or hard delete?
+- Unpublish/hide functionality?
+
+## YOUR TASK
+
+1. Review the planning documents to understand full context
+2. Read the Products section from the design document
+3. For each of the 10 question areas above, provide:
+   - Your recommendation based on best practices
+   - Pros/cons of different approaches
+   - What similar marketplaces do (Teachers Pay Teachers, Gumroad, Etsy, TeachersNotebook)
+   - Your reasoning for recommendations
+
+4. After we discuss and finalize all product decisions:
+   - Update the design document's Products section
+   - Create a detailed feature specification
+   - Move to next feature
+
+## MY PREFERENCES
+
+- I want user-friendly UX (teachers may not be tech-savvy)
+- I want to incentivize Pro/Pioneer subscriptions with enhanced product features
+- I want sellers to easily upload and manage their products
+- I want buyers to quickly find and evaluate products
+- I prefer proven solutions over custom implementations
+- I want products to look professional and trustworthy
+- I want the preview system to protect seller content while allowing buyers to evaluate quality
+
+## IMPORTANT REMINDERS
+
+- **Mobile-first responsive design** - but stunning on desktop (2/3/4 column grid)
+- **PWA** - will be installable as app on phones
+- **Feature 02.5 (Grade & Subject Management)** will provide pre-defined dropdowns
+- **Database schema not final yet** - we can add fields as needed
+- **Follow our decision:** Finalize ALL features before creating database schema
+
+Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

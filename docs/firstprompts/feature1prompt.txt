@@ -1,0 +1,161 @@
+  I'm building AKOMAYLESSONPLANNA, a digital marketplace where Filipino K-12 teachers can buy and sell educational resources (lesson plans, worksheets, presentations, etc.).
+
+  ## CONTEXT FROM PREVIOUS PLANNING SESSION
+
+  I've just completed an extensive planning session. Here's what's been established:
+
+  ### Project Overview
+  - **Name:** AKOMAYLESSONPLANNA
+  - **Type:** Two-sided marketplace (sellers: teachers, buyers: teachers)
+  - **Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase, shadcn/ui
+  - **Commission Model:** 20% platform commission (15% for Pioneer tier)
+  - **Payment Methods:** GCash, Maya (Philippines e-wallets)
+  - **Timeline:** 8-10 months (part-time: 20-30 hours/week)
+  - **Current Status:** shadcn/ui template already set up
+
+  ### Planning Documents Created
+
+  Please review these files to understand the full context:
+
+  1. **Pre-Development Checklist:** `docs/PRE-DEVELOPMENT-CHECKLIST.md`
+     - Account setups (Supabase, GCash, Maya, Vercel, GitHub)
+     - Business registrations (DTI, BIR, Mayor's Permit)
+     - Technical setup steps
+     - MCP server configuration
+
+  2. **MCP Server Architecture:** `docs/MCP-SERVER-ARCHITECTURE.md`
+     - 8 MCP servers configured for Cursor AI
+     - Expected 3-4x development speed improvement
+     - Supabase MCP, PostgreSQL MCP, Puppeteer MCP, etc.
+
+  3. **Development Phases:** `docs/dev/README.md`
+     - 7 development phases organized
+     - ~45 total features across all phases
+     - Timeline: 8-10 months
+
+  4. **Master Design Document:** `docs/2025-01-09-akomaylessonplanna-complete-design-summary.md`
+     - Complete business model
+     - Technical architecture
+     - Database schema draft (20 tables)
+     - API endpoints
+     - All features listed
+
+  5. **Previous Conversation Summary:** `docs/brainstorming/1-project-planning-mcp-setup-and-development-strategy.md`
+     - Full summary of planning session
+     - Key decisions made
+     - Next steps defined
+
+  ### CRITICAL PROCESS DECISION
+
+  We decided: **Finalize ALL features before creating database schema**
+
+  **Reasoning:** Features determine database structure. If we create the database first, then discuss features and realize we need different tables or columns, we'd have to redo the database work.
+
+  **Our Workflow:**
+  1. Discuss each feature in detail (all ~45 features)
+  2. Update the design document based on each discussion
+  3. After ALL features finalized, THEN create comprehensive database schema
+  4. Create detailed implementation plans per feature
+
+  ### WHERE WE LEFT OFF
+
+  We were about to start discussing Feature 01, but I chose to save the conversation and start fresh with you at 0% context.
+
+  **Starting Point:** Feature 01 - Authentication & User Management
+
+  **I chose this because:** Users need accounts before they can do anything else (sell products, buy products, browse marketplace).
+
+  ## WHAT I NEED FROM YOU
+
+  Let's discuss Feature 01: Authentication & User Management in detail.
+
+  ### Please read this section from the design document:
+
+  [Paste the Authentication section from docs/2025-01-09-akomaylessonplanna-complete-design-summary.md - it's under "Security & Compliance" → "Authentication & Authorization"]
+
+  ### Discussion Questions
+
+  I need your help to finalize these decisions for authentication:
+
+  **1. User Registration:**
+  - Email verification required? Or optional?
+  - Email/password authentication? Or social login only?
+  - Minimum password requirements?
+
+  **2. Social Login:**
+  - Google OAuth?
+  - Facebook OAuth?
+  - Both required or optional?
+  - Email/password still needed?
+
+  **3. User Roles:**
+  - Currently: buyer, seller, admin
+  - Is this sufficient or do we need more granular roles?
+  - Can a user be both buyer AND seller?
+
+  **4. Teacher Verification:**
+  - Required before selling? Or can list products pending verification?
+  - Manual admin approval? Or automatic with valid ID?
+  - What documents are accepted?
+  - How long is verification valid?
+
+  **5. Session Management:**
+  - Session duration (currently: 7 days inactivity)?
+  - "Remember me" functionality?
+  - Logout from all devices option?
+  - Multi-device login allowed?
+
+  **6. Account Recovery:**
+  - Password reset flow?
+  - Email change process?
+  - Account deletion request?
+  - What happens to their data?
+
+  **7. Security:**
+  - Two-factor authentication (2FA)?
+  - Login attempt limits?
+  - Account lockout policy?
+  - Suspicious activity detection?
+
+  **8. User Profile Fields:**
+  - Required fields: name, email (obvious)
+  - Optional fields: bio, subjects taught, grade levels, avatar?
+  - Custom profile for Pro/Pioneer tier?
+  - Social links (Facebook, Instagram)?
+
+  **9. Onboarding Flow:**
+  - Multi-step signup? Or single page?
+  - Can buyer skip teacher verification?
+  - Progressive profiling (ask for details over time)?
+  - Welcome email sequence?
+
+  **10. Technical Implementation:**
+  - Supabase Auth? Or custom?
+  - JWT tokens? Or session-based?
+  - httpOnly cookies? Or localStorage?
+  - Middleware for protected routes?
+
+  ## YOUR TASK
+
+  1. Read the planning documents to understand full context
+  2. Read the Authentication section from the design document
+  3. For each of the 10 question areas above, provide:
+     - Your recommendation based on best practices
+     - Pros/cons of different approaches
+     - What similar marketplaces do (Gumroad, Teachers Pay Teachers)
+     - Your reasoning for recommendations
+
+  4. After we discuss and finalize all authentication decisions:
+     - Update the design document's Authentication section
+     - Create a detailed feature specification
+     - Move to next feature
+
+  ## MY PREFERENCES
+
+  - I value security but don't want to over-engineer
+  - I want user-friendly UX (teachers may not be tech-savvy)
+  - I prefer proven solutions over custom implementations
+  - I'm comfortable with Supabase Auth if it meets our needs
+  - I want to minimize friction in signup flow
+
+  Let's start the discussion! Please ask me any clarifying questions you have, and provide your recommendations for each area.

@@ -1,0 +1,173 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { getAdminUser } from '@/lib/utils/admin-auth'
+import { MetricCards } from '@/components/admin/dashboard/metric-cards'
+import { QuickActions } from '@/components/admin/dashboard/quick-actions'
+import { AdminCharts } from '@/components/admin/dashboard/charts'
+import { ActivityFeed } from '@/components/admin/dashboard/activity-feed'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { RefreshCw } from 'lucide-react'
+import { cookies } from 'next/headers'
+
+async function getDashboardMetrics(timeRange: string = 'last_30_days') {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const cookieStore = await cookies()
+  const allCookies = cookieStore.getAll()
+  const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:17',message:'Fetching dashboard metrics',data:{cookieCount:allCookies.length,hasCookies:!!cookieHeader,timeRange},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
+  const response = await fetch(`${baseUrl}/api/admin/dashboard?timeRange=${timeRange}`, {
+    cache: 'no-store',
+    headers: cookieHeader ? {
+      Cookie: cookieHeader,
+    } : {},
+  })
+  // #region agent log
+  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:25',message:'Dashboard metrics response',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard metrics')
+  }
+  return response.json()
+}
+
+async function getQuickActions() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const cookieStore = await cookies()
+  const allCookies = cookieStore.getAll()
+  const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:35',message:'Fetching quick actions',data:{cookieCount:allCookies.length,hasCookies:!!cookieHeader},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  
+  const response = await fetch(`${baseUrl}/api/admin/dashboard/quick-actions`, {
+    cache: 'no-store',
+    headers: cookieHeader ? {
+      Cookie: cookieHeader,
+    } : {},
+  })
+  // #region agent log
+  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:43',message:'Quick actions response',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  if (!response.ok) {
+    throw new Error('Failed to fetch quick actions')
+  }
+  return response.json()
+}
+
+async function getRecentActivity() {
+  const supabase = await createClient()
+  
+  // Get recent audit log entries (last 20)
+  const { data: auditLogs } = await supabase
+    .from('audit_log')
+    .select(`
+      *,
+      admin:users!audit_log_admin_id_fkey(id, name)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  // Transform to activity feed format
+  const activities = (auditLogs || []).map((log) => {
+    let type: 'approval' | 'issue' | 'sale' | 'other' = 'other'
+    if (log.action.includes('approve')) type = 'approval'
+    else if (log.action.includes('ban') || log.action.includes('suspend') || log.action.includes('flag')) type = 'issue'
+    else if (log.action.includes('order') || log.action.includes('sale')) type = 'sale'
+
+    return {
+      id: log.id,
+      type,
+      action: log.action.replace(/_/g, ' '),
+      target: `${log.entity_type} #${log.entity_id.substring(0, 8)}`,
+      admin: (log.admin as any)?.name || 'System',
+      timestamp: log.created_at,
+    }
+  })
+
+  return activities
+}
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ timeRange?: string }>
+}) {
+  const supabase = await createClient()
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
+
+  if (!authUser) {
+    redirect('/login?redirect=/admin/dashboard')
+  }
+
+  const adminUser = await getAdminUser(authUser.id)
+  if (!adminUser) {
+    redirect('/')
+  }
+
+  // Await searchParams (Next.js 15+ requirement)
+  const params = await searchParams
+  const timeRange = params.timeRange || 'last_30_days'
+
+  // Fetch data
+  const [metrics, quickActions, activities] = await Promise.all([
+    getDashboardMetrics(timeRange),
+    getQuickActions(),
+    getRecentActivity(),
+  ])
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-1">Platform overview and quick actions</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* Time Range Selector */}
+          <select
+            defaultValue={timeRange}
+            className="px-3 py-2 border rounded-lg text-sm"
+          >
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="last_7_days">Last 7 Days</option>
+            <option value="this_month">This Month</option>
+            <option value="last_30_days">Last 30 Days</option>
+            <option value="this_year">This Year</option>
+            <option value="all_time">All Time</option>
+          </select>
+          <Button variant="outline" size="icon">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Action Cards */}
+      <QuickActions
+        pendingProducts={quickActions.pendingProducts}
+        verificationQueue={quickActions.verificationQueue}
+        flaggedReviews={quickActions.flaggedReviews}
+        withdrawalRequests={quickActions.withdrawalRequests}
+      />
+
+      {/* Metric Cards */}
+      <MetricCards metrics={metrics.metrics} />
+
+      {/* Charts */}
+      <AdminCharts />
+
+      {/* Activity Feed */}
+      <ActivityFeed activities={activities} />
+    </div>
+  )
+}

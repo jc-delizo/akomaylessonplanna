@@ -1,0 +1,438 @@
+# Feature 11: Messaging System - Design Prompt
+
+**Project:** AKOMAYLESSONPLANNA - Filipino Teacher Lesson Plan Marketplace
+**Date:** January 13, 2026
+**Feature:** Messaging System (Buyer-Seller Communication)
+**Status:** Ready for Design
+
+---
+
+## Context
+
+You have successfully completed design for Features 01-10:
+
+1. ✅ Feature 01: Authentication & User Management
+2. ✅ Feature 02: User Profiles & Profile Management
+3. ✅ Feature 02.5: System Configuration (Grade & Subject Management)
+4. ✅ Feature 03: Product Listings & Management
+5. ✅ Feature 04: Shopping Cart & Checkout Flow
+6. ✅ Feature 05: Reviews & Ratings
+7. ✅ Feature 06: Social Features
+8. ✅ Feature 07: Seller Dashboard & Analytics
+9. ✅ Feature 08: Advanced Search & Discovery
+10. ✅ Feature 09: Admin Panel & Content Moderation
+11. ✅ Feature 10: Email System (Transactional & Notification Emails)
+
+Now we need to design **Feature 11: Messaging System**.
+
+---
+
+## Current State (From Previous Features)
+
+### Existing Database Schema
+
+The `messages` table already exists:
+
+```sql
+CREATE TABLE messages (
+  id UUID PRIMARY KEY,
+  from_user_id UUID REFERENCES users(id),
+  to_user_id UUID REFERENCES users(id),
+  product_id UUID REFERENCES products(id),  -- nullable
+  subject VARCHAR(255),
+  message TEXT,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP
+);
+```
+
+### Existing UI References
+
+**From Feature 04 (Shopping Cart & Checkout):**
+- "Contact Buyer" button in seller dashboard order management (integration point mentioned)
+- Order detail modal has "Contact Buyer" button
+
+**From Feature 06 (Social Features):**
+- Notifications bell icon in header
+- "Messages" mentioned as future feature integration point
+
+**From Feature 07 (Seller Dashboard):**
+- "Contact Buyer" button in order history table
+- Navigation mentions "Messages" section (not yet implemented)
+
+**From Admin Panel (Feature 09):**
+- "Admin Support & Communication" section mentions:
+  - Support ticket management
+  - Dispute resolution
+  - Email-only support for users (users email support@)
+  - Real-time admin chat via external tools (Slack/Discord)
+
+### Messaging Use Cases Identified
+
+**1. Buyer-Seller Communication:**
+- Buyer asks product questions before purchase
+- Buyer requests clarification after purchase
+- Seller responds to buyer inquiries
+- Seller sends updated files (if issues)
+
+**2. Dispute Resolution:**
+- Platform mediates between buyer and seller
+- Admin can message both parties
+
+**3. Support:**
+- **Current design:** Email-only support (users email support@akomaylessonplanna.com)
+- Admins create support tickets manually from emails
+- Ticket conversation thread (public replies + internal notes)
+
+---
+
+## Your Task: Design the Messaging System
+
+You are tasked with designing a **comprehensive messaging system** for AKOMAYLESSONPLANNA. This is NOT just basic messaging - it needs to be thoughtfully designed for:
+
+1. **Buyer-Seller Communication** (primary use case)
+2. **Platform Mediation** (dispute resolution)
+3. **User Safety** (prevent harassment, fraud)
+4. **Seller Efficiency** (manage customer inquiries)
+5. **Mobile-First Experience** (70%+ Filipino users on mobile)
+
+### Key Questions to Answer
+
+Please provide detailed recommendations for:
+
+#### **1. Message Types & Categories**
+- What types of messages should be supported?
+  - Pre-purchase inquiries?
+  - Post-purchase support?
+  - Custom requests?
+  - File sharing?
+  - Platform mediation messages?
+- Should messages be categorized (questions, issues, disputes, etc.)?
+- Quick reply templates for sellers?
+
+#### **2. Message Threads & Conversations**
+- How should conversations be organized?
+  - By product? (One conversation per product)
+  - By user? (One conversation per buyer-seller pair)
+  - By order? (One conversation per order)
+- Should old conversations be archived?
+  - After how long?
+  - Can users re-open archived conversations?
+- Message history: How long to retain?
+
+#### **3. User Interface & Experience**
+- **Inbox Layout:**
+  - Single list of all conversations?
+  - Tabs (Active, Archived, All)?
+  - Sort by (recent, unread, product)?
+- **Conversation View:**
+  - Chat-bubble style (like Messenger/WhatsApp)?
+  - Email thread style?
+  - Show product context in conversation?
+- **Message Composition:**
+  - Rich text or plain text?
+  - File attachments?
+  - Emoji support?
+  - Quick reply templates for sellers?
+- **Mobile Experience:**
+  - Bottom sheet or full screen?
+  - Swipe actions (archive, delete)?
+  - Push notifications for new messages?
+  - Real-time vs polling?
+
+#### **4. Real-Time Communication**
+- Should messages be real-time (WebSockets) or polling?
+- Real-time: Better UX, more complex, higher cost
+- Polling: Simpler, works fine for low-volume messaging
+- **My inclination:** Polling for MVP (every 30 seconds), upgrade to real-time post-launch
+- Your recommendation?
+
+#### **5. Notifications & Alerts**
+- How are users notified of new messages?
+  - In-app bell badge? (already exists from Feature 06)
+  - Browser push notifications?
+  - Email notifications? (already have email system from Feature 10)
+  - In-app sound/vibration?
+- Notification throttling (prevent spam)?
+  - Max X messages per Y minutes per conversation
+- Do-not-disturb settings?
+- Quiet hours (no notifications 9 PM - 7 AM)?
+
+#### **6. Privacy & Safety**
+**Critical for marketplace trust:**
+
+- **Anonymity:** How much info to reveal?
+  - Show real names or usernames?
+  - Show email addresses? (NEVER - prevent off-platform transactions)
+  - Show phone numbers? (NEVER)
+  - When to reveal identity? (after purchase verified?)
+
+- **Message Moderation:**
+  - Auto-flag inappropriate content (profanity, personal info, external links)?
+  - Report/block user functionality?
+  - Admin can view messages (for disputes)?
+
+- **Transaction Safety:**
+  - Detect off-platform transaction attempts ("I'll pay you via GCash directly")
+  - Warning messages when suspicious patterns detected
+  - Block messages with external links (unless approved)?
+
+- **Blocking & Reporting:**
+  - User can block specific user (no more messages)
+  - User can report conversation (goes to admin)
+  - What happens when blocked? (messages hidden vs deleted)
+
+#### **7. Seller Tools & Efficiency**
+Sellers may receive many messages. Need efficiency features:
+
+- **Quick Replies:**
+  - Pre-written templates for common questions
+  - "Yes, this is available"
+  - "I can customize this for you"
+  - "Check your library for downloads"
+  - Sellers can create custom templates (up to X)
+
+- **Status Indicators:**
+  - "Responds within 1 hour" badge (like Upwork)
+  - Average response time tracking
+  - Show seller's response time on profile?
+
+- **Message Templates:**
+  - How many custom templates per seller?
+  - Can templates include variables ({{buyer_name}}, {{product_title}})?
+  - Pro/Pioneer get more templates? (subscription incentive)
+
+- **Away Message:**
+  - Auto-reply when seller is away?
+  - "I'm on leave, will respond on [date]"
+  - Optional or required?
+
+- **Bulk Messages:**
+  - Can seller send bulk message to all buyers?
+  - "New product launch!" announcement?
+  - Strict limits (prevent spam)
+
+#### **8. File Sharing**
+- Should users be able to send files?
+  - Pre-purchase: Preview files, custom samples
+  - Post-purchase: Corrected files, additional resources
+  - File size limits?
+  - File type restrictions?
+  - Virus scanning?
+  - Storage in Supabase Storage?
+
+#### **9. Integration with Existing Features**
+
+**With Product Listings:**
+- "Contact Seller" button on product page
+- Opens pre-filled message: "Hi, I'm interested in [Product Name]"
+- Messages tied to products (context)
+
+**With Orders:**
+- "Contact Buyer" button in seller dashboard
+- Opens conversation with order context
+- Messages tied to order ID
+
+**With Reviews:**
+- "Contact Seller" link after review
+- Encourage resolution before negative review
+
+**With Admin Panel:**
+- Admin can view conversations (dispute resolution)
+- Admin can send messages to both parties
+- "Platform mediation" message type (official admin messages)
+
+#### **10. Admin & Moderation Tools**
+
+**Message Moderation:**
+- Auto-flag: Profanity, personal info, external links
+- Manual review: User reports
+- Admin actions: Warning, temporary mute, permanent ban, delete messages
+
+**Dispute Resolution:**
+- Admin enters conversation (visible to both parties)
+- Admin messages highlighted (different style)
+- Admin can mediate, propose solutions, make final decisions
+- Conversation archived after resolution
+
+**Support Integration:**
+- Support tickets linked to conversations
+- Admin can reference specific messages in tickets
+- Export conversation (for evidence, legal)
+
+#### **11. Database Schema Enhancements**
+
+The existing `messages` table may need additions. Consider:
+
+```sql
+-- Do we need these fields?
+conversation_id UUID  -- Thread messages together?
+parent_message_id UUID  -- For replies?
+message_type ENUM  -- inquiry, support, dispute, admin?
+status ENUM  -- active, archived, blocked?
+attachments TEXT[]  -- File URLs?
+is_system_message BOOLEAN  -- Auto-generated messages?
+read_at TIMESTAMP  -- When message was read
+blocked_by UUID  -- Who blocked the conversation?
+report_reason TEXT  -- If reported
+reviewed_by UUID  -- Admin who reviewed report
+```
+
+**Conversations table:**
+```sql
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY,
+  user_1_id UUID REFERENCES users(id),
+  user_2_id UUID REFERENCES users(id),
+  product_id UUID REFERENCES products(id),  -- nullable (general conversation)
+  order_id UUID REFERENCES orders(id),  -- nullable (if about specific order)
+  last_message_at TIMESTAMP,
+  last_message_preview TEXT,
+  user_1_unread_count INTEGER DEFAULT 0,
+  user_2_unread_count INTEGER DEFAULT 0,
+  status ENUM  -- active, archived, blocked
+);
+```
+
+**Quick reply templates table:**
+```sql
+CREATE TABLE message_templates (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  template_name VARCHAR(255),
+  template_content TEXT,
+  is_system BOOLEAN DEFAULT false,  -- System-provided templates
+  created_at TIMESTAMP
+);
+```
+
+#### **12. Success Metrics & KPIs**
+
+**For Platform:**
+- Message volume (total messages sent)
+- Response time (average seller response time)
+- Resolution rate (issues resolved via messaging vs escalated to admin)
+- Spam rate (blocked/reported messages)
+- User satisfaction (post-resolution survey)
+
+**For Sellers:**
+- Average response time (display on profile)
+- Response rate (percentage of messages responded to)
+- Conversion impact (do messaged buyers purchase more?)
+- Template usage (which quick replies most popular)
+
+#### **13. MVP vs Post-Launch**
+
+**MVP Critical (Must Have):**
+- Basic buyer-seller messaging (text only)
+- Conversation list + chat view
+- Message notifications (in-app bell badge)
+- Block/report functionality
+- Message moderation (basic profanity filter)
+- Seller quick replies (5 system templates)
+- Admin can view messages (dispute resolution)
+
+**Post-Launch (Nice to Have):**
+- File attachments
+- Custom seller templates (beyond system templates)
+- Real-time messaging (WebSockets)
+- Push notifications
+- "Responds within X hours" badge
+- Away message
+- Bulk messaging
+- Message read receipts
+- Typing indicators
+- Message search
+- Export conversation
+
+---
+
+## Design Requirements
+
+### Must Align With:
+
+1. **Previous Features** - All decisions must be consistent with Features 01-10
+2. **Database Schema** - Use/enhance existing `messages` table
+3. **Mobile-First Design** - 70%+ Filipino users on mobile
+4. **Filipino Context** - Filipino teachers, Facebook/Messenger usage patterns
+5. **Simplicity First** - Don't over-engineer, can add features post-launch
+
+### Design Constraints:
+
+1. **Supabase + Next.js** - Tech stack
+2. **No Real-Time for MVP** - Polling every 30 seconds (WebSockets post-launch)
+3. **Email-Only Support** - Support via support@ email (not in-app messaging for support)
+4. **Privacy-First** - Never expose email/phone, prevent off-platform transactions
+5. **Seller-Friendly** - Quick replies, templates, efficiency tools
+6. **Safe Space** - Block/report, moderation, dispute resolution
+
+---
+
+## Output Format
+
+Please provide:
+
+1. **Overview** (200-300 words) - High-level design summary
+2. **Message Types & Categories** - What types of messages, categorization system
+3. **Conversations & Threading** - How conversations are organized
+4. **User Interface** - Inbox, compose, mobile experience (with mockups/wireframes)
+5. **Real-Time vs Polling** - Your recommendation with rationale
+6. **Notifications** - How users are alerted (throttling, quiet hours)
+7. **Privacy & Safety** - Anonymity, moderation, blocking, transaction safety
+8. **Seller Tools** - Quick replies, templates, status indicators, away messages
+9. **File Sharing** - Yes/no, limits, restrictions, virus scanning
+10. **Integration Points** - How messaging connects to products, orders, reviews, admin
+11. **Admin Tools** - Moderation, dispute resolution, support integration
+12. **Database Schema** - Enhanced schema with all new tables/fields
+13. **API Endpoints** - List all messaging endpoints
+14. **Success Metrics** - KPIs to track
+15. **MVP vs Post-Launch** - Clear prioritization
+
+---
+
+## Reference Points
+
+Review these existing designs to ensure alignment:
+
+- **Feature 04:** "Contact Buyer" buttons in order management
+- **Feature 06:** Notification bell icon, email preferences
+- **Feature 07:** Seller dashboard navigation mentions "Messages"
+- **Feature 09:** Email-only support, dispute resolution process
+- **Feature 10:** Email templates (can use same template system for quick replies)
+
+---
+
+## Filipino Context Considerations
+
+**Communication Preferences:**
+- Filipino teachers active in Facebook groups
+- Messenger is the most familiar messaging app
+- Design should feel like Messenger (familiar UX)
+- Polite, respectful tone (use "po/opo" in system messages)
+
+**Mobile Usage:**
+- 70%+ on mobile
+- Facebook Lite popular (low-end devices)
+- Design for slow connections, small screens
+- Touch targets 44x44px minimum
+
+**Trust & Safety:**
+- Filipinos value personal relationships
+- Platform mediation important for conflict resolution
+- "Suki" culture (repeat customer relationships)
+- Build trust through transparency (response times visible)
+
+---
+
+## Next Steps
+
+After your design is complete:
+
+1. ✅ Design documented in `docs/brainstorming/13-feature-11-messaging-system.md`
+2. ✅ Database schema updated in main design summary
+3. ✅ API endpoints added to main design summary
+4. ⏭️ Create Feature 12 prompt (if more features needed) or move to implementation
+
+---
+
+**Ready when you are!** Please read all the documentation in the `docs/` folder, study the existing design thoroughly, and provide comprehensive recommendations for the messaging system.
