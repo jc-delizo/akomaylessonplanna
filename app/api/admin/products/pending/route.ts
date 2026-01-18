@@ -8,26 +8,14 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  * Shows first 3 products from new sellers
  */
 export async function GET(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:10',message:'GET /api/admin/products/pending started',data:{url:request.nextUrl.toString(),hasCookies:!!request.cookies,headers:Object.fromEntries(request.headers.entries())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   try {
     const authResult = await requireAdmin(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:12',message:'requireAdmin result',data:{success:authResult.success,status:authResult.success ? undefined : authResult.response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (!authResult.success) {
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:14',message:'Auth failed, returning response',data:{status:authResult.response?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       return authResult.response
     }
 
     const supabase = await createClient()
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:17',message:'Auth successful, querying products',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     // Get pending products (oldest first)
     const { data: pendingProducts, error } = await supabase
       .from('products')
@@ -48,15 +36,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true }) // Oldest first (FCFS)
 
     if (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:38',message:'Query error',data:{error:error.message,code:error.code,hint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       console.error('Error fetching pending products:', error)
       return NextResponse.json({ error: 'Failed to fetch pending products' }, { status: 500 })
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:41',message:'Query successful',data:{productCount:pendingProducts?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     // Calculate priority badges and submission counts
     const productsWithMetadata = await Promise.all(

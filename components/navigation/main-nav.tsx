@@ -89,19 +89,10 @@ export function MainNav({ user }: MainNavProps) {
   const { isAdmin, loading: adminLoading } = useAdminAuth()
   const { cartCount: guestCartCount } = useGuestCart()
   
-  // #region agent log - Debug hydration mismatch
-  useEffect(() => {
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'main-nav.tsx:88',message:'MainNav render - user state',data:{hasUser:!!user,userId:user?.id,mounted,isAdmin,adminLoading,isClient:typeof window !== 'undefined',willRenderUserLinks:mounted && !!user},timestamp:Date.now(),sessionId:'debug-session',runId:'hydration-debug',hypothesisId:'A'})}).catch(()=>{});
-  }, [user, mounted, isAdmin, adminLoading]);
-  // #endregion
-  
   // Track mount state to prevent hydration mismatches
   useEffect(() => {
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'main-nav.tsx:95',message:'MainNav mounted',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'hydration-debug',hypothesisId:'B'})}).catch(()=>{});
     setMounted(true)
   }, [])
-  
-  // Removed agent log fetch to prevent ERR_INSUFFICIENT_RESOURCES errors
 
   // Fetch user profile data
   useEffect(() => {
@@ -611,7 +602,9 @@ export function MainNav({ user }: MainNavProps) {
                   </Link>
                   <GlareButton>
                     <Link
-                      href="/shop/products/new"
+                      href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                        ? '/become-seller'
+                        : '/shop/products/new'}
                       className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >

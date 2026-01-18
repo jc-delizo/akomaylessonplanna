@@ -8,13 +8,7 @@ import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
  */
 export async function GET(request: NextRequest) {
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:9',message:'GET handler entry',data:{hasCookieHeader:!!request.headers.get('cookie'),cookieLength:request.headers.get('cookie')?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     const authResult = await requireSuperAdmin(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:12',message:'requireSuperAdmin result',data:{success:authResult.success,status:!authResult.success?authResult.response.status:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     if (!authResult.success) {
       return authResult.response
     }

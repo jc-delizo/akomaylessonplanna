@@ -16,19 +16,12 @@ async function getDashboardMetrics(timeRange: string = 'last_30_days') {
   const allCookies = cookieStore.getAll()
   const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
   
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:17',message:'Fetching dashboard metrics',data:{cookieCount:allCookies.length,hasCookies:!!cookieHeader,timeRange},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
-  
   const response = await fetch(`${baseUrl}/api/admin/dashboard?timeRange=${timeRange}`, {
     cache: 'no-store',
     headers: cookieHeader ? {
       Cookie: cookieHeader,
     } : {},
   })
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:25',message:'Dashboard metrics response',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   if (!response.ok) {
     throw new Error('Failed to fetch dashboard metrics')
   }
@@ -41,19 +34,12 @@ async function getQuickActions() {
   const allCookies = cookieStore.getAll()
   const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
   
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:35',message:'Fetching quick actions',data:{cookieCount:allCookies.length,hasCookies:!!cookieHeader},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
-  
   const response = await fetch(`${baseUrl}/api/admin/dashboard/quick-actions`, {
     cache: 'no-store',
     headers: cookieHeader ? {
       Cookie: cookieHeader,
     } : {},
   })
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/page.tsx:43',message:'Quick actions response',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
   if (!response.ok) {
     throw new Error('Failed to fetch quick actions')
   }

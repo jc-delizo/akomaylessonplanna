@@ -76,9 +76,6 @@ export function useAdminAuth() {
         }
 
         // Check if user is admin based on role
-        // #region agent log
-        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:67',message:'Role check',data:{userId:user.id,role:roleData.role,isAdmin:roleData.role==='admin'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         const isUserAdmin = roleData.role === 'admin'
         
         if (!isUserAdmin) {
@@ -94,9 +91,6 @@ export function useAdminAuth() {
         }
 
         // User is admin - set state immediately, then try to get admin_role
-        // #region agent log
-        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:75',message:'Setting admin state',data:{isAdmin:true,adminRole:'super_admin'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         if (mounted) {
           setState({
             isAdmin: true,
@@ -109,9 +103,6 @@ export function useAdminAuth() {
         // Try to get admin_role asynchronously (non-blocking)
         // Only attempt if we haven't already determined the column doesn't exist
         if (adminRoleColumnExists !== false) {
-          // #region agent log
-          fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:110',message:'Querying admin_role',data:{userId:user.id,columnExistsCache:adminRoleColumnExists},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           toPromise(
             supabase
               .from('users')
@@ -120,9 +111,6 @@ export function useAdminAuth() {
               .single()
           )
             .then(({ data: adminRoleData, error: adminRoleError }) => {
-              // #region agent log
-              fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:116',message:'admin_role query result',data:{hasData:!!adminRoleData,hasError:!!adminRoleError,errorCode:adminRoleError?.code,errorMessage:adminRoleError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-              // #endregion
               // If there's any error, assume column doesn't exist and cache it
               // This prevents repeated queries until migration is applied
               if (adminRoleError) {

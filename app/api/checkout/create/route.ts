@@ -100,10 +100,6 @@ export async function POST(request: Request) {
     // Create order
     const paymentExpiresAt = new Date()
     paymentExpiresAt.setMinutes(paymentExpiresAt.getMinutes() + 15) // 15-minute timeout
-    // #region agent log
-    const logData = {location:'checkout/create/route.ts:96',message:'Creating order with payment_expires_at',data:{now:new Date().toISOString(),expiresAt:paymentExpiresAt.toISOString(),expiresAtMs:paymentExpiresAt.getTime(),nowMs:Date.now(),timeDiffMs:paymentExpiresAt.getTime() - Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'};
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-    // #endregion
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -118,13 +114,6 @@ export async function POST(request: Request) {
       })
       .select()
       .single()
-    
-    // #region agent log
-    if (order) {
-      const logData2 = {location:'checkout/create/route.ts:113',message:'Order created',data:{orderId:order.id,paymentExpiresAt:order.payment_expires_at,paymentStatus:order.payment_status},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'};
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData2)}).catch(()=>{});
-    }
-    // #endregion
 
     if (orderError || !order) {
       console.error('Error creating order:', orderError)

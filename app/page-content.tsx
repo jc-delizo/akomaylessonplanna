@@ -30,7 +30,11 @@ export function PageContent() {
       )}`;
       return;
     }
-  }, [searchParams]);
+
+    // Redirect to marketplace if no OAuth callback
+    setIsRedirecting(true);
+    router.push('/marketplace');
+  }, [searchParams, router]);
 
   // Show loading state while redirecting
   if (isRedirecting) {
@@ -44,5 +48,13 @@ export function PageContent() {
     );
   }
 
-  return <ComponentExample />;
+  // This should not be reached, but show loading while redirecting
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+        <p className="text-muted-foreground">Redirecting to marketplace...</p>
+      </div>
+    </div>
+  );
 }

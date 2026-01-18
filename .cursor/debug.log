@@ -1273,3 +1273,7 @@
 {"location":"useAdminAuth.ts:116","message":"admin_role query result","data":{"hasData":true,"hasError":false},"timestamp":1768706362908,"sessionId":"debug-session","runId":"run1","hypothesisId":"E"}
 {"location":"page.tsx:32","message":"PlatformSettingsPage entry","data":{},"timestamp":1768706395467,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
 {"location":"page.tsx:22","message":"AdminUsersPage started","data":{"isPromise":true},"timestamp":1768706395693,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"useAdminAuth.ts:67","message":"Role check","data":{"userId":"616ad0ee-9688-4837-9868-c477e94e38cb","role":"admin","isAdmin":true},"timestamp":1768706465763,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"useAdminAuth.ts:110","message":"Querying admin_role","data":{"userId":"616ad0ee-9688-4837-9868-c477e94e38cb","columnExistsCache":true},"timestamp":1768706465764,"sessionId":"debug-session","runId":"run1","hypothesisId":"E"}
+{"location":"useAdminAuth.ts:75","message":"Setting admin state","data":{"isAdmin":true,"adminRole":"super_admin"},"timestamp":1768706465763,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"useAdminAuth.ts:116","message":"admin_role query result","data":{"hasData":true,"hasError":false},"timestamp":1768706465973,"sessionId":"debug-session","runId":"run1","hypothesisId":"E"}

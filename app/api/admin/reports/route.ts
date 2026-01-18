@@ -14,14 +14,8 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  * - limit?: number (default: 50)
  */
 export async function GET(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:16',message:'GET request started',data:{hasCookies:!!request.headers.get('cookie'),url:request.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   try {
     const authResult = await requireAdmin(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:20',message:'requireAdmin result',data:{success:authResult.success,status:!authResult.success?authResult.response.status:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     if (!authResult.success) {
       return authResult.response
     }
@@ -56,9 +50,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: reports, error, count } = await query
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:54',message:'Query result',data:{hasError:!!error,errorMessage:error?.message,reportsCount:reports?.length,count},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     if (error) {
       console.error('Error fetching reports:', error)
@@ -100,9 +91,6 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:96',message:'Before return success',data:{reportsWithDetailsCount:reportsWithDetails?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return NextResponse.json({
       reports: reportsWithDetails,
       pagination: {
@@ -113,9 +101,6 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:105',message:'Catch block error',data:{errorMessage:error instanceof Error?error.message:String(error),errorStack:error instanceof Error?error.stack:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.error('Error in GET /api/admin/reports:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

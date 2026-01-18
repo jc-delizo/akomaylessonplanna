@@ -12,9 +12,6 @@ import { ensureStorageBucket } from '@/lib/utils/storage'
  * Auto-crops to square
  */
 export async function POST(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:13',message:'POST /api/me/profile/avatar entry',data:{hasSupabaseUrl:!!process.env.NEXT_PUBLIC_SUPABASE_URL,supabaseUrlPrefix:process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0,20)||'missing'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
   try {
     const supabase = await createClient()
 
@@ -22,10 +19,6 @@ export async function POST(request: NextRequest) {
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser()
-
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:21',message:'Auth check result',data:{isAuthenticated:!!authUser,userId:authUser?.id?.substring(0,8)||'none'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -59,17 +52,9 @@ export async function POST(request: NextRequest) {
     const fileName = `avatar.${fileExt}`
     const filePath = `${authUser.id}/${fileName}`
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:61',message:'Before storage upload attempt',data:{bucketName:'user-avatars',filePath,fileSize:file.size,fileType:file.type,fileName},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-
     // Ensure storage bucket exists
     const bucketName = 'user-avatars'
     const bucketResult = await ensureStorageBucket(bucketName, true)
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:66',message:'Bucket ensure result',data:{bucketName,success:bucketResult.success,created:bucketResult.created,hasError:!!bucketResult.error},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     if (!bucketResult.success) {
       console.error('Failed to ensure storage bucket exists:', bucketResult.error)
@@ -78,10 +63,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:80',message:'Bucket ensured, attempting upload',data:{bucketName,bucketCreated:bucketResult.created},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -90,10 +71,6 @@ export async function POST(request: NextRequest) {
         contentType: file.type,
         upsert: true, // Replace if exists
       })
-
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:78',message:'Storage upload result',data:{hasError:!!uploadError,errorMessage:uploadError?.message||'none',errorName:uploadError?.name||'none',hasData:!!uploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     if (uploadError) {
       console.error('Error uploading avatar:', uploadError)

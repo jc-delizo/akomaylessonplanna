@@ -11,9 +11,6 @@ async function getUsers(
   supabase: Awaited<ReturnType<typeof createClient>>,
   searchParams: Record<string, string>
 ) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:10',message:'getUsers called',data:{searchParams},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   const search = searchParams.search
   const role = searchParams.role
   const verification = searchParams.verification
@@ -88,14 +85,8 @@ async function getUsers(
     .range(offset, offset + limit - 1)
 
   const { data: users, error, count } = await query
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:75',message:'Query result',data:{userCount:users?.length||0,hasError:!!error,errorMessage:error?.message,count},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   if (error) {
     console.error('Error fetching users:', error)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:79',message:'Query error',data:{error:error.message,code:error.code,hint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     throw new Error('Failed to fetch users')
   }
 
@@ -123,9 +114,6 @@ async function getUsers(
     })
   )
 
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:100',message:'getUsers success',data:{userCount:usersWithStats.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   return {
     users: usersWithStats,
     pagination: {
@@ -142,14 +130,8 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined }
 }) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:22',message:'AdminUsersPage started',data:{isPromise:searchParams instanceof Promise},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   // Await searchParams if it's a Promise (Next.js 15+)
   const resolvedSearchParams = searchParams instanceof Promise ? await searchParams : searchParams
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:26',message:'searchParams resolved',data:{keys:Object.keys(resolvedSearchParams)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const supabase = await createClient()
   const {
     data: { user: authUser },
@@ -171,22 +153,13 @@ export default async function AdminUsersPage({
       params[key] = Array.isArray(value) ? value[0] : value
     }
   })
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:67',message:'Calling getUsers',data:{params},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   let users: any[] = []
   let pagination: any = null
   try {
     const result = await getUsers(supabase, params)
     users = result.users || []
     pagination = result.pagination || null
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:177',message:'getUsers completed',data:{userCount:users.length,hasPagination:!!pagination},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:180',message:'getUsers error caught',data:{error:error instanceof Error?error.message:'Unknown error'},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     console.error('Error fetching users:', error)
     // Continue with empty users array instead of crashing
   }

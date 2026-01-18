@@ -18,14 +18,8 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  * - limit?: number (default: 50)
  */
 export async function GET(request: NextRequest) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:20',message:'GET /api/admin/users started',data:{url:request.nextUrl.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
   try {
     const authResult = await requireAdmin(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:23',message:'requireAdmin result',data:{success:authResult.success},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     if (!authResult.success) {
       return authResult.response
     }
@@ -108,14 +102,8 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1)
 
     const { data: users, error, count } = await query
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:104',message:'Query result',data:{userCount:users?.length||0,hasError:!!error,errorMessage:error?.message,count},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     if (error) {
       console.error('Error fetching users:', error)
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:107',message:'Query error',data:{error:error.message,code:error.code,hint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
     }
 

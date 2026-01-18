@@ -62,10 +62,6 @@ export async function POST(request: Request) {
       const expiresAtStr = order.payment_expires_at.toString()
       const expiresAt = new Date(expiresAtStr.endsWith('Z') ? expiresAtStr : expiresAtStr + 'Z')
       const now = new Date()
-      // #region agent log
-      const logData = {location:'select-payment/route.ts:61',message:'Checking payment expiration',data:{orderId:order_id,expiresAtRaw:order.payment_expires_at,expiresAt:expiresAt.toISOString(),now:now.toISOString(),expiresAtMs:expiresAt.getTime(),nowMs:now.getTime(),isExpired:expiresAt < now,timeDiffMs:expiresAt.getTime() - now.getTime()},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'};
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-      // #endregion
       if (expiresAt < now) {
         // Update order to failed
         await supabase
@@ -78,11 +74,6 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
-    } else {
-      // #region agent log
-      const logData = {location:'select-payment/route.ts:73',message:'payment_expires_at is null or undefined',data:{orderId:order_id,paymentExpiresAt:order.payment_expires_at},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'B'};
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-      // #endregion
     }
 
     // Update order with payment method and mobile number

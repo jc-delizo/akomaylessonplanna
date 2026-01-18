@@ -167,9 +167,6 @@ export function useAuth() {
   }
 
   const signup = async (email: string, password: string, name: string, rememberMe: boolean = false) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:42',message:'signup entry',data:{email,name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
-    // #endregion
     // Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -184,29 +181,14 @@ export function useAuth() {
       },
     })
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:57',message:'auth signup result',data:{hasUser:!!authData?.user,userId:authData?.user?.id,userEmail:authData?.user?.email,authError:authError?.message,authErrorCode:authError?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
-    // #endregion
-
     if (authError) throw authError
     if (!authData.user) throw new Error('Failed to create user')
 
-    // #region agent log
-    const sessionCheck = await supabase.auth.getSession();
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:139',message:'session before insert',data:{hasSession:!!sessionCheck.data.session,sessionUserId:sessionCheck.data.session?.user?.id,authUidMatches:sessionCheck.data.session?.user?.id===authData.user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,D,E'})}).catch(()=>{});
-    // #endregion
-
     // Check if profile already exists (Hypothesis A)
-    // #region agent log
     const existingProfileCheck = await supabase.from('users').select('id,email,username').eq('id', authData.user.id).maybeSingle();
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:143',message:'check existing profile',data:{profileExists:!!existingProfileCheck.data,profileId:existingProfileCheck.data?.id,profileEmail:existingProfileCheck.data?.email,profileUsername:existingProfileCheck.data?.username,checkError:existingProfileCheck.error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     // If profile already exists, skip insert (user may have signed up before)
     if (existingProfileCheck.data) {
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:148',message:'profile exists, skipping insert',data:{profileId:existingProfileCheck.data.id},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       // Profile already exists, continue with signup success
     } else {
       // Create user profile in public.users table
@@ -220,35 +202,13 @@ export function useAuth() {
         can_sell: false,
         email_verified: false, // No email verification for buyers
       };
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:155',message:'insert payload before',data:insertPayload,timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
 
       const { data: insertData, error: profileError } = await supabase.from('users').insert(insertPayload).select()
-
-      // #region agent log
-      const errorDetails = profileError ? {
-        message: profileError.message,
-        code: profileError.code,
-        details: profileError.details,
-        hint: profileError.hint,
-        statusCode: (profileError as any).statusCode,
-        statusText: (profileError as any).statusText,
-        response: (profileError as any).response,
-        toString: String(profileError),
-        keys: Object.keys(profileError || {}),
-        fullObject: Object.assign({}, profileError)
-      } : null;
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:161',message:'insert result',data:{hasError:!!profileError,hasData:!!insertData,errorDetails,insertData},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,C,D,E'})}).catch(()=>{});
-      // #endregion
 
       if (profileError) {
         // Check if it's a duplicate key error (profile might have been created by trigger or race condition)
         if (profileError.code === '23505') {
           // Duplicate key - profile already exists, continue with signup success
-          // #region agent log
-          fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:182',message:'duplicate key error, profile exists, continuing',data:{errorCode:profileError.code},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
         } else {
           // Other error - log and throw
           console.error('Profile creation failed:', {

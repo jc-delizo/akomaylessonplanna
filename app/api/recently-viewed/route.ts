@@ -67,10 +67,6 @@ export async function GET(request: NextRequest) {
 
     const { data: recentlyViewed, error } = await query
 
-    // #region agent log
-    await fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:68',message:'Query result',data:{userId:user.id,error:error?.message,errorCode:error?.code,dataLength:recentlyViewed?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-
     if (error) {
       // Handle missing table gracefully (PGRST205 = table not found)
       if (error.code === 'PGRST205') {

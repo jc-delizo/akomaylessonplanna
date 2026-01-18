@@ -9,60 +9,32 @@ import { Separator } from '@/components/ui/separator'
 import { headers } from 'next/headers'
 
 async function getPlatformSettings() {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:10',message:'getPlatformSettings entry',data:{hasEnvVar:!!process.env.NEXT_PUBLIC_APP_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const headersList = await headers()
   const cookieHeader = headersList.get('cookie')
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:13',message:'Headers retrieved',data:{hasCookieHeader:!!cookieHeader,cookieLength:cookieHeader?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const fetchUrl = `${baseUrl}/api/admin/settings/platform`
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:16',message:'Before fetch',data:{baseUrl,fetchUrl,hasCookieHeader:!!cookieHeader,willForwardCookies:!!cookieHeader},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const response = await fetch(fetchUrl, {
     cache: 'no-store',
     headers: cookieHeader ? { cookie: cookieHeader } : undefined,
   })
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:20',message:'After fetch',data:{status:response.status,statusText:response.statusText,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   if (!response.ok) {
-    // #region agent log
-    const errorText = await response.text().catch(() => 'Failed to read error body');
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:23',message:'Response not ok',data:{status:response.status,statusText:response.statusText,errorBody:errorText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     throw new Error('Failed to fetch platform settings')
   }
   const result = await response.json()
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:28',message:'getPlatformSettings success',data:{hasResult:!!result},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   return result
 }
 
 export default async function PlatformSettingsPage() {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:32',message:'PlatformSettingsPage entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
   const supabase = await createClient()
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser()
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:37',message:'Auth check complete',data:{hasAuthUser:!!authUser,userId:authUser?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
 
   if (!authUser) {
     redirect('/login?redirect=/admin/settings/platform')
   }
 
   const adminUser = await getAdminUser(authUser.id)
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:44',message:'Admin check complete',data:{hasAdminUser:!!adminUser,adminRole:adminUser?.admin_role},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
   if (!adminUser || adminUser.admin_role !== 'super_admin') {
     redirect('/admin')
   }

@@ -13,13 +13,7 @@ import { requireAdmin } from '@/lib/middleware/admin-auth'
  */
 export async function GET(request: NextRequest) {
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:14',message:'GET request started',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     const authResult = await requireAdmin(request)
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:17',message:'Admin auth check',data:{success:authResult.success},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (!authResult.success) {
       return authResult.response
     }
@@ -27,9 +21,6 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
     const timeRange = searchParams.get('timeRange') || 'last_30_days'
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:24',message:'TimeRange parsed',data:{timeRange},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     // Calculate date range
     const now = new Date()
@@ -150,18 +141,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:133',message:'Starting metrics queries',data:{startDate:startDate.toISOString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     // Row 1: Revenue & Growth Metrics
     // Total Revenue (commission collected)
     const revenueData = await safeSelect<{ total_commission: number }>('orders', 'total_commission', {
       eq: { payment_status: 'completed' },
       gte: { field: 'created_at', value: startDate.toISOString() },
     })
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:139',message:'Revenue data fetched',data:{revenueDataCount:revenueData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     const totalRevenue = (revenueData || []).reduce((sum, order) => sum + Number(order?.total_commission || 0), 0)
 
     // Total Orders
@@ -235,9 +220,6 @@ export async function GET(request: NextRequest) {
       startDate: startDate.toISOString(),
     })
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dashboard/route.ts:211',message:'Error caught',data:{errorMessage:error instanceof Error?error.message:'unknown',errorStack:error instanceof Error?error.stack:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.error('Error in GET /api/admin/dashboard:', error)
     return NextResponse.json({ 
       error: 'Internal server error',

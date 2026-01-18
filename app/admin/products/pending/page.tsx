@@ -10,9 +10,6 @@ import Image from 'next/image'
 async function getPendingProducts(
   supabase: Awaited<ReturnType<typeof createClient>>
 ) {
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:10',message:'getPendingProducts called - querying Supabase directly',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   // Query pending products directly from Supabase
   const { data: pendingProducts, error } = await supabase
     .from('products')
@@ -32,9 +29,6 @@ async function getPendingProducts(
     .eq('status', 'pending_review')
     .order('created_at', { ascending: true }) // Oldest first (FCFS)
 
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:30',message:'Query result',data:{hasError:!!error,errorMessage:error?.message,productCount:pendingProducts?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   if (error) {
     console.error('Error fetching pending products:', error)
     throw new Error('Failed to fetch pending products')
@@ -70,9 +64,6 @@ async function getPendingProducts(
     })
   )
 
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:60',message:'getPendingProducts success',data:{productCount:productsWithMetadata.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   return productsWithMetadata
 }
 
@@ -87,16 +78,10 @@ export default async function PendingProductsPage() {
   }
 
   const adminUser = await getAdminUser(authUser.id)
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:31',message:'Admin check result',data:{hasAdminUser:!!adminUser,userId:authUser.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   if (!adminUser) {
     redirect('/')
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:36',message:'About to call getPendingProducts',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const products = await getPendingProducts(supabase)
 
   const getTimeAgo = (hours: number) => {

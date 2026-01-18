@@ -56,6 +56,16 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Redirect root path to /marketplace (unless it's an OAuth callback)
+  if (request.nextUrl.pathname === '/') {
+    const code = request.nextUrl.searchParams.get('code')
+    const error = request.nextUrl.searchParams.get('error')
+    // Only redirect if it's not an OAuth callback
+    if (!code && !error) {
+      return NextResponse.redirect(new URL('/marketplace', request.url))
+    }
+  }
+
   // Redirect old /dashboard/* routes to /shop/*
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const newPath = request.nextUrl.pathname.replace(/^\/dashboard/, '/shop')
