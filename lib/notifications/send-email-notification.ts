@@ -9,6 +9,7 @@ import { initializeUserEmailPreferences } from '@/lib/emails/preference-checker'
  */
 function getEmailTypeForNotification(type: NotificationType): string | null {
   const mapping: Record<NotificationType, string | null> = {
+    new_message: 'new_message',
     new_sale: 'new_sale',
     new_review: 'new_review',
     price_drop: 'price_drop',

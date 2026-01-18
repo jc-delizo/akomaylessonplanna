@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET() {
   try {
@@ -29,7 +30,7 @@ export async function GET() {
     // Get all completed order items for this seller
     const { data: orderItems, error: itemsError } = await supabase
       .from('order_items')
-      .select('net_earnings, created_at, order:orders!order_items_order_id_fkey(payment_status, completed_at)')
+      .select('net_earnings, created_at, product_id, order:orders!order_items_order_id_fkey(payment_status, completed_at)')
       .eq('seller_id', user.id)
 
     if (itemsError) {
@@ -50,11 +51,12 @@ export async function GET() {
     let allTime = 0
 
     for (const item of orderItems || []) {
-      if (item.order?.payment_status === 'completed') {
+      const order = getRelation(item.order)
+      if (order?.payment_status === 'completed') {
         const earnings = parseFloat(item.net_earnings.toString())
         allTime += earnings
 
-        const itemDate = new Date(item.order.completed_at || item.created_at)
+        const itemDate = new Date(order.completed_at || item.created_at)
         if (itemDate >= weekAgo) {
           thisWeek += earnings
         }
@@ -107,10 +109,12 @@ export async function GET() {
         const monthEarnings =
           orderItems
             ?.filter(
-              (item) =>
-                item.order?.payment_status === 'completed' &&
-                new Date(item.order.completed_at || item.created_at) >= monthDate &&
-                new Date(item.order.completed_at || item.created_at) <= monthEnd
+              (item) => {
+                const order = getRelation(item.order)
+                return order?.payment_status === 'completed' &&
+                  new Date(order.completed_at || item.created_at) >= monthDate &&
+                  new Date(order.completed_at || item.created_at) <= monthEnd
+              }
             )
             .reduce(
               (sum, item) => sum + parseFloat(item.net_earnings.toString()),
@@ -131,7 +135,10 @@ export async function GET() {
 
       const categorySales: Record<string, number> = {}
       orderItems
-        ?.filter((item) => item.order?.payment_status === 'completed')
+        ?.filter((item) => {
+          const order = getRelation(item.order)
+          return order?.payment_status === 'completed'
+        })
         .forEach((item) => {
           const product = sellerProducts?.find((p) => p.id === item.product_id)
           if (product) {
@@ -150,9 +157,11 @@ export async function GET() {
         const dayEarnings =
           orderItems
             ?.filter(
-              (item) =>
-                item.order?.payment_status === 'completed' &&
-                (item.order.completed_at || item.created_at).startsWith(dateStr)
+              (item) => {
+                const order = getRelation(item.order)
+                return order?.payment_status === 'completed' &&
+                  (order.completed_at || item.created_at).startsWith(dateStr)
+              }
             )
             .reduce(
               (sum, item) => sum + parseFloat(item.net_earnings.toString()),
@@ -172,9 +181,11 @@ export async function GET() {
       const currentMonthEarnings =
         orderItems
           ?.filter(
-            (item) =>
-              item.order?.payment_status === 'completed' &&
-              new Date(item.order.completed_at || item.created_at) >= currentMonthStart
+            (item) => {
+              const order = getRelation(item.order)
+              return order?.payment_status === 'completed' &&
+                new Date(order.completed_at || item.created_at) >= currentMonthStart
+            }
           )
           .reduce(
             (sum, item) => sum + parseFloat(item.net_earnings.toString()),
@@ -189,10 +200,12 @@ export async function GET() {
       const lastMonthEarnings =
         orderItems
           ?.filter(
-            (item) =>
-              item.order?.payment_status === 'completed' &&
-              new Date(item.order.completed_at || item.created_at) >= lastMonthStart &&
-              new Date(item.order.completed_at || item.created_at) <= lastMonthEnd
+            (item) => {
+              const order = getRelation(item.order)
+              return order?.payment_status === 'completed' &&
+                new Date(order.completed_at || item.created_at) >= lastMonthStart &&
+                new Date(order.completed_at || item.created_at) <= lastMonthEnd
+            }
           )
           .reduce(
             (sum, item) => sum + parseFloat(item.net_earnings.toString()),

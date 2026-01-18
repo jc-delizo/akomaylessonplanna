@@ -49,7 +49,10 @@ export async function GET(
         // Group by day
         const revenueByDay: Record<string, number> = {}
         revenueItems
-          ?.filter((item) => item.order?.payment_status === 'completed')
+          ?.filter((item) => {
+            const order = Array.isArray(item.order) ? item.order[0] : item.order
+            return order?.payment_status === 'completed'
+          })
           .forEach((item) => {
             const date = item.created_at.split('T')[0]
             revenueByDay[date] =
@@ -71,7 +74,10 @@ export async function GET(
 
         const salesByDay: Record<string, number> = {}
         salesItems
-          ?.filter((item) => item.order?.payment_status === 'completed')
+          ?.filter((item) => {
+            const order = Array.isArray(item.order) ? item.order[0] : item.order
+            return order?.payment_status === 'completed'
+          })
           .forEach((item) => {
             const date = item.created_at.split('T')[0]
             salesByDay[date] = (salesByDay[date] || 0) + 1

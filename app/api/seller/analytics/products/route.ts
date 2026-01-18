@@ -46,7 +46,10 @@ export async function GET(request: Request) {
     // Calculate revenue per product
     const productRevenue: Record<string, number> = {}
     orderItems
-      ?.filter((item) => item.order?.payment_status === 'completed')
+      ?.filter((item) => {
+        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        return order?.payment_status === 'completed'
+      })
       .forEach((item) => {
         productRevenue[item.product_id] =
           (productRevenue[item.product_id] || 0) + parseFloat(item.net_earnings.toString())
@@ -70,7 +73,10 @@ export async function GET(request: Request) {
     // Sales by category
     const categorySales: Record<string, number> = {}
     orderItems
-      ?.filter((item) => item.order?.payment_status === 'completed')
+      ?.filter((item) => {
+        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        return order?.payment_status === 'completed'
+      })
       .forEach((item) => {
         const product = products?.find((p) => p.id === item.product_id)
         if (product) {

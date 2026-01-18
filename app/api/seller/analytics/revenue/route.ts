@@ -57,9 +57,11 @@ export async function GET(request: Request) {
         const dayRevenue =
           orderItems
             ?.filter(
-              (item) =>
-                item.order?.payment_status === 'completed' &&
-                (item.order.completed_at || item.created_at).startsWith(dateStr)
+              (item) => {
+                const order = Array.isArray(item.order) ? item.order[0] : item.order
+                return order?.payment_status === 'completed' &&
+                  (order.completed_at || item.created_at).startsWith(dateStr)
+              }
             )
             .reduce((sum, item) => sum + parseFloat(item.net_earnings.toString()), 0) || 0
 
@@ -69,9 +71,11 @@ export async function GET(request: Request) {
         const previousRevenue =
           orderItems
             ?.filter(
-              (item) =>
-                item.order?.payment_status === 'completed' &&
-                (item.order.completed_at || item.created_at).startsWith(previousDateStr)
+              (item) => {
+                const order = Array.isArray(item.order) ? item.order[0] : item.order
+                return order?.payment_status === 'completed' &&
+                  (order.completed_at || item.created_at).startsWith(previousDateStr)
+              }
             )
             .reduce((sum, item) => sum + parseFloat(item.net_earnings.toString()), 0) || 0
 
@@ -85,9 +89,13 @@ export async function GET(request: Request) {
       // Group by week
       const weeks: Record<string, number> = {}
       orderItems
-        ?.filter((item) => item.order?.payment_status === 'completed')
+        ?.filter((item) => {
+          const order = Array.isArray(item.order) ? item.order[0] : item.order
+          return order?.payment_status === 'completed'
+        })
         .forEach((item) => {
-          const date = new Date(item.order.completed_at || item.created_at)
+          const order = Array.isArray(item.order) ? item.order[0] : item.order
+          const date = new Date(order?.completed_at || item.created_at)
           const weekStart = new Date(date)
           weekStart.setDate(date.getDate() - date.getDay())
           const weekKey = weekStart.toISOString().split('T')[0]
@@ -107,9 +115,13 @@ export async function GET(request: Request) {
       // Group by month
       const months: Record<string, number> = {}
       orderItems
-        ?.filter((item) => item.order?.payment_status === 'completed')
+        ?.filter((item) => {
+          const order = Array.isArray(item.order) ? item.order[0] : item.order
+          return order?.payment_status === 'completed'
+        })
         .forEach((item) => {
-          const date = new Date(item.order.completed_at || item.created_at)
+          const order = Array.isArray(item.order) ? item.order[0] : item.order
+          const date = new Date(order?.completed_at || item.created_at)
           const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
           months[monthKey] =

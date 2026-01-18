@@ -12,6 +12,8 @@ type CarouselApi = {
   scrollTo: (index: number) => void
   canScrollNext: boolean
   canScrollPrev: boolean
+  on: (event: string, callback: () => void) => void
+  off: (event: string, callback: () => void) => void
 }
 
 type CarouselProps = {
@@ -41,10 +43,16 @@ function Carousel({
     setCanScrollPrev(api.canScrollPrev)
     setCanScrollNext(api.canScrollNext)
 
-    api.on("select", () => {
+    const handleSelect = () => {
       setCanScrollPrev(api.canScrollPrev)
       setCanScrollNext(api.canScrollNext)
-    })
+    }
+
+    api.on("select", handleSelect)
+
+    return () => {
+      api.off("select", handleSelect)
+    }
   }, [api])
 
   React.useEffect(() => {

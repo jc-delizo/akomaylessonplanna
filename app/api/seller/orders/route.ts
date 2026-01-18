@@ -94,11 +94,12 @@ export async function GET(request: Request) {
     // Get buyer names and location (anonymized) for each order
     let orderItemsWithBuyers = await Promise.all(
       filteredItems.map(async (item) => {
-        if (item.order?.buyer_id) {
+        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        if (order?.buyer_id) {
           const { data: buyer } = await supabase
             .from('users')
-            .select('name, location_region')
-            .eq('id', item.order.buyer_id)
+            .select('id, name, location_region')
+            .eq('id', order.buyer_id)
             .single()
 
           return {
@@ -112,7 +113,10 @@ export async function GET(request: Request) {
               : undefined,
           }
         }
-        return item
+        return {
+          ...item,
+          buyer: undefined,
+        }
       })
     )
 

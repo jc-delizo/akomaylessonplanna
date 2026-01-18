@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { User } from '@/lib/utils/profile'
+import { toPromise } from '@/lib/utils/supabase-promise'
 
 /**
  * GET /api/sellers/[username]
@@ -68,12 +69,15 @@ export async function GET(
 
     // Track profile view (insert into profile_views)
     // This is done asynchronously, so we don't wait for it
-    supabase
-      .from('profile_views')
-      .insert({
-        profile_user_id: user.id,
-        viewer_id: authUser?.id || null,
-      })
+    toPromise(
+      supabase
+        .from('profile_views')
+        .insert({
+          profile_user_id: user.id,
+          viewer_id: authUser?.id || null,
+        })
+    )
+      .then(() => {})
       .catch((error) => {
         // Log error but don't fail the request
         console.error('Failed to track profile view:', error)

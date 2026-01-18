@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { toPromise } from '@/lib/utils/supabase-promise'
 import { 
   generateSearchCacheKey, 
   getCachedSearchResults, 
@@ -293,19 +294,20 @@ export async function GET(request: NextRequest) {
     if (query) {
       try {
         const adminClient = createAdminClient()
-        await adminClient.rpc('upsert_search_query', { p_query_text: query }).catch(() => {
+        await toPromise(adminClient.rpc('upsert_search_query', { p_query_text: query })).catch(() => {
           // If RPC doesn't exist yet, insert directly
-          adminClient
-            .from('search_queries')
-            .upsert({
-              query_text: query,
-              search_count: 1,
-              last_searched_at: new Date().toISOString()
-            }, {
-              onConflict: 'query_text',
-              ignoreDuplicates: false
-            })
-            .catch(() => {}) // Silently fail
+          toPromise(
+            adminClient
+              .from('search_queries')
+              .upsert({
+                query_text: query,
+                search_count: 1,
+                last_searched_at: new Date().toISOString()
+              }, {
+                onConflict: 'query_text',
+                ignoreDuplicates: false
+              })
+          ).catch(() => {}) // Silently fail
         })
       } catch (err) {
         // Silently fail - analytics tracking shouldn't break search

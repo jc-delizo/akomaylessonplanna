@@ -296,7 +296,7 @@ export default function BecomeSellerPage() {
             )}
             {verificationStatus.status === 'rejected' && (
               <div className="space-y-4">
-                <Alert variant="destructive">
+                <Alert className="border-destructive bg-destructive/10 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Verification Rejected</AlertTitle>
                   <AlertDescription>
@@ -331,7 +331,7 @@ export default function BecomeSellerPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Error/Success Messages */}
               {error && (
-                <Alert variant="destructive" className="mb-1">
+                <Alert className="mb-1 border-destructive bg-destructive/10 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>

@@ -90,7 +90,7 @@ export function EmailPreferencesContent({
             <Switch
               id="selling"
               checked={preferences.selling_notifications}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 updatePreference('selling_notifications', checked)
               }
             />
@@ -116,7 +116,7 @@ export function EmailPreferencesContent({
             <Switch
               id="buying"
               checked={preferences.buying_notifications}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 updatePreference('buying_notifications', checked)
               }
             />
@@ -142,7 +142,7 @@ export function EmailPreferencesContent({
             <Switch
               id="social"
               checked={preferences.social_notifications}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 updatePreference('social_notifications', checked)
               }
             />
@@ -168,7 +168,7 @@ export function EmailPreferencesContent({
             <Switch
               id="announcements"
               checked={preferences.announcements}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 updatePreference('announcements', checked)
               }
             />

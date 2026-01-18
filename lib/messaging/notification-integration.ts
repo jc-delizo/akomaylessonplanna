@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications/create-notification'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 /**
  * Create notification when new message arrives
@@ -34,7 +35,8 @@ export async function createMessageNotification(
     .single()
 
   const senderName = sender?.name || sender?.username || 'Someone'
-  const productTitle = conversation?.product?.title
+  const product = getRelation(conversation?.product)
+  const productTitle = product?.title
 
   // Create notification title
   let title = `Message from ${senderName}`

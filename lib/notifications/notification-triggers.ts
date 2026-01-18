@@ -271,7 +271,7 @@ export async function createSystemAnnouncement(
         email_sent: false,
       }))
     )
-    .select('id')
+    .select('id, user_id')
 
   // Send email notifications (batch)
   if (notificationsData) {
@@ -279,7 +279,7 @@ export async function createSystemAnnouncement(
     for (const notification of notificationsData) {
       await sendEmailNotification(
         notification.id,
-        notifications.find((n) => n.user_id === notification.user_id)?.user_id || '',
+        notification.user_id || '',
         'system_announcement',
         {
           title,

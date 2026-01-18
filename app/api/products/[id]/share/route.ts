@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { toPromise } from '@/lib/utils/supabase-promise'
 
 /**
  * POST /api/products/[id]/share
@@ -43,13 +44,15 @@ export async function POST(
     }
 
     // Track share (fire and forget - don't block response)
-    supabase
-      .from('product_shares')
-      .insert({
-        product_id: productId,
-        platform,
-        shared_by: user?.id || null,
-      })
+    toPromise(
+      supabase
+        .from('product_shares')
+        .insert({
+          product_id: productId,
+          platform,
+          shared_by: user?.id || null,
+        })
+    )
       .then(({ error: shareError }) => {
         if (shareError) {
           console.error('Error tracking share:', shareError)

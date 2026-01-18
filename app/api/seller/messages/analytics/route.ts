@@ -44,19 +44,21 @@ export async function GET(request: NextRequest) {
       .eq('seller_id', user.id)
       .eq('status', 'active')
 
+    // Get seller conversation IDs first
+    const { data: conversations } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('seller_id', user.id)
+    
+    const conversationIds = conversations?.map(c => c.id) || []
+    
     // Get unread count
     const { count: unreadCount } = await supabase
       .from('messages')
       .select('id', { count: 'exact', head: true })
       .eq('is_read', false)
       .neq('sender_id', user.id)
-      .in(
-        'conversation_id',
-        supabase
-          .from('conversations')
-          .select('id')
-          .eq('seller_id', user.id)
-      )
+      .in('conversation_id', conversationIds)
 
     // Get response time average (last 50 responses, rolling 30-day window)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()

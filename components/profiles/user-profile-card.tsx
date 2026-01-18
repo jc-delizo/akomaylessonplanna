@@ -88,9 +88,9 @@ export function UserProfileCard({ user, showFollowButton = true, className }: Us
           <div className="text-xs text-muted-foreground">
             {user.followers_count} {user.followers_count === 1 ? 'follower' : 'followers'}
           </div>
-          {showFollowButton && (
+          {showFollowButton && user.username && (
             <FollowButton
-              sellerId={user.id}
+              username={user.username}
               initialFollowersCount={user.followers_count}
             />
           )}

@@ -212,7 +212,7 @@ export function EmailConfigurationClient({
                     <Switch
                       id={config.email_type}
                       checked={config.is_enabled}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={(checked: boolean) =>
                         updateConfiguration(config.email_type, checked)
                       }
                       disabled={

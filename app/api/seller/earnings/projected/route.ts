@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET() {
   try {
@@ -45,9 +46,11 @@ export async function GET() {
     const currentMonthEarnings =
       orderItems
         ?.filter(
-          (item) =>
-            item.order?.payment_status === 'completed' &&
-            new Date(item.order.completed_at || item.created_at) >= currentMonthStart
+          (item) => {
+            const order = getRelation(item.order)
+            return order?.payment_status === 'completed' &&
+              new Date(order.completed_at || item.created_at) >= currentMonthStart
+          }
         )
         .reduce((sum, item) => sum + parseFloat(item.net_earnings.toString()), 0) || 0
 
@@ -60,10 +63,12 @@ export async function GET() {
     const lastMonthEarnings =
       orderItems
         ?.filter(
-          (item) =>
-            item.order?.payment_status === 'completed' &&
-            new Date(item.order.completed_at || item.created_at) >= lastMonthStart &&
-            new Date(item.order.completed_at || item.created_at) <= lastMonthEnd
+          (item) => {
+            const order = getRelation(item.order)
+            return order?.payment_status === 'completed' &&
+              new Date(order.completed_at || item.created_at) >= lastMonthStart &&
+              new Date(order.completed_at || item.created_at) <= lastMonthEnd
+          }
         )
         .reduce((sum, item) => sum + parseFloat(item.net_earnings.toString()), 0) || 0
 

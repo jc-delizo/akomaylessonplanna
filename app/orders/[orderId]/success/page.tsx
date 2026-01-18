@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
-import { CheckCircle, Download, ShoppingBag, Mail } from 'lucide-react'
+import { CheckCircle, Download, ShoppingBag, Mail, MessageSquare } from 'lucide-react'
 
 interface OrderItem {
   id: string

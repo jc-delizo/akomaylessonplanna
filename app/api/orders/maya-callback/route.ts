@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Get order
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, buyer_id, payment_status, total_amount')
+      .select('id, buyer_id, payment_status, total_amount, payment_method')
       .eq('id', order_id)
       .single()
 
@@ -54,6 +54,13 @@ export async function POST(request: Request) {
       // Idempotency: if already processed, return success
       return NextResponse.json({ success: true, message: 'Already processed' })
     }
+
+    // Get buyer info (needed for both success and failure scenarios)
+    const { data: buyer } = await supabase
+      .from('users')
+      .select('email, name, id')
+      .eq('id', order.buyer_id)
+      .single()
 
     if (status === 'success' || status === 'completed') {
       // Update order status
@@ -115,12 +122,6 @@ export async function POST(request: Request) {
       }
 
       // Send order confirmation and payment successful emails
-      const { data: buyer } = await supabase
-        .from('users')
-        .select('email, name, id')
-        .eq('id', order.buyer_id)
-        .single()
-
       if (buyer) {
         const { sendOrderConfirmationEmail, sendNewSaleEmail } = await import('@/lib/emails/notifications')
         const { sendPaymentSuccessfulEmail, sendDownloadReadyEmail } = await import('@/lib/emails/checkout-emails')
@@ -162,6 +163,10 @@ export async function POST(request: Request) {
         }
 
         // Send seller notifications
+        if (!orderItems || orderItems.length === 0) {
+          return NextResponse.json({ success: true, message: 'Order processed but no items found' })
+        }
+        
         const sellerIds = [...new Set(orderItems.map((item) => item.seller_id))]
         for (const sellerId of sellerIds) {
           const { data: seller } = await supabase

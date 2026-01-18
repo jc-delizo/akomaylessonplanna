@@ -57,15 +57,18 @@ export async function GET() {
     const gradeLevels: Record<string, number> = {}
     orderItems?.forEach((item) => {
       const product = products?.find((p) => p.id === item.product_id)
-      if (product?.grade?.name) {
-        gradeLevels[product.grade.name] = (gradeLevels[product.grade.name] || 0) + 1
+      const grade = Array.isArray(product?.grade) ? product.grade[0] : product?.grade
+      if (grade?.name) {
+        gradeLevels[grade.name] = (gradeLevels[grade.name] || 0) + 1
       }
     })
 
     // Regions breakdown
     const regions: Record<string, number> = {}
     orderItems?.forEach((item) => {
-      const region = item.order?.buyer?.location_region
+      const order = Array.isArray(item.order) ? item.order[0] : item.order
+      const buyer = Array.isArray(order?.buyer) ? order.buyer[0] : order?.buyer
+      const region = buyer?.location_region
       if (region) {
         regions[region] = (regions[region] || 0) + 1
       }
@@ -73,11 +76,17 @@ export async function GET() {
 
     // Repeat customer rate
     const buyerIds = new Set(
-      orderItems?.map((item) => item.order?.buyer_id).filter(Boolean) || []
+      orderItems?.map((item) => {
+        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        return order?.buyer_id
+      }).filter(Boolean) || []
     )
     const totalBuyers = buyerIds.size
     const repeatBuyers = Array.from(buyerIds).filter((buyerId) => {
-      const orders = orderItems?.filter((item) => item.order?.buyer_id === buyerId) || []
+      const orders = orderItems?.filter((item) => {
+        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        return order?.buyer_id === buyerId
+      }) || []
       return orders.length > 1
     }).length
 

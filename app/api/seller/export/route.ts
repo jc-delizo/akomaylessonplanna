@@ -159,7 +159,7 @@ async function processExportJob(
         ])
 
         fileContent = [headers, ...rows]
-          .map((row) => row.map((cell) => `"${cell}"`).join(','))
+          .map((row) => row.map((cell: string | number) => `"${cell}"`).join(','))
           .join('\n')
         fileName = `orders-${new Date().toISOString().split('T')[0]}.csv`
       } else {
@@ -202,7 +202,7 @@ async function processExportJob(
         ])
 
         fileContent = [headers, ...rows]
-          .map((row) => row.map((cell) => `"${cell}"`).join(','))
+          .map((row) => row.map((cell: string | number) => `"${cell}"`).join(','))
           .join('\n')
         fileName = `products-${new Date().toISOString().split('T')[0]}.csv`
       } else {
@@ -240,7 +240,7 @@ async function processExportJob(
         ]
 
         fileContent = [headers, ...rows]
-          .map((row) => row.map((cell) => `"${cell}"`).join(','))
+          .map((row) => row.map((cell: string | number) => `"${cell}"`).join(','))
           .join('\n')
         fileName = `earnings-${new Date().toISOString().split('T')[0]}.csv`
       } else {

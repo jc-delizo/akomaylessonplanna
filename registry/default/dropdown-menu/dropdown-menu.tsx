@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { DropdownMenu as DropdownMenuPrimitive } from "@base-ui/react/dropdown-menu"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -23,7 +23,7 @@ function DropdownMenuSubTrigger({
   inset,
   children,
   ...props
-}: DropdownMenuPrimitive.SubTrigger.Props & {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
   inset?: boolean
 }) {
   return (
@@ -45,9 +45,9 @@ function DropdownMenuSubTrigger({
 function DropdownMenuSubContent({
   className,
   ...props
-}: DropdownMenuPrimitive.Popup.Props) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
   return (
-    <DropdownMenuPrimitive.Popup
+    <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
@@ -62,10 +62,10 @@ function DropdownMenuContent({
   className,
   sideOffset = 4,
   ...props
-}: DropdownMenuPrimitive.Popup.Props) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
     <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.Popup
+      <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
@@ -82,7 +82,7 @@ function DropdownMenuItem({
   className,
   inset,
   ...props
-}: DropdownMenuPrimitive.Item.Props & {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean
 }) {
   return (
@@ -103,7 +103,7 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   ...props
-}: DropdownMenuPrimitive.CheckboxItem.Props) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -128,7 +128,7 @@ function DropdownMenuRadioItem({
   className,
   children,
   ...props
-}: DropdownMenuPrimitive.RadioItem.Props) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -152,7 +152,7 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: DropdownMenuPrimitive.Label.Props & {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
   inset?: boolean
 }) {
   return (
@@ -171,7 +171,7 @@ function DropdownMenuLabel({
 function DropdownMenuSeparator({
   className,
   ...props
-}: DropdownMenuPrimitive.Separator.Props) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"

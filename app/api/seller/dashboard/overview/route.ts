@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET(request: Request) {
   try {
@@ -128,12 +129,18 @@ export async function GET(request: Request) {
     let revenue = 0
     let previousRevenue = 0
     const salesCount = orderItems?.filter(
-      (item) => item.order?.payment_status === 'completed'
+      (item) => {
+        const order = getRelation(item.order)
+        return order?.payment_status === 'completed'
+      }
     ).length || 0
 
     // Calculate revenue for current period
     const currentPeriodItems = orderItems?.filter(
-      (item) => item.order?.payment_status === 'completed'
+      (item) => {
+        const order = getRelation(item.order)
+        return order?.payment_status === 'completed'
+      }
     ) || []
 
     revenue = currentPeriodItems.reduce(
@@ -163,7 +170,10 @@ export async function GET(request: Request) {
 
       previousRevenue =
         previousItems
-          ?.filter((item) => item.order?.payment_status === 'completed')
+          ?.filter((item) => {
+            const order = getRelation(item.order)
+            return order?.payment_status === 'completed'
+          })
           .reduce(
             (sum, item) => sum + parseFloat(item.net_earnings.toString()),
             0
@@ -197,7 +207,10 @@ export async function GET(request: Request) {
     // #endregion
 
     const sellerReviews = reviews?.filter(
-      (r) => r.product?.seller_id === user.id
+      (r) => {
+        const product = getRelation(r.product)
+        return product?.seller_id === user.id
+      }
     ) || []
     const avgRating =
       sellerReviews.length > 0
@@ -242,9 +255,11 @@ export async function GET(request: Request) {
       const dayRevenue =
         chartOrderItems
           ?.filter(
-            (item) =>
-              item.order?.payment_status === 'completed' &&
-              item.created_at.startsWith(dateStr)
+            (item) => {
+              const order = getRelation(item.order)
+              return order?.payment_status === 'completed' &&
+                item.created_at.startsWith(dateStr)
+            }
           )
           .reduce(
             (sum, item) => sum + parseFloat(item.net_earnings.toString()),

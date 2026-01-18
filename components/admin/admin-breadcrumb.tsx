@@ -59,7 +59,7 @@ export function AdminBreadcrumb() {
       sellers: 'Seller Performance',
       buyers: 'Buyer Behavior',
       geographic: 'Geographic Data',
-      analytics: 'Search Analytics',
+      'search-analytics': 'Search Analytics',
       popular: 'Popular Searches',
       categories: 'Category Management',
       seo: 'SEO Tools',

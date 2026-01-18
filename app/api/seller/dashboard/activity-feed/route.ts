@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     // Verify user is a seller
     const { data: userData } = await supabase
       .from('users')
-      .select('role, can_sell')
+      .select('role, can_sell, username')
       .eq('id', user.id)
       .single()
 
@@ -86,7 +86,9 @@ export async function GET(request: Request) {
 
     if (recentSales) {
       for (const sale of recentSales) {
-        const buyerName = sale.order?.buyer?.name || 'Anonymous'
+        const order = Array.isArray(sale.order) ? sale.order[0] : sale.order
+        const buyer = Array.isArray(order?.buyer) ? order.buyer[0] : order?.buyer
+        const buyerName = buyer?.name || 'Anonymous'
         const anonymizedName = formatBuyerName(buyerName)
 
         activities.push({
@@ -123,13 +125,15 @@ export async function GET(request: Request) {
 
     if (recentReviews) {
       for (const review of recentReviews) {
-        const buyerName = review.buyer?.name || 'Anonymous'
+        const buyer = Array.isArray(review.buyer) ? review.buyer[0] : review.buyer
+        const buyerName = buyer?.name || 'Anonymous'
         const anonymizedName = formatBuyerName(buyerName)
 
+        const product = Array.isArray(review.product) ? review.product[0] : review.product
         activities.push({
           type: 'review',
           title: `New ${review.rating}-star review`,
-          message: `${anonymizedName} reviewed "${review.product?.title || 'Product'}"`,
+          message: `${anonymizedName} reviewed "${product?.title || 'Product'}"`,
           icon: '⭐',
           timestamp: review.created_at,
           actionUrl: `/shop/reviews`,
@@ -153,7 +157,8 @@ export async function GET(request: Request) {
 
     if (recentFollowers) {
       for (const follower of recentFollowers) {
-        const followerName = follower.follower?.name || 'Someone'
+        const followerUser = Array.isArray(follower.follower) ? follower.follower[0] : follower.follower
+        const followerName = followerUser?.name || 'Someone'
         const anonymizedName = formatBuyerName(followerName)
 
         activities.push({

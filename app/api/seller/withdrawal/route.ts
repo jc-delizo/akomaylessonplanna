@@ -55,8 +55,9 @@ export async function POST(request: Request) {
 
     let availableBalance = 0
     for (const item of orderItems) {
-      if (item.order?.payment_status === 'completed') {
-        const itemDate = new Date(item.order.completed_at || item.created_at)
+      const order = Array.isArray(item.order) ? item.order[0] : item.order
+      if (order?.payment_status === 'completed') {
+        const itemDate = new Date(order.completed_at || item.created_at)
         if (itemDate < threeDaysAgo) {
           availableBalance += parseFloat(item.net_earnings.toString())
         }

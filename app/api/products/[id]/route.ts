@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { toPromise } from '@/lib/utils/supabase-promise'
 
 /**
  * GET /api/products/[id]
@@ -90,12 +91,14 @@ export async function GET(
 
     // Track product view (asynchronously, don't block response)
     if (product.status === 'published') {
-      supabase
-        .from('product_views')
-        .insert({
-          product_id: id,
-          user_id: user?.id || null,
-        })
+      toPromise(
+        supabase
+          .from('product_views')
+          .insert({
+            product_id: id,
+            user_id: user?.id || null,
+          })
+      )
         .then(({ error: viewError }) => {
           if (viewError) {
             console.error('Failed to track product view:', viewError)
@@ -106,13 +109,15 @@ export async function GET(
         })
 
       // Update views_count (optimistic update)
-      supabase
-        .from('products')
-        .update({
-          views_count: (product.views_count || 0) + 1,
-        })
-        .eq('id', id)
-        .then()
+      toPromise(
+        supabase
+          .from('products')
+          .update({
+            views_count: (product.views_count || 0) + 1,
+          })
+          .eq('id', id)
+      )
+        .then(() => {})
         .catch((err) => {
           console.error('Error updating views count:', err)
         })

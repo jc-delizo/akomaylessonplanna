@@ -9,7 +9,7 @@ function Spinner({
   className,
   size = "default",
   ...props
-}: React.ComponentProps<"div"> & {
+}: React.ComponentProps<typeof Loader2Icon> & {
   size?: "sm" | "default" | "lg"
 }) {
   return (

@@ -37,7 +37,12 @@ function ComboboxInput({
 }: ComboboxPrimitive.Input.Props) {
   return (
     <ComboboxPrimitive.Input
-      render={<Input className={className} />}
+      render={(inputProps, state) => (
+        <Input 
+          {...inputProps} 
+          className={typeof className === 'function' ? className(state) : className} 
+        />
+      )}
       data-slot="combobox-input"
       {...props}
     />

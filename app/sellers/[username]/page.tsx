@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toPromise } from '@/lib/utils/supabase-promise'
 import { Button } from '@/components/ui/button'
 import { BadgeDisplay } from '@/components/profiles/badge-display'
 import { FollowButton } from '@/components/profiles/follow-button'
@@ -61,6 +62,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
       can_sell,
       subscription_tier,
       is_pioneer,
+      email,
       created_at
     `
     )
@@ -78,12 +80,15 @@ export default async function SellerProfilePage({ params }: PageProps) {
 
   // Track profile view (insert into profile_views)
   // This is done asynchronously, so we don't wait for it
-  supabase
-    .from('profile_views')
-    .insert({
-      profile_user_id: user.id,
-      viewer_id: authUser?.id || null,
-    })
+  toPromise(
+    supabase
+      .from('profile_views')
+      .insert({
+        profile_user_id: user.id,
+        viewer_id: authUser?.id || null,
+      })
+  )
+    .then(() => {})
     .catch((error) => {
       // Log error but don't fail the request
       console.error('Failed to track profile view:', error)
@@ -106,7 +111,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
     ...user,
     products_count: productsCount,
     sales_count: salesCount,
-    avg_rating: avgRating,
+    avg_rating: avgRating as number | null,
   }
 
   if (!profile || (profile.role !== 'seller' && profile.role !== 'admin')) {
@@ -233,7 +238,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold">
-                {profile.avg_rating ? profile.avg_rating.toFixed(1) : '—'}
+                {profile.avg_rating ? (profile.avg_rating as number).toFixed(1) : '—'}
               </div>
               <div className="text-xs text-muted-foreground">Rating</div>
             </div>

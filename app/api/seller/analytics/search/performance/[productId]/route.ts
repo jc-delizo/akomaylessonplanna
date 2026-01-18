@@ -67,7 +67,7 @@ export async function GET(
     const totalImpressions = analytics?.reduce((sum, a) => sum + (a.impressions || 0), 0) || 0
     const totalClicks = analytics?.reduce((sum, a) => sum + (a.clicks || 0), 0) || 0
     const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
-    const avgRanking = analytics?.length > 0
+    const avgRanking = analytics && analytics.length > 0
       ? analytics.reduce((sum, a) => sum + (parseFloat(a.avg_position) || 0), 0) / analytics.length
       : 100 // Default to worst ranking if no data
 

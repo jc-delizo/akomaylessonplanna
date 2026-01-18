@@ -245,6 +245,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if uploadData is null before accessing its properties
+    if (!uploadData || !uploadData.path) {
+      return NextResponse.json(
+        { error: 'Failed to upload document: No upload data returned' },
+        { status: 500 }
+      )
+    }
+
     // For private buckets, store the path (admins will access via admin client)
     // Format: teacher-verifications/{user_id}/{timestamp}-prc-license.{ext}
     const documentUrl = `teacher-verifications/${uploadData.path}`

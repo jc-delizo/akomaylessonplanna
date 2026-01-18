@@ -10,6 +10,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { AdminRole } from '@/lib/utils/admin-auth'
 import { hasPermission, type Permission } from '@/lib/utils/admin-permissions'
+import { toPromise } from '@/lib/utils/supabase-promise'
 
 export interface AdminAuthState {
   isAdmin: boolean
@@ -111,11 +112,13 @@ export function useAdminAuth() {
           // #region agent log
           fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:110',message:'Querying admin_role',data:{userId:user.id,columnExistsCache:adminRoleColumnExists},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
           // #endregion
-          supabase
-            .from('users')
-            .select('admin_role')
-            .eq('id', user.id)
-            .single()
+          toPromise(
+            supabase
+              .from('users')
+              .select('admin_role')
+              .eq('id', user.id)
+              .single()
+          )
             .then(({ data: adminRoleData, error: adminRoleError }) => {
               // #region agent log
               fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAdminAuth.ts:116',message:'admin_role query result',data:{hasData:!!adminRoleData,hasError:!!adminRoleError,errorCode:adminRoleError?.code,errorMessage:adminRoleError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});

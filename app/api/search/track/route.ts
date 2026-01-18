@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { toPromise } from '@/lib/utils/supabase-promise'
 
 /**
  * POST /api/search/track
@@ -30,9 +31,9 @@ export async function POST(request: NextRequest) {
 
     // Track in search_queries table (for popular searches)
     try {
-      await adminClient.rpc('upsert_search_query', {
+      await toPromise(adminClient.rpc('upsert_search_query', {
         p_query_text: query.trim()
-      }).catch(async () => {
+      })).catch(async () => {
         // Fallback: Direct upsert if RPC doesn't exist
         await adminClient
           .from('search_queries')
@@ -55,10 +56,10 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        await supabase.rpc('upsert_user_search_history', {
+        await toPromise(supabase.rpc('upsert_user_search_history', {
           p_user_id: user.id,
           p_query_text: query.trim()
-        }).catch(async () => {
+        })).catch(async () => {
           // Fallback: Direct upsert if RPC doesn't exist
           await supabase
             .from('user_search_history')

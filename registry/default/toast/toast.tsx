@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Toast as ToastPrimitive } from "@radix-ui/react-toast"
+import * as ToastPrimitive from "@radix-ui/react-toast"
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"

@@ -105,7 +105,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
     chips.push({
       key: 'product_type',
       label: 'Type',
-      value: filters.product_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+      value: filters.product_type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     })
   }
 

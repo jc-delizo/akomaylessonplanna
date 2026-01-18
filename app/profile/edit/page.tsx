@@ -38,7 +38,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/al
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/registry/default/tooltip/tooltip'
 import { Skeleton } from '@/registry/default/skeleton/skeleton'
 import { validateUsername, calculateProfileCompletion } from '@/lib/utils/profile'
-import type { User } from '@/lib/utils/profile'
+import type { User as ProfileUser } from '@/lib/utils/profile'
 import { LogoutButton } from '@/components/auth/logout-button'
 
 /**
@@ -68,7 +68,7 @@ export default function ProfileEditPage() {
   const [success, setSuccess] = useState(false)
 
   // Form state
-  const [profile, setProfile] = useState<Partial<User>>({})
+  const [profile, setProfile] = useState<Partial<ProfileUser>>({})
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
@@ -149,7 +149,7 @@ export default function ProfileEditPage() {
         location_region: locationRegion,
         social_links: socialLinks,
         custom_accent_color: customAccentColor,
-      } as User)
+      } as ProfileUser)
     : 0
 
   // Handle form submission

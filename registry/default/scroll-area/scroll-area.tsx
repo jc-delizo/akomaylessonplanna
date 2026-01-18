@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { ScrollArea as ScrollAreaPrimitive } from "@radix-ui/react-scroll-area"
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
-const ScrollArea = ScrollAreaPrimitive.Root
+const ScrollAreaRoot = ScrollAreaPrimitive.Root
 
 const ScrollBar = ScrollAreaPrimitive.ScrollAreaScrollbar
 
@@ -29,9 +29,9 @@ function ScrollArea({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof ScrollArea>) {
+}: React.ComponentProps<typeof ScrollAreaRoot>) {
   return (
-    <ScrollArea
+    <ScrollAreaRoot
       data-slot="scroll-area"
       className={cn("relative overflow-hidden", className)}
       {...props}
@@ -43,7 +43,7 @@ function ScrollArea({
       <ScrollBar orientation="horizontal" className="touch-none select-none transition-colors">
         <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-border" />
       </ScrollBar>
-    </ScrollArea>
+    </ScrollAreaRoot>
   )
 }
 

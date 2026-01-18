@@ -146,14 +146,14 @@ export async function generateMetadata({ params }: PageProps) {
     avg_rating: product.avg_rating,
     reviews_count: product.reviews_count,
     seller: {
-      name: product.seller?.name || '',
-      username: product.seller?.username || ''
+      name: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.name || '',
+      username: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.username || ''
     },
     grade: {
-      name: product.grade?.name || ''
+      name: (Array.isArray(product.grade) ? product.grade[0] : product.grade)?.name || ''
     },
     subject: {
-      name: product.subject?.name || ''
+      name: (Array.isArray(product.subject) ? product.subject[0] : product.subject)?.name || ''
     }
   })
 }
