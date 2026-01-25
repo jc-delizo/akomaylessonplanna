@@ -154,12 +154,9 @@ export function MainNav({ user }: MainNavProps) {
         if (cancelled) return
         console.error('Error fetching user profile:', error)
         // Fallback to cached profile or basic user info
-        const fallbackName = user.user_metadata?.first_name && user.user_metadata?.last_name
-          ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`.trim()
-          : user.user_metadata?.first_name || 'User'
         const fallbackProfile: UserProfile = cachedProfile || {
           avatar_url: null,
-          name: fallbackName,
+          name: user.name || user.email || 'User',
           email: user.email,
         }
         if (!cancelled) {

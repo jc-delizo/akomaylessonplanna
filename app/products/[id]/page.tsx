@@ -89,6 +89,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     avg_rating: product.avg_rating || undefined,
     reviews_count: product.reviews_count || undefined,
     seller: {
+      first_name: product.seller?.first_name || '',
+      last_name: product.seller?.last_name || '',
       name: product.seller 
         ? (product.seller.first_name && product.seller.last_name
           ? `${product.seller.first_name} ${product.seller.last_name}`.trim()
@@ -156,6 +158,8 @@ export async function generateMetadata({ params }: PageProps) {
     avg_rating: product.avg_rating,
     reviews_count: product.reviews_count,
     seller: {
+      first_name: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.first_name || '',
+      last_name: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.last_name || '',
       name: (() => {
         const seller = Array.isArray(product.seller) ? product.seller[0] : product.seller
         if (!seller) return ''

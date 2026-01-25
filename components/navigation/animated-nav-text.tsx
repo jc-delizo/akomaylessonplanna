@@ -21,12 +21,14 @@ export function AnimatedNavText() {
   return (
     <span className="font-bold text-xl hidden sm:block min-w-[320px]">
       <RotatingText
-        texts={ALL_TEXTS}
-        rotationInterval={INTERVAL_DURATION}
-        loop={true}
-        mainClassName=""
-        splitLevelClassName=""
-        elementLevelClassName=""
+        {...({
+          texts: ALL_TEXTS,
+          rotationInterval: INTERVAL_DURATION,
+          loop: true,
+          mainClassName: '',
+          splitLevelClassName: '',
+          elementLevelClassName: '',
+        } as any)}
       />
     </span>
   )

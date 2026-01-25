@@ -118,14 +118,13 @@ export async function GET(
  * Format: "Teacher [First Name] [Last Initial]."
  * Example: "Maria Santos" -> "Teacher Maria S."
  */
-function anonymizeName(fullName: string): string {
-  if (!fullName) return 'Teacher'
+function anonymizeName(firstName: string, lastName: string): string {
+  const first = (firstName || '').trim()
+  const last = (lastName || '').trim()
   
-  const parts = fullName.trim().split(' ')
-  if (parts.length === 0) return 'Teacher'
+  if (!first) return 'Teacher'
   
-  const firstName = parts[0]
-  const lastInitial = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  const lastInitial = last ? last[0] : ''
   
-  return `Teacher ${firstName} ${lastInitial}.`.trim()
+  return `Teacher ${first} ${lastInitial ? lastInitial + '.' : ''}`.trim()
 }

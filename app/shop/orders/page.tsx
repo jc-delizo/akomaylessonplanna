@@ -434,7 +434,7 @@ export default function SellerOrdersPage() {
                     <Label>Product</Label>
                     <Select
                       value={productFilter}
-                      onValueChange={setProductFilter}
+                      onValueChange={(value) => setProductFilter(value ?? 'all')}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -457,7 +457,7 @@ export default function SellerOrdersPage() {
                     <Label>Location</Label>
                     <Select
                       value={locationFilter}
-                      onValueChange={setLocationFilter}
+                      onValueChange={(value) => setLocationFilter(value ?? 'all')}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />

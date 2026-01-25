@@ -66,10 +66,21 @@ interface GradeSubject {
   subject_id: string
 }
 
+// Helper function to split full name into first and last name
+function splitName(fullName: string): { first_name: string; last_name: string } {
+  const parts = fullName.trim().split(' ')
+  if (parts.length === 1) {
+    return { first_name: parts[0], last_name: '' }
+  }
+  const firstName = parts[0]
+  const lastName = parts.slice(1).join(' ')
+  return { first_name: firstName, last_name: lastName }
+}
+
 // Sample seller data
 const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'userId'>[] = [
   {
-    name: 'Maria Santos',
+    ...splitName('Maria Santos'),
     bio: 'Experienced Mathematics teacher with 10 years of teaching Grade 7-10. Passionate about making math fun and accessible.',
     subjects_taught: ['Mathematics', 'Algebra'],
     grade_levels_taught: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
@@ -78,7 +89,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Juan dela Cruz',
+    ...splitName('Juan dela Cruz'),
     bio: 'Science teacher specializing in Biology and Chemistry. Creating engaging lesson plans for junior high school.',
     subjects_taught: ['Science', 'Biology', 'Chemistry'],
     grade_levels_taught: ['Grade 7', 'Grade 8', 'Grade 9'],
@@ -87,7 +98,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Ana Garcia',
+    ...splitName('Ana Garcia'),
     bio: 'Elementary teacher focused on Grade 1-3. Expert in creating colorful and interactive learning materials.',
     subjects_taught: ['Mathematics', 'English', 'Filipino'],
     grade_levels_taught: ['Grade 1', 'Grade 2', 'Grade 3'],
@@ -96,7 +107,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pioneer'
   },
   {
-    name: 'Carlos Rodriguez',
+    ...splitName('Carlos Rodriguez'),
     bio: 'English teacher for senior high school. Specializing in literature and creative writing.',
     subjects_taught: ['English', 'Literature'],
     grade_levels_taught: ['Grade 11', 'Grade 12'],
@@ -105,7 +116,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Liza Fernandez',
+    ...splitName('Liza Fernandez'),
     bio: 'Filipino language teacher with expertise in Araling Panlipunan. Creating culturally relevant teaching materials.',
     subjects_taught: ['Filipino', 'Araling Panlipunan'],
     grade_levels_taught: ['Grade 4', 'Grade 5', 'Grade 6'],
@@ -114,7 +125,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Roberto Tan',
+    ...splitName('Roberto Tan'),
     bio: 'MAPEH teacher passionate about arts and physical education. Creating visual materials and activity guides.',
     subjects_taught: ['Music, Arts, Physical Education, and Health', 'Physical Education'],
     grade_levels_taught: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
@@ -123,7 +134,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Grace Lim',
+    ...splitName('Grace Lim'),
     bio: 'Kindergarten teacher creating fun and educational materials for early childhood learning.',
     subjects_taught: ['Mother Tongue', 'Reading', 'Writing'],
     grade_levels_taught: ['Kindergarten'],
@@ -132,7 +143,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Michael Torres',
+    ...splitName('Michael Torres'),
     bio: 'TLE teacher specializing in computer and technology education. Creating practical and modern lesson plans.',
     subjects_taught: ['Technology and Livelihood Education', 'Computer'],
     grade_levels_taught: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
@@ -141,7 +152,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pioneer'
   },
   {
-    name: 'Patricia Reyes',
+    ...splitName('Patricia Reyes'),
     bio: 'ESP teacher focused on values education and character development. Creating meaningful teaching resources.',
     subjects_taught: ['Edukasyon sa Pagpapakatao', 'Values Education'],
     grade_levels_taught: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4'],
@@ -150,7 +161,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'James Villanueva',
+    ...splitName('James Villanueva'),
     bio: 'Senior high school teacher specializing in STEM subjects. Creating advanced lesson plans and exam materials.',
     subjects_taught: ['General Mathematics', 'Statistics and Probability', 'General Physics'],
     grade_levels_taught: ['Grade 11', 'Grade 12'],
@@ -159,7 +170,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Michelle Cruz',
+    ...splitName('Michelle Cruz'),
     bio: 'Grade 6 teacher creating comprehensive lesson plans and assessment tools for elementary students.',
     subjects_taught: ['Mathematics', 'Science', 'English'],
     grade_levels_taught: ['Grade 6'],
@@ -168,7 +179,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Ronald Aquino',
+    ...splitName('Ronald Aquino'),
     bio: 'RPMS specialist creating professional cover pages and portfolio templates for teacher evaluations.',
     subjects_taught: ['All Subjects'],
     grade_levels_taught: ['All Grades'],
@@ -177,7 +188,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Jennifer Ong',
+    ...splitName('Jennifer Ong'),
     bio: 'Visual materials creator specializing in posters and classroom decorations. Making learning spaces beautiful.',
     subjects_taught: ['All Subjects'],
     grade_levels_taught: ['All Grades'],
@@ -186,7 +197,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pioneer'
   },
   {
-    name: 'Mark Alcantara',
+    ...splitName('Mark Alcantara'),
     bio: 'Event materials designer creating tarpaulins and banners for school events and celebrations.',
     subjects_taught: ['All Subjects'],
     grade_levels_taught: ['All Grades'],
@@ -195,7 +206,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Sarah Mendoza',
+    ...splitName('Sarah Mendoza'),
     bio: 'Grade 9-10 teacher specializing in Science and Mathematics. Creating detailed lesson plans and exams.',
     subjects_taught: ['Science', 'Mathematics', 'General Chemistry'],
     grade_levels_taught: ['Grade 9', 'Grade 10'],
@@ -204,7 +215,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'David Ramos',
+    ...splitName('David Ramos'),
     bio: 'Grade 2 teacher creating engaging and interactive lesson plans for young learners.',
     subjects_taught: ['Mathematics', 'English', 'Filipino', 'Mother Tongue'],
     grade_levels_taught: ['Grade 2'],
@@ -213,7 +224,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Catherine Bautista',
+    ...splitName('Catherine Bautista'),
     bio: 'Grade 8 teacher with expertise in Algebra and Geometry. Creating comprehensive teaching materials.',
     subjects_taught: ['Mathematics', 'Algebra', 'Geometry'],
     grade_levels_taught: ['Grade 8'],
@@ -222,7 +233,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'Paul Martinez',
+    ...splitName('Paul Martinez'),
     bio: 'Grade 4 teacher creating colorful and educational materials for intermediate students.',
     subjects_taught: ['Mathematics', 'Science', 'Araling Panlipunan'],
     grade_levels_taught: ['Grade 4'],
@@ -231,7 +242,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'free'
   },
   {
-    name: 'Rachel Gutierrez',
+    ...splitName('Rachel Gutierrez'),
     bio: 'Grade 7 teacher specializing in English and Filipino. Creating language learning resources.',
     subjects_taught: ['English', 'Filipino'],
     grade_levels_taught: ['Grade 7'],
@@ -240,7 +251,7 @@ const sellerTemplates: Omit<SellerData, 'email' | 'password' | 'username' | 'use
     subscription_tier: 'pro'
   },
   {
-    name: 'John Estrada',
+    ...splitName('John Estrada'),
     bio: 'Multi-grade teacher creating versatile teaching materials for Grades 5-6. Expert in curriculum alignment.',
     subjects_taught: ['Mathematics', 'Science', 'English', 'Filipino'],
     grade_levels_taught: ['Grade 5', 'Grade 6'],
@@ -349,10 +360,9 @@ async function createSeller(
 ): Promise<SellerData | null> {
   const email = `seller${index + 1}@akomaylessonplanna.test`
   const password = generatePassword()
-  // Split name into first and last
-  const nameParts = template.name.trim().split(' ')
-  const firstName = nameParts[0] || 'Seller'
-  const lastName = nameParts.slice(1).join(' ') || ''
+  // Use first_name and last_name directly
+  const firstName = template.first_name || 'Seller'
+  const lastName = template.last_name || ''
   const fullName = `${firstName} ${lastName}`.trim()
   const username = fullName.toLowerCase().replace(/\s+/g, '_').substring(0, 20)
 

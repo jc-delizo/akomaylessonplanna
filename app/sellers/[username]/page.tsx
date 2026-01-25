@@ -43,7 +43,8 @@ export default async function SellerProfilePage({ params }: PageProps) {
     .select(
       `
       id,
-      name,
+      first_name,
+      last_name,
       username,
       avatar_url,
       bio,
@@ -393,7 +394,7 @@ export async function generateMetadata({ params }: PageProps) {
 
   const { data: user } = await supabase
     .from('users')
-    .select('name, username, bio, avatar_url, banner_url')
+    .select('first_name, last_name, username, bio, avatar_url, banner_url')
     .eq('username', username)
     .single()
 

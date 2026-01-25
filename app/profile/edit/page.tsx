@@ -297,16 +297,6 @@ export default function ProfileEditPage() {
     }
   }
 
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
   // Handle region selection
   const handleRegionChange = (regionCode: string) => {
     setSelectedRegionCode(regionCode)
@@ -558,7 +548,7 @@ export default function ProfileEditPage() {
                   <div className="flex items-center gap-6">
                     <Avatar className="h-24 w-24 ring-2 ring-border">
                       {profile?.avatar_url && (
-                        <AvatarImage src={profile.avatar_url} alt={name || 'Avatar'} />
+                        <AvatarImage src={profile.avatar_url} alt={firstName && lastName ? `${firstName} ${lastName}` : firstName || 'Avatar'} />
                       )}
                       <AvatarFallback className="text-2xl bg-muted">
                         {getInitials(firstName || 'User', lastName || '')}
@@ -773,10 +763,10 @@ export default function ProfileEditPage() {
                     <Label>Location</Label>
                     <Accordion
                       type="single"
-                      value={accordionValue}
+                      {...({ value: accordionValue === '__closed__' ? undefined : accordionValue } as any)}
                       onValueChange={(value) => {
                         // Convert undefined to sentinel to keep state controlled
-                        setAccordionValue(value ?? '__closed__')
+                        setAccordionValue((value as unknown as string | undefined) ?? '__closed__')
                       }}
                       className="w-full"
                     >
