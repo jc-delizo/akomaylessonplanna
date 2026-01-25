@@ -65,7 +65,7 @@ export async function GET(
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url, is_verified_teacher)
+        sender:sender_id(id, first_name, last_name, username, avatar_url, is_verified_teacher)
       `
       )
       .eq('conversation_id', conversationId)
@@ -239,7 +239,7 @@ export async function POST(
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url, is_verified_teacher)
+        sender:sender_id(id, first_name, last_name, username, avatar_url, is_verified_teacher)
       `
       )
       .single()

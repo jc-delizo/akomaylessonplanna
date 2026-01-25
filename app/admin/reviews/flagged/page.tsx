@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Check, X, Trash2 } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 
 async function getFlaggedReviews(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -19,7 +20,8 @@ async function getFlaggedReviews(
         *,
         buyer:users!reviews_buyer_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           email
         ),
         product:products!reviews_product_id_fkey(
@@ -28,14 +30,16 @@ async function getFlaggedReviews(
           seller_id,
           seller:users!products_seller_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             username
           )
         )
       ),
       reporter:users!review_flags_reporter_id_fkey(
         id,
-        name
+        first_name,
+        last_name
       )
     `, { count: 'exact' })
     .eq('status', status)
@@ -116,7 +120,7 @@ export default async function FlaggedReviewsPage() {
                       <Badge variant="outline">{flag.flag_type}</Badge>
                       {flag.reporter && (
                         <span className="text-sm text-gray-500">
-                          Reported by {flag.reporter?.name}
+                          Reported by {flag.reporter ? getFullName(flag.reporter) : 'Unknown'}
                         </span>
                       )}
                     </div>
@@ -127,7 +131,7 @@ export default async function FlaggedReviewsPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-lg font-bold">{review?.rating} ⭐</span>
                         <span className="text-sm text-gray-600">
-                          by {review?.buyer?.name || 'Unknown'}
+                          by {review?.buyer ? getFullName(review.buyer) : 'Unknown'}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{review?.comment}</p>

@@ -98,7 +98,7 @@ export async function GET(request: Request) {
         if (order?.buyer_id) {
           const { data: buyer } = await supabase
             .from('users')
-            .select('id, name, location_region')
+            .select('id, first_name, last_name, location_region')
             .eq('id', order.buyer_id)
             .single()
 
@@ -107,7 +107,9 @@ export async function GET(request: Request) {
             buyer: buyer
               ? {
                   id: buyer.id,
-                  name: buyer.name,
+                  first_name: buyer.first_name,
+                  last_name: buyer.last_name,
+                  name: `${buyer.first_name} ${buyer.last_name || ''}`.trim(), // For backward compatibility
                   location_region: buyer.location_region,
                 }
               : undefined,

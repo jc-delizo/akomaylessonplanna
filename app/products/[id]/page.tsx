@@ -20,7 +20,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         bio,
@@ -29,7 +30,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
         is_pioneer,
         followers_count,
         response_time_hours,
-        created_at
+        created_at,
+        role,
+        can_sell,
+        avg_rating,
+        reviews_count
       ),
       grade:grades!products_grade_id_fkey(
         id,
@@ -84,7 +89,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     avg_rating: product.avg_rating || undefined,
     reviews_count: product.reviews_count || undefined,
     seller: {
-      name: product.seller?.name || ''
+      name: product.seller 
+        ? (product.seller.first_name && product.seller.last_name
+          ? `${product.seller.first_name} ${product.seller.last_name}`.trim()
+          : product.seller.first_name || '')
+        : ''
     }
   })
 
@@ -118,7 +127,8 @@ export async function generateMetadata({ params }: PageProps) {
       avg_rating,
       reviews_count,
       seller:users!products_seller_id_fkey(
-        name,
+        first_name,
+        last_name,
         username
       ),
       grade:grades!products_grade_id_fkey(
@@ -146,7 +156,13 @@ export async function generateMetadata({ params }: PageProps) {
     avg_rating: product.avg_rating,
     reviews_count: product.reviews_count,
     seller: {
-      name: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.name || '',
+      name: (() => {
+        const seller = Array.isArray(product.seller) ? product.seller[0] : product.seller
+        if (!seller) return ''
+        return seller.first_name && seller.last_name
+          ? `${seller.first_name} ${seller.last_name}`.trim()
+          : seller.first_name || ''
+      })(),
       username: (Array.isArray(product.seller) ? product.seller[0] : product.seller)?.username || ''
     },
     grade: {

@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        buyer:buyer_id(id, name, username, email),
-        seller:seller_id(id, name, username, email),
+        buyer:buyer_id(id, first_name, last_name, username, email),
+        seller:seller_id(id, first_name, last_name, username, email),
         product:product_id(id, title, price)
       `,
         { count: 'exact' }

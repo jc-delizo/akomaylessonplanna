@@ -27,7 +27,8 @@ export async function GET(
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           bio,
@@ -305,7 +306,7 @@ export async function PUT(
         const { createNewProductNotification } = await import('@/lib/notifications/notification-triggers')
         const { data: sellerData } = await supabase
           .from('users')
-          .select('name')
+          .select('first_name, last_name')
           .eq('id', user.id)
           .single()
 
@@ -314,7 +315,7 @@ export async function PUT(
             user.id,
             id,
             existingProduct.title,
-            sellerData.name
+            `${sellerData.first_name} ${sellerData.last_name || ''}`.trim()
           )
         }
       } catch (notificationError) {

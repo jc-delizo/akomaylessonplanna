@@ -11,7 +11,8 @@
 export type User = {
   id: string
   email: string
-  name: string
+  first_name: string
+  last_name: string
   username: string | null
   avatar_url: string | null
   bio: string | null
@@ -35,6 +36,30 @@ export type User = {
   subscription_tier: 'free' | 'pro' | 'pioneer'
   is_pioneer: boolean
   created_at: string
+}
+
+/**
+ * Get full name from first_name and last_name
+ */
+export function getFullName(user: { first_name: string; last_name: string }): string {
+  const firstName = (user.first_name || '').trim()
+  const lastName = (user.last_name || '').trim()
+  if (lastName) {
+    return `${firstName} ${lastName}`.trim()
+  }
+  return firstName
+}
+
+/**
+ * Get initials from first_name and last_name
+ */
+export function getInitials(firstName: string, lastName: string): string {
+  const first = (firstName || '').trim()
+  const last = (lastName || '').trim()
+  if (last) {
+    return `${first[0] || ''}${last[0] || ''}`.toUpperCase()
+  }
+  return first[0]?.toUpperCase() || ''
 }
 
 // Badge type
@@ -64,7 +89,8 @@ export function calculateProfileCompletion(user: User): number {
   let points = 0
 
   // Display Name (10 points) - Required
-  if (user.name && user.name.trim().length >= 3) {
+  const fullName = getFullName(user)
+  if (fullName && fullName.trim().length >= 3) {
     points += 10
   }
 
@@ -287,7 +313,8 @@ export function getProfileCompletionLevel(
 export function canUserSell(user: User): { canSell: boolean; missingFields: string[] } {
   const missingFields: string[] = []
 
-  if (!user.name || user.name.trim().length < 3) {
+  const fullName = getFullName(user)
+  if (!fullName || fullName.trim().length < 3) {
     missingFields.push('Display Name')
   }
 

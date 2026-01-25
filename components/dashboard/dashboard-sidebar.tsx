@@ -84,7 +84,7 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        'fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 bg-white border-r transition-all duration-300',
+        'fixed left-0 top-16 bottom-0 z-40 w-64 bg-white border-r transition-all duration-300',
         collapsed && 'w-20'
       )}
     >
@@ -109,8 +109,8 @@ export function DashboardSidebar({
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-orange-50 text-orange-700 border-l-4 border-[#ff7200]'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+                    ? 'bg-gray-900 dark:bg-gray-800 text-white border-l-4 border-gray-900 dark:border-gray-700'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white',
                   collapsed && 'justify-center'
                 )}
               >
@@ -148,40 +148,6 @@ export function DashboardSidebar({
             )
           })}
         </nav>
-
-        {/* User Profile Footer */}
-        {user && (
-          <div className="border-t p-4">
-            <div
-              className={cn(
-                'flex items-center gap-3',
-                collapsed && 'flex-col justify-center'
-              )}
-            >
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-full"
-                />
-              ) : (
-                <div className="h-10 w-10 rounded-full bg-[#ff7200] flex items-center justify-center text-white font-semibold">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              {!collapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user.name}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {user.role || 'Seller'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   )

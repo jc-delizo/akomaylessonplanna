@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
         *,
         seller:users!withdrawal_requests_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           email,
           username,
           avatar_url

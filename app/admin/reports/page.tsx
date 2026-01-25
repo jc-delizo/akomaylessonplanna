@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, User, Package, MessageSquare } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 import { headers } from 'next/headers'
 
 async function getUserReports() {
@@ -103,7 +104,7 @@ export default async function UserReportsPage() {
                   )}
                   <div className="text-sm text-gray-500">
                     <p>
-                      Reported by: {report.reporter?.name || 'Unknown'} •{' '}
+                      Reported by: {report.reporter ? getFullName(report.reporter) : 'Unknown'} •{' '}
                       {new Date(report.created_at).toLocaleString()}
                     </p>
                     {report.reportedItem && (

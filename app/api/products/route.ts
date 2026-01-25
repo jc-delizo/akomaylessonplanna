@@ -326,16 +326,19 @@ export async function POST(request: NextRequest) {
         const { createNewProductNotification } = await import('@/lib/notifications/notification-triggers')
         const { data: sellerData } = await supabase
           .from('users')
-          .select('name')
+          .select('first_name, last_name')
           .eq('id', user.id)
           .single()
 
         if (sellerData) {
+          const sellerName = sellerData.first_name && sellerData.last_name
+            ? `${sellerData.first_name} ${sellerData.last_name}`.trim()
+            : sellerData.first_name || 'Seller'
           await createNewProductNotification(
             user.id,
             product.id,
             product.title,
-            sellerData.name
+            sellerName
           )
         }
       } catch (notificationError) {

@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     // Fetch users
     const { data: users } = userIds.size > 0 ? await supabase
       .from('users')
-      .select('id, name, username, avatar_url')
+      .select('id, first_name, last_name, username, avatar_url')
       .in('id', Array.from(userIds)) : { data: [] }
 
     // Fetch products
@@ -107,7 +107,13 @@ export async function GET(request: NextRequest) {
       const buyer = usersMap.get(conv.buyer_id)
       const seller = usersMap.get(conv.seller_id)
       const product = conv.product_id ? productsMap.get(conv.product_id) : null
-      const otherParty = conv.buyer_id === user.id ? seller : buyer
+      const otherPartyRaw = conv.buyer_id === user.id ? seller : buyer
+      const otherParty = otherPartyRaw ? {
+        ...otherPartyRaw,
+        name: otherPartyRaw.first_name && otherPartyRaw.last_name
+          ? `${otherPartyRaw.first_name} ${otherPartyRaw.last_name}`.trim()
+          : otherPartyRaw.first_name || '', // For backward compatibility
+      } : null
       const unreadCount = lastMessages?.filter(
         (m) => m.conversation_id === conv.id && !m.is_read && m.sender_id !== user.id
       ).length || 0

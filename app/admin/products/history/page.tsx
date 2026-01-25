@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Search, Filter, Download } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 
 async function getReviewHistory(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -33,7 +34,8 @@ async function getReviewHistory(
       published_at,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         email
       ),
@@ -197,7 +199,7 @@ export default async function ReviewHistoryPage({
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium">{product.seller?.name}</p>
+                        <p className="text-sm font-medium">{product.seller ? getFullName(product.seller) : 'N/A'}</p>
                         <p className="text-xs text-gray-500">{product.seller?.email}</p>
                       </div>
                     </td>

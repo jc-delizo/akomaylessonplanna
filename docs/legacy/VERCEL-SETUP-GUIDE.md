@@ -1,6 +1,11 @@
 # Vercel Setup Guide - Step by Step
 
-Complete guide to deploy your app to Vercel and connect everything.
+> **⚠️ LEGACY DOCUMENT**: This guide describes a single-environment setup. For the current recommended approach with isolated dev/prod environments, see:
+> - **[DEV-PROD-SETUP-GUIDE.md](implementationplan/DEV-PROD-SETUP-GUIDE.md)** - Master guide for dev/prod isolated setup
+> - **[CONFIGURATION-SETUP.md](implementationplan/CONFIGURATION-SETUP.md)** - Two Vercel projects configuration
+> - **[DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md)** - Branch-based workflow
+
+Complete guide to deploy your app to Vercel and connect everything (single-environment approach).
 
 ## Prerequisites
 

@@ -4,10 +4,11 @@ import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * PUT /api/admin/users/[id]/edit
- * Edit user profile (name, username, bio, tier, ban status)
+ * Edit user profile (first_name, last_name, username, bio, tier, ban status)
  * 
  * Body:
- * - name?: string
+ * - first_name?: string
+ * - last_name?: string
  * - username?: string
  * - bio?: string
  * - subscription_tier?: 'free' | 'pro' | 'pioneer'
@@ -43,9 +44,14 @@ export async function PUT(
     const updates: Record<string, unknown> = {}
     const changes: Record<string, { from: unknown; to: unknown }> = {}
 
-    if (body.name !== undefined && body.name !== currentUser.name) {
-      updates.name = body.name
-      changes.name = { from: currentUser.name, to: body.name }
+    if (body.first_name !== undefined && body.first_name !== currentUser.first_name) {
+      updates.first_name = body.first_name
+      changes.first_name = { from: currentUser.first_name, to: body.first_name }
+    }
+
+    if (body.last_name !== undefined && body.last_name !== currentUser.last_name) {
+      updates.last_name = body.last_name || ''
+      changes.last_name = { from: currentUser.last_name, to: body.last_name || '' }
     }
 
     if (body.username !== undefined && body.username !== currentUser.username) {

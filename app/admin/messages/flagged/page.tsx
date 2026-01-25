@@ -8,6 +8,7 @@ import { formatRelativeTime } from '@/lib/utils/date'
 import Image from 'next/image'
 import { Flag, CheckCircle, X, Eye } from 'lucide-react'
 import Link from 'next/link'
+import { getFullName } from '@/lib/utils/profile'
 
 interface FlaggedMessage {
   id: string
@@ -16,7 +17,9 @@ interface FlaggedMessage {
   created_at: string
   sender: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
     email: string
   }
@@ -27,11 +30,15 @@ interface FlaggedMessage {
     product_id?: string
     buyer: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
     }
     seller: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
     }
     product?: {
       id: string
@@ -136,13 +143,13 @@ export default function AdminFlaggedMessagesPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">From:</span>
-                      <p className="font-medium">{message.sender.name}</p>
+                      <p className="font-medium">{getFullName(message.sender)}</p>
                       <p className="text-xs text-muted-foreground">{message.sender.email}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Conversation:</span>
                       <p className="font-medium">
-                        {message.conversation.buyer.name} ↔ {message.conversation.seller.name}
+                        {getFullName(message.conversation.buyer)} ↔ {getFullName(message.conversation.seller)}
                       </p>
                       {message.conversation.product && (
                         <p className="text-xs text-muted-foreground">

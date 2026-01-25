@@ -346,6 +346,35 @@ All tables created with proper:
 
 ---
 
+## Technical Stack Compliance
+
+### Verified Tech Stack:
+- ✅ Next.js 16.1.1 (App Router with Server Components)
+- ✅ @base-ui/react 1.0.0 (UI primitives)
+- ✅ Local shadcn registry at `registry/`
+- ✅ Supabase for database, auth, and storage
+- ✅ TypeScript with strict mode
+- ✅ NO TanStack Query (using Next.js server components)
+- ✅ NO Radix UI as primary (using @base-ui/react)
+
+### Critical Constraints Met:
+1. ✅ One copy per product (no quantity field in cart_items)
+2. ✅ 7-day refund window enforced
+3. ✅ Minimum withdrawal: ₱500
+4. ✅ Payment webhooks with signature verification
+5. ✅ RLS policies on all tables
+6. ✅ Soft deletes for orders
+7. ✅ Email notification structure ready
+8. ✅ Mobile-optimized checkout flow
+
+### Payment Integration:
+- ✅ GCash sandbox integration
+- ✅ Maya sandbox integration
+- ✅ Webhook handlers with retry logic
+- ✅ Order status tracking
+
+---
+
 ## Success Criteria Met
 
 ✅ Users can add products to cart and wishlist

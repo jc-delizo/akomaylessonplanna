@@ -105,7 +105,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       // Send order confirmation email (if email system is set up)
       const { data: buyer } = await supabase
         .from('users')
-        .select('email, name')
+        .select('email, first_name, last_name')
         .eq('id', order.buyer_id)
         .single()
 
@@ -162,7 +162,9 @@ export async function POST(request: Request, { params }: RouteParams) {
                       product.title,
                       parseFloat(orderItemData.price_at_purchase.toString()),
                       parseFloat(orderItemData.net_earnings.toString()),
-                      buyer.name
+                      buyer.first_name && buyer.last_name
+                        ? `${buyer.first_name} ${buyer.last_name}`.trim()
+                        : buyer.first_name || 'Buyer'
                     )
                   }
                 }

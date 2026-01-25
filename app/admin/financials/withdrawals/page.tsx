@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Check, X, Clock } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getWithdrawals() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -102,15 +103,15 @@ export default async function WithdrawalsPage() {
                             {seller?.avatar_url ? (
                               <img
                                 src={seller.avatar_url}
-                                alt={seller.name}
+                                alt={seller ? getFullName(seller) : 'Seller'}
                                 className="w-8 h-8 rounded-full"
                               />
                             ) : (
-                              <span className="text-xs">{seller?.name?.[0]?.toUpperCase()}</span>
+                              <span className="text-xs">{seller ? getInitials(seller.first_name || '', seller.last_name || '') : ''}</span>
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{seller?.name}</p>
+                            <p className="text-sm font-medium">{seller ? getFullName(seller) : 'N/A'}</p>
                             <p className="text-xs text-gray-500">{seller?.email}</p>
                           </div>
                         </div>

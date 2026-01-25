@@ -5,7 +5,7 @@ import { toPromise } from '@/lib/utils/supabase-promise'
 import { Button } from '@/components/ui/button'
 import { BadgeDisplay } from '@/components/profiles/badge-display'
 import { FollowButton } from '@/components/profiles/follow-button'
-import { getUserBadges, formatProfileUrl } from '@/lib/utils/profile'
+import { getUserBadges, formatProfileUrl, getInitials, getFullName } from '@/lib/utils/profile'
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
 import Link from 'next/link'
 import { SellerReviewsSection } from '@/components/sellers/seller-reviews-section'
@@ -121,15 +121,8 @@ export default async function SellerProfilePage({ params }: PageProps) {
   const badges = getUserBadges(profile)
   const isOwnProfile = authUser?.id === profile.id
 
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+  // Get full name and initials
+  const fullName = getFullName(profile)
 
   // Format member since date
   const memberSince = new Date(profile.created_at).toLocaleDateString('en-US', {
@@ -157,7 +150,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
           <div className="relative h-48 md:h-64 lg:h-80 w-full rounded-lg overflow-hidden">
             <img
               src={profile.banner_url}
-              alt={`${profile.name} banner`}
+              alt={`${fullName} banner`}
               className="w-full h-full object-cover"
             />
           </div>
@@ -168,9 +161,9 @@ export default async function SellerProfilePage({ params }: PageProps) {
         {/* Profile Picture Overlay */}
         <div className="absolute -bottom-12 left-4 md:left-8">
           <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background">
-            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.name} />}
+            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={fullName} />}
             <AvatarFallback className="text-lg md:text-2xl">
-              {getInitials(profile.name)}
+              {getInitials(profile.first_name, profile.last_name)}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -215,7 +208,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
       <div className="mt-16 md:mt-20 mb-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{profile.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{fullName}</h1>
             {profile.username && (
               <p className="text-muted-foreground">@{profile.username}</p>
             )}
@@ -414,11 +407,11 @@ export async function generateMetadata({ params }: PageProps) {
   const profileUrl = `${baseUrl}/sellers/${username}`
 
   return {
-    title: `${user.name} - Seller Profile | AKOMAYLESSONPLANNA`,
-    description: user.bio || `View ${user.name}'s products and reviews on AKOMAYLESSONPLANNA`,
+    title: `${getFullName(user)} - Seller Profile | AKOMAYLESSONPLANNA`,
+    description: user.bio || `View ${getFullName(user)}'s products and reviews on AKOMAYLESSONPLANNA`,
     openGraph: {
-      title: `${user.name} - Seller Profile`,
-      description: user.bio || `View ${user.name}'s products and reviews on AKOMAYLESSONPLANNA`,
+      title: `${getFullName(user)} - Seller Profile`,
+      description: user.bio || `View ${getFullName(user)}'s products and reviews on AKOMAYLESSONPLANNA`,
       url: profileUrl,
       type: 'profile',
       images: user.banner_url || user.avatar_url ? [user.banner_url || user.avatar_url || ''] : [],

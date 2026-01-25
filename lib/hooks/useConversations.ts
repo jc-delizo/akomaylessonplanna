@@ -24,10 +24,12 @@ export interface Conversation {
   created_at: string
   other_party: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
     avatar_url?: string
-  }
+  } | null
   last_message?: {
     id: string
     content: string

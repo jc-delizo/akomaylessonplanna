@@ -50,7 +50,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     // Get user data for watermarking and email notifications
     const { data: userData } = await supabase
       .from('users')
-      .select('email, name')
+      .select('email, first_name, last_name')
       .eq('id', user.id)
       .single()
 
@@ -148,7 +148,8 @@ export async function GET(request: Request, { params }: RouteParams) {
               cover_image_url,
               seller:users!products_seller_id_fkey(
                 id,
-                name
+                first_name,
+                last_name
               )
             `)
             .eq('id', orderItem.product_id)
@@ -159,11 +160,11 @@ export async function GET(request: Request, { params }: RouteParams) {
             // In production, this would be added to email_queue with send_after timestamp
             const seller = Array.isArray(productData.seller) ? productData.seller[0] : productData.seller
             await sendReviewReminderEmail({
-              buyerName: userData.name || 'Teacher',
+              buyerName: userData ? `${userData.first_name} ${userData.last_name || ''}`.trim() || 'Teacher' : 'Teacher',
               buyerEmail: userData.email,
               productTitle: productData.title,
               productCoverImage: productData.cover_image_url || undefined,
-              sellerName: seller?.name || 'Seller',
+              sellerName: seller ? `${seller.first_name} ${seller.last_name || ''}`.trim() || 'Seller' : 'Seller',
               reviewLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/library/${orderItem.product_id}/review`,
             })
           }

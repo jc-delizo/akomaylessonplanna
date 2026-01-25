@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url),
+        sender:sender_id(id, first_name, last_name, username, avatar_url),
         conversation:conversation_id(id, buyer_id, seller_id, product_id)
       `
       )

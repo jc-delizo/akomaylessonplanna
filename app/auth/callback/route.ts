@@ -83,21 +83,41 @@ export async function GET(request: Request) {
 
       // If profile doesn't exist, create it
       if (!profile) {
-        // Extract name from user metadata (works for Google, Facebook, and other providers)
-        // Facebook provides: name, full_name
-        // Google provides: name, full_name
-        const name =
-          user.user_metadata?.name ||
-          user.user_metadata?.full_name ||
-          user.user_metadata?.display_name ||
-          user.user_metadata?.first_name && user.user_metadata?.last_name
-            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
-            : user.email.split('@')[0]
+        // Extract first_name and last_name from user metadata
+        // OAuth providers may provide:
+        // - first_name and last_name separately (preferred)
+        // - full name (name, full_name, display_name) that needs to be split
+        let firstName = ''
+        let lastName = ''
+
+        if (user.user_metadata?.first_name && user.user_metadata?.last_name) {
+          // Provider gives us separate fields (best case)
+          firstName = user.user_metadata.first_name
+          lastName = user.user_metadata.last_name
+        } else {
+          // Extract from full name - try various metadata fields
+          const fullName =
+            user.user_metadata?.name ||
+            user.user_metadata?.full_name ||
+            user.user_metadata?.display_name ||
+            user.email.split('@')[0]
+
+          // Split on first space
+          const spaceIndex = fullName.indexOf(' ')
+          if (spaceIndex > 0) {
+            firstName = fullName.substring(0, spaceIndex)
+            lastName = fullName.substring(spaceIndex + 1)
+          } else {
+            firstName = fullName
+            lastName = ''
+          }
+        }
 
         const { error: insertError } = await supabase.from('users').insert({
           id: user.id,
           email: user.email,
-          name,
+          first_name: firstName,
+          last_name: lastName || '',
           username: user.email.split('@')[0], // Temporary username
           role: 'buyer',
           is_verified_teacher: false,

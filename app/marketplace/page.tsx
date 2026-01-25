@@ -4,6 +4,19 @@ import { ProductTabs } from '@/components/products/product-tabs'
 import { CurvedLoopHero } from '@/components/curved-loop-hero'
 import Link from 'next/link'
 
+// Helper function to transform products to add 'name' field for backward compatibility
+function transformProducts(products: any[]): any[] {
+  if (!products) return []
+  return products.map((p: any) => {
+    if (p.seller) {
+      const firstName = p.seller.first_name || ''
+      const lastName = p.seller.last_name || ''
+      p.seller.name = `${firstName} ${lastName}`.trim() || firstName
+    }
+    return p
+  })
+}
+
 export default async function MarketplacePage() {
   const supabase = await createClient()
   const {
@@ -17,7 +30,8 @@ export default async function MarketplacePage() {
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         is_verified_teacher
@@ -44,7 +58,8 @@ export default async function MarketplacePage() {
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         is_verified_teacher
@@ -70,7 +85,8 @@ export default async function MarketplacePage() {
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         is_verified_teacher
@@ -96,7 +112,8 @@ export default async function MarketplacePage() {
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         is_verified_teacher
@@ -149,7 +166,8 @@ export default async function MarketplacePage() {
             *,
             seller:users!products_seller_id_fkey(
               id,
-              name,
+              first_name,
+              last_name,
               username,
               avatar_url,
               is_verified_teacher
@@ -209,7 +227,8 @@ export default async function MarketplacePage() {
               *,
               seller:users!products_seller_id_fkey(
                 id,
-                name,
+                first_name,
+                last_name,
                 username,
                 avatar_url,
                 is_verified_teacher
@@ -243,7 +262,8 @@ export default async function MarketplacePage() {
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           is_verified_teacher
@@ -265,6 +285,13 @@ export default async function MarketplacePage() {
     recommendedProducts = trending || []
   }
 
+  // Transform all products to add 'name' field for backward compatibility
+  const transformedFeaturedProducts = transformProducts(featuredProducts || [])
+  const transformedNewProducts = transformProducts(newProducts || [])
+  const transformedTrendingProducts = transformProducts(trendingProducts || [])
+  const transformedBestsellerProducts = transformProducts(bestsellerProducts || [])
+  const transformedRecommendedProducts = transformProducts(recommendedProducts || [])
+
   return (
     <>
       {/* CurvedLoop Hero Section */}
@@ -273,15 +300,15 @@ export default async function MarketplacePage() {
       <div className="container mx-auto px-4 py-8">
         {/* Product Tabs - Featured, New Arrivals, Trending, Best Sellers, Recommended */}
         <ProductTabs
-          featuredProducts={featuredProducts || []}
-          newProducts={newProducts || []}
-          trendingProducts={trendingProducts || []}
-          bestsellerProducts={bestsellerProducts || []}
-          recommendedProducts={recommendedProducts || []}
+          featuredProducts={transformedFeaturedProducts}
+          newProducts={transformedNewProducts}
+          trendingProducts={transformedTrendingProducts}
+          bestsellerProducts={transformedBestsellerProducts}
+          recommendedProducts={transformedRecommendedProducts}
         />
 
         {/* Empty state */}
-        {(!newProducts || newProducts.length === 0) && (
+        {(!transformedNewProducts || transformedNewProducts.length === 0) && (
           <div className="text-center py-12">
             <svg
               className="mx-auto w-24 h-24 text-gray-400 mb-4"

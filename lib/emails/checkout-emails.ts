@@ -26,7 +26,7 @@ export async function sendPaymentSuccessfulEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', buyerId)
       .single()
 
@@ -36,8 +36,11 @@ export async function sendPaymentSuccessfulEmail(
     }
 
     // Build template data
+    const buyerFullName = buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer'
     const templateData = buildPaymentSuccessfulData({
-      userName: buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       orderId,
@@ -80,7 +83,7 @@ export async function sendDownloadReadyEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', buyerId)
       .single()
 
@@ -90,8 +93,11 @@ export async function sendDownloadReadyEmail(
     }
 
     // Build template data
+    const buyerFullName = buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer'
     const templateData = buildDownloadReadyData({
-      userName: buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       orderId,

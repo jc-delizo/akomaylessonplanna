@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import { Trash2, ShoppingCart, Heart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { getFullName } from '@/lib/utils/profile'
 
 interface WishlistItem {
   id: string
@@ -19,7 +21,9 @@ interface WishlistItem {
     cover_image_url?: string
     seller: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
     }
   }
@@ -82,7 +86,16 @@ export default function WishlistPage() {
   const handleAddToCart = async (productId: string) => {
     setAddingToCart(productId)
     try {
-      const response = await fetch('/api/wishlist/move-to-cart', {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        // Guest users need to login to use cart
+        router.push(`/login?redirect=${encodeURIComponent('/wishlist')}`)
+        return
+      }
+
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id: productId }),
@@ -92,10 +105,10 @@ export default function WishlistPage() {
         throw new Error('Failed to add to cart')
       }
 
-      setWishlistItems(items => items.filter(item => item.product.id !== productId))
+      toast.success('Added to cart!')
     } catch (error) {
       console.error('Error adding to cart:', error)
-      alert('Failed to add to cart. Please try again.')
+      toast.error('Failed to add to cart. Please try again.')
     } finally {
       setAddingToCart(null)
     }
@@ -139,7 +152,7 @@ export default function WishlistPage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Button asChild size="lg">
-              <Link href="/marketplace">Browse Products</Link>
+              <Link href="/marketplace/browse">Browse Products</Link>
             </Button>
             <Button variant="outline" asChild size="lg" className="gap-2">
               <Link href="/cart">
@@ -216,7 +229,7 @@ export default function WishlistPage() {
                   href={`/sellers/${item.product.seller.username}`}
                   className="hover:text-purple-600 transition-colors font-medium"
                 >
-                  {item.product.seller.name}
+                  {getFullName(item.product.seller)}
                 </Link>
               </p>
               <p className="text-xl font-bold text-purple-600 mb-4">

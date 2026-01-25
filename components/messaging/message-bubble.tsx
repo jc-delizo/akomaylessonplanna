@@ -4,6 +4,7 @@ import { formatRelativeTime } from '@/lib/utils/date'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 interface MessageBubbleProps {
   message: {
@@ -16,7 +17,9 @@ interface MessageBubbleProps {
     is_read: boolean
     sender?: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
       avatar_url?: string
       is_verified_teacher?: boolean
@@ -47,7 +50,7 @@ export function MessageBubble({ message, currentUserId }: MessageBubbleProps) {
         {message.sender?.avatar_url ? (
           <Image
             src={message.sender.avatar_url}
-            alt={message.sender.name || 'Admin'}
+            alt={message.sender ? getFullName(message.sender) : 'Admin'}
             width={32}
             height={32}
             className="rounded-full"
@@ -60,7 +63,7 @@ export function MessageBubble({ message, currentUserId }: MessageBubbleProps) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium">
-              {message.sender?.name || 'Admin'}
+              {message.sender ? getFullName(message.sender) : 'Admin'}
             </span>
             <Badge variant="outline" className="text-xs">
               Admin
@@ -104,7 +107,7 @@ export function MessageBubble({ message, currentUserId }: MessageBubbleProps) {
           {message.sender?.avatar_url ? (
             <Image
               src={message.sender.avatar_url}
-              alt={message.sender.name || 'User'}
+              alt={message.sender ? getFullName(message.sender) : 'User'}
               width={32}
               height={32}
               className="rounded-full"
@@ -112,7 +115,7 @@ export function MessageBubble({ message, currentUserId }: MessageBubbleProps) {
           ) : (
             <div className="size-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {message.sender?.name?.[0]?.toUpperCase() || 'U'}
+                {message.sender ? getInitials(message.sender.first_name || '', message.sender.last_name || '') : 'U'}
               </span>
             </div>
           )}
@@ -129,7 +132,7 @@ export function MessageBubble({ message, currentUserId }: MessageBubbleProps) {
         {!isOwnMessage && (
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-medium">
-              {message.sender?.name || 'Unknown User'}
+              {message.sender ? getFullName(message.sender) : 'Unknown User'}
             </span>
             {message.sender?.is_verified_teacher && (
               <Badge variant="outline" className="text-xs">

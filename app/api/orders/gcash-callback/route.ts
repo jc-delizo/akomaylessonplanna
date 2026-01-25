@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     // Get buyer info (needed for both success and failure scenarios)
     const { data: buyer } = await supabase
       .from('users')
-      .select('email, name, id')
+      .select('email, first_name, last_name, id')
       .eq('id', order.buyer_id)
       .single()
 
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
                   product.title,
                   parseFloat(item.price_at_purchase.toString()),
                   parseFloat(item.net_earnings.toString()),
-                  buyer.name
+                  buyer ? `${buyer.first_name} ${buyer.last_name || ''}`.trim() : 'Buyer'
                 )
 
                 // Create notification for seller
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
                   sellerId,
                   order_id,
                   product.title,
-                  buyer.name,
+                  buyer ? `${buyer.first_name} ${buyer.last_name || ''}`.trim() : 'Buyer',
                   parseFloat(item.price_at_purchase.toString())
                 )
               }

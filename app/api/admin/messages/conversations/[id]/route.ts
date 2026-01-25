@@ -25,8 +25,8 @@ export async function GET(
       .select(
         `
         *,
-        buyer:buyer_id(id, name, username, email, avatar_url),
-        seller:seller_id(id, name, username, email, avatar_url),
+        buyer:buyer_id(id, first_name, last_name, username, email, avatar_url),
+        seller:seller_id(id, first_name, last_name, username, email, avatar_url),
         product:product_id(id, title, price, cover_image_url, slug)
       `
       )

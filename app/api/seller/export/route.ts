@@ -110,7 +110,7 @@ async function processExportJob(
           order:orders!order_items_order_id_fkey(
             payment_method,
             payment_status,
-            buyer:users!orders_buyer_id_fkey(name, location_region)
+            buyer:users!orders_buyer_id_fkey(first_name, last_name, location_region)
           )
         `
         )
@@ -146,8 +146,8 @@ async function processExportJob(
           order.order_id.slice(0, 8).toUpperCase(),
           new Date(order.created_at).toLocaleDateString(),
           order.product_title,
-          order.order?.buyer?.name
-            ? formatBuyerName(order.order.buyer.name)
+          order.order?.buyer?.first_name
+            ? formatBuyerName(order.order.buyer.first_name, order.order.buyer.last_name || '')
             : 'Anonymous',
           order.order?.buyer?.location_region || 'N/A',
           `₱${order.price_at_purchase.toFixed(2)}`,
@@ -300,10 +300,11 @@ async function processExportJob(
   }
 }
 
-function formatBuyerName(name: string): string {
-  const parts = name.split(' ')
-  if (parts.length >= 2) {
-    return `Teacher ${parts[0]} ${parts[parts.length - 1].charAt(0)}.`
+function formatBuyerName(firstName: string, lastName: string): string {
+  const first = (firstName || '').trim()
+  const last = (lastName || '').trim()
+  if (last) {
+    return `Teacher ${first} ${last.charAt(0)}.`
   }
-  return `Teacher ${name.charAt(0)}.`
+  return `Teacher ${first.charAt(0)}.`
 }

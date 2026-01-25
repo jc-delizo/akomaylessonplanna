@@ -32,7 +32,7 @@ export async function sendOrderConfirmationEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', buyerEmail)
       .single()
 
@@ -54,8 +54,11 @@ export async function sendOrderConfirmationEmail(
     }
 
     // Build template data
+    const buyerFullName = buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer'
     const templateData = buildOrderConfirmationData({
-      userName: buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       orderId,
@@ -103,7 +106,7 @@ export async function sendPaymentFailedEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', buyerEmail)
       .single()
 
@@ -125,8 +128,11 @@ export async function sendPaymentFailedEmail(
     }
 
     // Build template data
+    const buyerFullName = buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer'
     const templateData = buildPaymentFailedData({
-      userName: buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       orderId,
@@ -171,7 +177,7 @@ export async function sendNewSaleEmail(
     // Get seller info
     const { data: seller } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', sellerEmail)
       .single()
 
@@ -181,8 +187,11 @@ export async function sendNewSaleEmail(
     }
 
     // Build template data
+    const sellerFullName = seller.first_name && seller.last_name
+      ? `${seller.first_name} ${seller.last_name}`.trim()
+      : seller.first_name || 'Seller'
     const templateData = buildNewSaleData({
-      userName: seller.name || 'Seller',
+      userName: sellerFullName,
       userEmail: seller.email,
       userId: seller.id,
       productTitle,
@@ -245,7 +254,7 @@ export async function sendRefundApprovedEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', buyerEmail)
       .single()
 
@@ -263,8 +272,11 @@ export async function sendRefundApprovedEmail(
       .single()
 
     // Build template data
+    const buyerFullName = buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer'
     const templateData = buildRefundProcessedData({
-      userName: buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       orderId,
@@ -324,7 +336,7 @@ export async function sendAbandonedCartEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', buyerEmail)
       .single()
 
@@ -334,8 +346,11 @@ export async function sendAbandonedCartEmail(
     }
 
     // Build template data
+    const buyerFullName = buyerName || (buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer')
     const templateData = buildCartAbandonmentData({
-      userName: buyerName || buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       cartItems,

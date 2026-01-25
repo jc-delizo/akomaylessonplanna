@@ -64,7 +64,8 @@ export async function GET(
         ),
         buyer:users!reviews_buyer_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           avatar_url
         )
       `, { count: 'exact' })
@@ -88,7 +89,10 @@ export async function GET(
       ...review,
       buyer: {
         ...review.buyer,
-        name: anonymizeName(review.buyer?.name || ''),
+        name: anonymizeName(
+          review.buyer?.first_name || '',
+          review.buyer?.last_name || ''
+        ),
       },
     })) || []
 

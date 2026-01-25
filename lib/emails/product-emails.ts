@@ -25,7 +25,7 @@ export async function sendProductApprovedEmail(
     // Get seller info
     const { data: seller } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', sellerId)
       .single()
 
@@ -35,8 +35,11 @@ export async function sendProductApprovedEmail(
     }
 
     // Build template data
+    const sellerFullName = seller.first_name && seller.last_name
+      ? `${seller.first_name} ${seller.last_name}`.trim()
+      : seller.first_name || 'Seller'
     const templateData = buildProductApprovedData({
-      userName: seller.name || 'Seller',
+      userName: sellerFullName,
       userEmail: seller.email,
       userId: seller.id,
       productTitle,

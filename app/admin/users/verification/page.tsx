@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
 import { VerificationDocumentLink } from '@/components/admin/verification-document-link'
 import { VerificationActions } from '@/components/admin/verification-actions'
 import { PrcVerificationInfo } from '@/components/admin/prc-verification-info'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getVerificationQueue() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -113,13 +114,13 @@ export default async function VerificationQueuePage() {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
                       {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.name} className="w-12 h-12 rounded-full" />
+                        <img src={user.avatar_url} alt={getFullName(user)} className="w-12 h-12 rounded-full" />
                       ) : (
-                        <span className="text-lg font-medium">{user?.name?.[0]?.toUpperCase()}</span>
+                        <span className="text-lg font-medium">{getInitials(user?.first_name || '', user?.last_name || '')}</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base truncate">{user?.name}</p>
+                      <p className="font-semibold text-base truncate">{getFullName(user)}</p>
                       <p className="text-sm text-gray-500 truncate">{user?.email}</p>
                     </div>
                   </div>

@@ -94,17 +94,20 @@ export async function POST(request: Request, { params }: RouteParams) {
 
       const { data: buyer } = await supabase
         .from('users')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', user.id)
         .single()
 
       if (seller && buyer) {
+        const buyerName = buyer.first_name && buyer.last_name
+          ? `${buyer.first_name} ${buyer.last_name}`.trim()
+          : buyer.first_name || 'Buyer'
         const { sendRefundRequestedEmail } = await import('@/lib/emails/notifications')
         await sendRefundRequestedEmail(
           seller.email,
           orderId,
           orderItems.product_title,
-          buyer.name
+          buyerName
         )
       }
 

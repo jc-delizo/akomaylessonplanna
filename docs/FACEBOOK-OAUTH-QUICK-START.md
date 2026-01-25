@@ -23,6 +23,10 @@ This is a quick reference checklist for setting up Facebook OAuth. For detailed 
   - `https://yourdomain.com/auth/callback` (production)
 - [ ] Get App ID and App Secret
 - [ ] Configure app settings (domains, privacy policy, etc.)
+- [ ] Set User Data Deletion URL:
+  - Development: `http://localhost:3000/api/webhooks/facebook/data-deletion`
+  - Production: `https://yourdomain.com/api/webhooks/facebook/data-deletion`
+- [ ] Add `FACEBOOK_APP_SECRET` to environment variables
 
 **Find your Supabase project reference:**
 - Go to Supabase Dashboard → Settings → General

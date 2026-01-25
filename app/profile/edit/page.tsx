@@ -37,9 +37,21 @@ import { Separator } from '@/registry/default/separator/separator'
 import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/alert'
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/registry/default/tooltip/tooltip'
 import { Skeleton } from '@/registry/default/skeleton/skeleton'
-import { validateUsername, calculateProfileCompletion } from '@/lib/utils/profile'
+import { validateUsername, calculateProfileCompletion, getInitials } from '@/lib/utils/profile'
 import type { User as ProfileUser } from '@/lib/utils/profile'
-import { LogoutButton } from '@/components/auth/logout-button'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/registry/default/accordion/accordion'
+import {
+  getAllRegions,
+  getCitiesByRegion,
+  matchExistingLocation,
+  findRegionByCode,
+} from '@/lib/utils/location'
+import type { Region, City } from '@/lib/data/philippines-locations'
 
 /**
  * Profile Edit Page
@@ -53,7 +65,7 @@ import { LogoutButton } from '@/components/auth/logout-button'
  * - Bio (max 500 chars, line breaks supported)
  * - Subjects Taught (multi-select dropdown - from grades/subjects tables)
  * - Grade Levels Taught (multi-select dropdown)
- * - Location (city + region - text input for now, Feature 02.5 will add dropdowns)
+ * - Location (city + region - dropdowns with Philippines regions and cities)
  * - Social Links (Facebook, Instagram, YouTube URLs)
  * - Banner (Pro/Pioneer only) with upload
  * - Custom Accent Color (Pro/Pioneer only) - color picker from preset palette
@@ -69,13 +81,21 @@ export default function ProfileEditPage() {
 
   // Form state
   const [profile, setProfile] = useState<Partial<ProfileUser>>({})
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
   const [subjectsTaught, setSubjectsTaught] = useState<string[]>([])
   const [gradeLevelsTaught, setGradeLevelsTaught] = useState<string[]>([])
   const [locationCity, setLocationCity] = useState('')
   const [locationRegion, setLocationRegion] = useState('')
+  const [selectedRegionCode, setSelectedRegionCode] = useState<string>('')
+  const [availableCities, setAvailableCities] = useState<City[]>([])
+  const [allRegions] = useState<Region[]>(getAllRegions())
+  // Use sentinel string to keep Accordion controlled from first render
+  // Base UI determines controlled/uncontrolled based on first render value
+  // Using a sentinel that's not a valid accordion item value ('region' or 'city')
+  const [accordionValue, setAccordionValue] = useState<string>('__closed__')
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
     instagram: '',
@@ -102,13 +122,31 @@ export default function ProfileEditPage() {
 
         const { profile: profileData } = await response.json()
         setProfile(profileData)
-        setName(profileData.name || '')
+        setFirstName(profileData.first_name || '')
+        setLastName(profileData.last_name || '')
         setUsername(profileData.username || '')
         setBio(profileData.bio || '')
         setSubjectsTaught(profileData.subjects_taught || [])
         setGradeLevelsTaught(profileData.grade_levels_taught || [])
-        setLocationCity(profileData.location_city || '')
-        setLocationRegion(profileData.location_region || '')
+        // Handle location data - try to match existing free-text data to structured data
+        const existingRegion = profileData.location_region || ''
+        const existingCity = profileData.location_city || ''
+        
+        if (existingRegion || existingCity) {
+          const matched = matchExistingLocation(existingRegion, existingCity)
+          if (matched) {
+            const region = findRegionByCode(matched.regionCode)
+            setSelectedRegionCode(matched.regionCode)
+            setLocationRegion(region ? region.name : existingRegion)
+            setLocationCity(matched.cityName)
+            setAvailableCities(getCitiesByRegion(matched.regionCode))
+          } else {
+            // Keep original values if no match found
+            setLocationRegion(existingRegion)
+            setLocationCity(existingCity)
+          }
+        }
+        
         setSocialLinks(profileData.social_links || { facebook: '', instagram: '', youtube: '' })
         setCustomAccentColor(profileData.custom_accent_color || '')
 
@@ -140,7 +178,8 @@ export default function ProfileEditPage() {
   const completionPercent = profile
     ? calculateProfileCompletion({
         ...profile,
-        name,
+        first_name: firstName,
+        last_name: lastName || '',
         username,
         bio,
         subjects_taught: subjectsTaught,
@@ -174,7 +213,8 @@ export default function ProfileEditPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name,
+          first_name: firstName,
+          last_name: lastName || '',
           username,
           bio,
           subjects_taught: subjectsTaught,
@@ -267,6 +307,51 @@ export default function ProfileEditPage() {
       .slice(0, 2)
   }
 
+  // Handle region selection
+  const handleRegionChange = (regionCode: string) => {
+    setSelectedRegionCode(regionCode)
+    const region = findRegionByCode(regionCode)
+    if (region) {
+      setLocationRegion(region.name)
+      setAvailableCities(region.cities)
+      // Reset city when region changes
+      setLocationCity('')
+      // Auto-expand city accordion when region is selected
+      setAccordionValue('city')
+    }
+  }
+
+  // Handle city selection
+  const handleCityChange = (cityName: string) => {
+    setLocationCity(cityName)
+    // Close accordion after selection
+    setAccordionValue('__closed__')
+  }
+
+  // Check if Basic Info section is complete
+  const isBasicInfoComplete = () => {
+    const fullName = `${firstName} ${lastName || ''}`.trim()
+    return (
+      fullName.length >= 3 &&
+      username.trim().length >= 3 &&
+      profile?.avatar_url &&
+      bio.trim().length >= 50
+    )
+  }
+
+  // Check if Teaching section is complete
+  const isTeachingComplete = () => {
+    return (
+      subjectsTaught.length > 0 &&
+      gradeLevelsTaught.length > 0
+    )
+  }
+
+  // Check if Location & Social section is complete
+  const isLocationComplete = () => {
+    return locationCity.trim().length > 0 && locationRegion.trim().length > 0
+  }
+
   // Preset accent colors (12 brand colors)
   const accentColors = [
     '#3B82F6', // Blue
@@ -307,12 +392,9 @@ export default function ProfileEditPage() {
   return (
     <TooltipProvider>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <UserCircle className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Edit Profile</h1>
-          </div>
-          <LogoutButton />
+        <div className="flex items-center gap-3 mb-8">
+          <UserCircle className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold">Edit Profile</h1>
         </div>
 
         {/* Profile Completion Indicator */}
@@ -342,18 +424,48 @@ export default function ProfileEditPage() {
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Basic Info</span>
-                <span className="sm:hidden">Basic</span>
+                <span className="relative hidden sm:inline">
+                  Basic Info
+                  {!isBasicInfoComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
+                <span className="relative sm:hidden">
+                  Basic
+                  {!isBasicInfoComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
               </TabsTrigger>
               <TabsTrigger value="teaching" className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">Teaching</span>
-                <span className="sm:hidden">Teach</span>
+                <span className="relative hidden sm:inline">
+                  Teaching
+                  {!isTeachingComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
+                <span className="relative sm:hidden">
+                  Teach
+                  {!isTeachingComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
               </TabsTrigger>
               <TabsTrigger value="location" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                <span className="hidden sm:inline">Location & Social</span>
-                <span className="sm:hidden">Social</span>
+                <span className="relative hidden sm:inline">
+                  Location & Social
+                  {!isLocationComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
+                <span className="relative sm:hidden">
+                  Social
+                  {!isLocationComplete() && (
+                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
+                </span>
               </TabsTrigger>
               <TabsTrigger value="customization" className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
@@ -364,72 +476,69 @@ export default function ProfileEditPage() {
 
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-6">
-              {/* Display Name */}
+              {/* Display Name and Username */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <CardTitle>Display Name</CardTitle>
-                  </div>
-                  <CardDescription>Your public display name (3-50 characters)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      minLength={3}
-                      maxLength={50}
-                      required
-                      placeholder="Enter your display name"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {name.length}/50 characters
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              {/* Username */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4" />
-                    <CardTitle>Username</CardTitle>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Your username must be unique and will be used in your profile URL</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <CardTitle>Display Name & Username</CardTitle>
                   </div>
                   <CardDescription>
-                    Your unique username (3-20 characters, alphanumeric + underscores)
+                    Your public display name and unique username for your profile
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      minLength={3}
-                      maxLength={20}
-                      pattern="[a-zA-Z0-9_]+"
-                      placeholder="username"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your profile URL will be: /sellers/{username || 'username'}
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        minLength={1}
+                        maxLength={255}
+                        required
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        maxLength={255}
+                        placeholder="Enter your last name (optional)"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Your username must be unique and will be used in your profile URL</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        minLength={3}
+                        maxLength={20}
+                        pattern="[a-zA-Z0-9_]+"
+                        placeholder="username"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        /sellers/{username || 'username'}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -452,7 +561,7 @@ export default function ProfileEditPage() {
                         <AvatarImage src={profile.avatar_url} alt={name || 'Avatar'} />
                       )}
                       <AvatarFallback className="text-2xl bg-muted">
-                        {getInitials(name || 'User')}
+                        {getInitials(firstName || 'User', lastName || '')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-2">
@@ -661,32 +770,75 @@ export default function ProfileEditPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="location_city">City/Municipality</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="location_city"
-                        type="text"
-                        value={locationCity}
-                        onChange={(e) => setLocationCity(e.target.value)}
-                        placeholder="e.g., Manila"
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location_region">Region</Label>
-                    <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="location_region"
-                        type="text"
-                        value={locationRegion}
-                        onChange={(e) => setLocationRegion(e.target.value)}
-                        placeholder="e.g., Metro Manila"
-                        className="pl-9"
-                      />
-                    </div>
+                    <Label>Location</Label>
+                    <Accordion
+                      type="single"
+                      value={accordionValue}
+                      onValueChange={(value) => {
+                        // Convert undefined to sentinel to keep state controlled
+                        setAccordionValue(value ?? '__closed__')
+                      }}
+                      className="w-full"
+                    >
+                      <AccordionItem value="region">
+                        <AccordionTrigger className="text-sm">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <span>
+                              {selectedRegionCode
+                                ? findRegionByCode(selectedRegionCode)?.name
+                                : 'Select a region'}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 pt-2">
+                            {allRegions.map((region) => (
+                              <button
+                                key={region.code}
+                                type="button"
+                                onClick={() => handleRegionChange(region.code)}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors"
+                              >
+                                {region.name}
+                              </button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {selectedRegionCode && (
+                        <AccordionItem value="city">
+                          <AccordionTrigger className="text-sm">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <span>
+                                {locationCity || 'Select a city/municipality'}
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-1 pt-2 max-h-64 overflow-y-auto">
+                              {availableCities.map((city, index) => (
+                                <button
+                                  key={`city-${selectedRegionCode}-${index}-${city.name}`}
+                                  type="button"
+                                  onClick={() => handleCityChange(city.name)}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors"
+                                >
+                                  {city.name}
+                                </button>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                    </Accordion>
+                    {!selectedRegionCode && (
+                      <p className="text-xs text-muted-foreground">
+                        Please select a region first to see available cities
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

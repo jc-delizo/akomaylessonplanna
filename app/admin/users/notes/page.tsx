@@ -4,6 +4,7 @@ import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 export default async function AdminNotesPage() {
   const supabase = await createClient()
@@ -25,9 +26,9 @@ export default async function AdminNotesPage() {
     .from('admin_notes')
     .select(`
       *,
-      user:users!admin_notes_user_id_fkey(id, name, email, avatar_url),
-      admin:users!admin_notes_admin_id_fkey(id, name, email),
-      mentioned_admin:users!admin_notes_mentioned_admin_fkey(id, name, email)
+      user:users!admin_notes_user_id_fkey(id, first_name, last_name, email, avatar_url),
+      admin:users!admin_notes_admin_id_fkey(id, first_name, last_name, email),
+      mentioned_admin:users!admin_notes_mentioned_admin_fkey(id, first_name, last_name, email)
     `)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -64,27 +65,27 @@ export default async function AdminNotesPage() {
                   {note.user?.avatar_url ? (
                     <img
                       src={note.user.avatar_url}
-                      alt={note.user.name}
+                      alt={note.user ? getFullName(note.user) : 'User'}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
                     <span className="text-sm font-medium">
-                      {note.user?.name?.[0]?.toUpperCase()}
+                      {note.user ? getInitials(note.user.first_name || '', note.user.last_name || '') : ''}
                     </span>
                   )}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium">{note.user?.name}</p>
+                    <p className="font-medium">{note.user ? getFullName(note.user) : 'Unknown'}</p>
                     <span className="text-sm text-gray-500">•</span>
                     <p className="text-sm text-gray-500">
-                      Note by {note.admin?.name || 'Unknown'}
+                      Note by {note.admin ? getFullName(note.admin) : 'Unknown'}
                     </p>
                     {note.is_mention && note.mentioned_admin && (
                       <>
                         <span className="text-sm text-gray-500">•</span>
                         <span className="text-sm text-purple-600">
-                          @{note.mentioned_admin.name}
+                          @{getFullName(note.mentioned_admin)}
                         </span>
                       </>
                     )}

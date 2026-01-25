@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SearchBar } from '@/components/search/search-bar'
+import { AnimatedNavText } from '@/components/navigation/animated-nav-text'
 import { MessageSquare, Shield, User, LogOut, ShoppingCart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { GlareButton } from '@/components/ui/glare-button'
@@ -20,6 +21,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface MainNavProps {
   user?: {
@@ -37,6 +43,7 @@ type UserProfile = {
   email?: string
   role?: 'buyer' | 'seller' | 'admin'
   can_sell?: boolean
+  profile_completion_percent?: number
 }
 
 // Cache helper functions for user profile
@@ -112,9 +119,10 @@ export function MainNav({ user }: MainNavProps) {
     const fetchUserProfile = async () => {
       try {
         const supabase = createClient()
+        
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, email, avatar_url, role, can_sell')
+          .select('id, first_name, last_name, email, avatar_url, role, can_sell, profile_completion_percent')
           .eq('id', user.id)
           .single()
 
@@ -122,12 +130,18 @@ export function MainNav({ user }: MainNavProps) {
 
         if (error) throw error
         if (data) {
+          // Construct full name from first_name and last_name
+          const fullName = data.first_name && data.last_name 
+            ? `${data.first_name} ${data.last_name}`.trim()
+            : data.first_name || 'User'
+          
           const profileData: UserProfile = {
             avatar_url: data.avatar_url,
-            name: data.name || user.name || 'User',
+            name: fullName,
             email: data.email || user.email,
             role: data.role,
             can_sell: data.can_sell,
+            profile_completion_percent: data.profile_completion_percent || 0,
           }
           
           // Cache the fetched profile
@@ -140,9 +154,12 @@ export function MainNav({ user }: MainNavProps) {
         if (cancelled) return
         console.error('Error fetching user profile:', error)
         // Fallback to cached profile or basic user info
+        const fallbackName = user.user_metadata?.first_name && user.user_metadata?.last_name
+          ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`.trim()
+          : user.user_metadata?.first_name || 'User'
         const fallbackProfile: UserProfile = cachedProfile || {
           avatar_url: null,
-          name: user.name || 'User',
+          name: fallbackName,
           email: user.email,
         }
         if (!cancelled) {
@@ -312,7 +329,7 @@ export function MainNav({ user }: MainNavProps) {
               className="w-8 h-8"
               priority
             />
-            <span className="font-bold text-xl hidden sm:block">ako may lesson plan na!</span>
+            <AnimatedNavText />
           </Link>
 
           {/* Desktop Navigation */}
@@ -323,35 +340,56 @@ export function MainNav({ user }: MainNavProps) {
             />
           </div>
           <div className="hidden md:flex items-center gap-5">
-            <Link
-              href="/marketplace"
-              className={`text-sm font-medium transition-colors hover:text-orange-600 ${
-                (pathname === '/marketplace' || (pathname.startsWith('/marketplace/') && !pathname.startsWith('/marketplace/browse'))) ? 'text-orange-600' : 'text-gray-700'
-              }`}
-            >
-              Marketplace
-            </Link>
-            <Link
-              href="/marketplace/browse"
-              className={`text-sm font-medium transition-colors hover:text-orange-600 ${
-                isActive('/marketplace/browse') ? 'text-orange-600' : 'text-gray-700'
-              }`}
-            >
-              Browse
-            </Link>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/marketplace"
+                  className={`text-sm font-medium transition-colors hover:text-orange-600 ${
+                    (pathname === '/marketplace' || (pathname.startsWith('/marketplace/') && !pathname.startsWith('/marketplace/browse'))) ? 'text-orange-600' : 'text-gray-700'
+                  }`}
+                >
+                  Marketplace
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Curated Files for you!</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/marketplace/browse"
+                  className={`text-sm font-medium transition-colors hover:text-orange-600 ${
+                    isActive('/marketplace/browse') ? 'text-orange-600' : 'text-gray-700'
+                  }`}
+                >
+                  Browse
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Browse all products!</p>
+              </TooltipContent>
+            </Tooltip>
             {/* Only render user-dependent links after mount to prevent hydration mismatch */}
             <div suppressHydrationWarning>
               {mounted && user && (
                 <>
                   {(userProfile?.role === 'seller' || userProfile?.role === 'admin' || userProfile?.can_sell === true) && (
-                    <Link
-                      href="/shop/products"
-                      className={`text-sm font-medium transition-colors hover:text-orange-600 ${
-                        isActive('/shop/products') ? 'text-orange-600' : 'text-gray-700'
-                      }`}
-                    >
-                      My Shop
-                    </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href="/shop"
+                          className={`text-sm font-medium transition-colors hover:text-orange-600 ${
+                            pathname.startsWith('/shop') ? 'text-orange-600' : 'text-gray-700'
+                          }`}
+                        >
+                          My Shop
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Your store front!</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </>
               )}
@@ -364,81 +402,107 @@ export function MainNav({ user }: MainNavProps) {
             {mounted && user ? (
               <>
                 <GlareButton>
-                  <Link
-                    href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                      ? '/become-seller'
-                      : '/shop/products/new'}
-                    className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
-                  >
-                    {userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                      ? 'Be a Seller'
-                      : 'Upload Product'}
-                  </Link>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                          ? '/become-seller'
+                          : '/shop/products/new'}
+                        className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
+                      >
+                        {userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                          ? 'Be a Seller'
+                          : 'Upload Product'}
+                      </Link>
+                    </TooltipTrigger>
+                    {userProfile?.role === 'buyer' || userProfile?.can_sell === false ? (
+                      <TooltipContent>
+                        <p>Earn more by selling your files!</p>
+                      </TooltipContent>
+                    ) : (
+                      <TooltipContent>
+                        <p>Upload Product</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
                 </GlareButton>
-                <Link
-                  href="/messages"
-                  className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Messages"
-                >
-                  <MessageSquare className="size-5" />
-                  {unreadMessageCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-xs"
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/messages"
+                      className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
                     >
-                      {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
-                    </Badge>
-                  )}
-                </Link>
+                      <MessageSquare className="size-5" />
+                      {unreadMessageCount > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                        </Badge>
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Messages</p>
+                  </TooltipContent>
+                </Tooltip>
                 <NotificationBell />
-                <Link
-                  href="/cart"
-                  className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Shopping Cart"
-                >
-                  <ShoppingCart className="size-5" />
-                  {totalCartCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-xs"
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/cart"
+                      className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
                     >
-                      {totalCartCount > 9 ? '9+' : totalCartCount}
-                    </Badge>
-                  )}
-                </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin/dashboard"
-                    className={`relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors ${
-                      isActive('/admin') ? 'bg-gray-100' : ''
-                    }`}
-                    title="Admin Panel"
-                  >
-                    <Shield className={`size-5 ${isActive('/admin') ? 'text-orange-600' : ''}`} />
-                  </Link>
-                )}
+                      <ShoppingCart className="size-5" />
+                      {totalCartCount > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {totalCartCount > 9 ? '9+' : totalCartCount}
+                        </Badge>
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Shopping Cart</p>
+                  </TooltipContent>
+                </Tooltip>
                 {userProfile && (
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                        aria-label="User menu"
-                      >
-                        {userProfile.avatar_url ? (
-                          <Image
-                            src={userProfile.avatar_url}
-                            alt={userProfile.name}
-                            width={36}
-                            height={36}
-                            className="h-9 w-9 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-9 w-9 rounded-full bg-[#ff7200] flex items-center justify-center text-white font-semibold text-sm">
-                            {userProfile.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </button>
-                    </DropdownMenuTrigger>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="relative flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                            aria-label="User menu"
+                          >
+                            {userProfile.avatar_url ? (
+                              <Image
+                                src={userProfile.avatar_url}
+                                alt={userProfile.name}
+                                width={36}
+                                height={36}
+                                className="h-9 w-9 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-9 w-9 rounded-full bg-[#ff7200] flex items-center justify-center text-white font-semibold text-sm">
+                                {userProfile.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            {userProfile.profile_completion_percent !== undefined && userProfile.profile_completion_percent < 100 && (
+                              <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                            )}
+                          </button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      {userProfile.profile_completion_percent !== undefined && userProfile.profile_completion_percent < 100 && (
+                        <TooltipContent>
+                          <p>Complete your profile!</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
@@ -457,6 +521,17 @@ export function MainNav({ user }: MainNavProps) {
                           View Profile
                         </Link>
                       </DropdownMenuItem>
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/admin/dashboard" className="cursor-pointer flex items-center">
+                              <Shield className="mr-2 h-4 w-4" />
+                              Admin Panel
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleLogout}
@@ -545,19 +620,6 @@ export function MainNav({ user }: MainNavProps) {
               <div suppressHydrationWarning>
                 {mounted && user && (
                   <>
-                    {/* Only render admin link after mount to prevent hydration mismatch */}
-                    {isAdmin && (
-                      <Link
-                        href="/admin/dashboard"
-                        className={`flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors ${
-                          isActive('/admin') ? 'bg-gray-100' : ''
-                        }`}
-                        onClick={() => setMobileMenuOpen(false)}
-                        title="Admin Panel"
-                      >
-                        <Shield className={`size-5 ${isActive('/admin') ? 'text-orange-600' : ''}`} />
-                      </Link>
-                    )}
                   <Link
                     href="/messages"
                     className="text-sm font-medium text-gray-700 hover:text-orange-600 flex items-center gap-2 py-2 transition-colors"

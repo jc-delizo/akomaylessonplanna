@@ -223,7 +223,7 @@ This document captures all decisions made during the brainstorming session for F
 
 **Step 3: Files & Media**
 - Upload product files* (at least 1)
-- Upload cover image* (auto-generate or manual)
+- Upload cover image (optional, manual only)
 - Additional gallery images (optional, up to 5)
 
 **Step 4: Pricing & Publishing**
@@ -241,13 +241,13 @@ This document captures all decisions made during the brainstorming session for F
 - **Storage**: Supabase Storage (private bucket)
 
 **Cover Image:**
-- **Auto-generation**:
-  - PDF: First page → image
-  - DOCX/PPTX: First page → image
-  - Images: Use as cover
-  - ZIP: Require manual upload
-- **Manual override**: Custom upload (1200x800px recommended, max 5MB)
-- **Auto-crop/resize** to standard dimensions
+- **Manual upload only** (no auto-generation)
+- **Rationale**: Products can have multiple files, so the system cannot reliably determine which file should be used for the cover image. Manual upload gives sellers full control over their product presentation.
+- **Specifications**: 
+  - Custom upload (1200x800px recommended, max 10MB)
+  - Supported formats: JPG, PNG, WEBP, GIF
+  - Optional field - products can be published without a cover image
+  - Auto-crop/resize to standard dimensions (if needed)
 
 **Preview Generation:**
 - Automatic after upload
@@ -752,6 +752,8 @@ GET /api/grades/:gradeId/subjects - Get subjects for specific grade
 
 7. **No Old Version Access**: Buyers always get latest version. Industry standard (Teachers Pay Teachers, Gumroad). Simpler implementation.
 
+8. **Manual Cover Image Upload Only**: Cover images are always manually uploaded by sellers. No auto-generation from product files, as products can have multiple files and the system cannot reliably determine which file should be used for the cover. This gives sellers full control over their product presentation.
+
 ---
 
 ## Implementation Checklist
@@ -762,7 +764,7 @@ When implementing this feature:
 - [ ] Create `grades`, `subjects`, `grade_subjects` tables
 - [ ] Implement multi-step product upload wizard
 - [ ] File upload to Supabase Storage
-- [ ] Auto-generate cover images
+- [ ] Manual cover image upload (no auto-generation)
 - [ ] Auto-generate previews (first 3 pages)
 - [ ] Product detail page (hybrid layout for images/documents)
 - [ ] Preview modal with watermark

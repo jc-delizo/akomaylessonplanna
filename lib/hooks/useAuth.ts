@@ -166,14 +166,18 @@ export function useAuth() {
     return data
   }
 
-  const signup = async (email: string, password: string, name: string, rememberMe: boolean = false) => {
+  const signup = async (email: string, password: string, firstName: string, lastName: string, rememberMe: boolean = false) => {
     // Sign up with Supabase Auth
+    // Store full name in auth metadata for compatibility
+    const fullName = `${firstName} ${lastName}`.trim()
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name,
+          name: fullName,
+          first_name: firstName,
+          last_name: lastName,
           role: 'buyer',
         },
         // DO NOT require email confirmation for buyers
@@ -195,7 +199,8 @@ export function useAuth() {
       const insertPayload = {
         id: authData.user.id,
         email: authData.user.email!,
-        name,
+        first_name: firstName,
+        last_name: lastName || '',
         username: email.split('@')[0], // Temporary username from email
         role: 'buyer',
         is_verified_teacher: false,
@@ -262,6 +267,25 @@ export function useAuth() {
     return data
   }
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    if (error) throw error
+    // Always return success to prevent email enumeration
+    return { success: true }
+  }
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) throw error
+    return { success: true }
+  }
+
   return {
     user,
     loading,
@@ -269,6 +293,8 @@ export function useAuth() {
     signup,
     logout,
     signInWithOAuth,
+    resetPassword,
+    updatePassword,
     getRememberMePreference,
   }
 }

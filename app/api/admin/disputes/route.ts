@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
       .from('disputes')
       .select(`
         *,
-        buyer:users!disputes_buyer_id_fkey(id, name, email, avatar_url),
-        seller:users!disputes_seller_id_fkey(id, name, email, avatar_url),
+        buyer:users!disputes_buyer_id_fkey(id, first_name, last_name, email, avatar_url),
+        seller:users!disputes_seller_id_fkey(id, first_name, last_name, email, avatar_url),
         product:products!disputes_product_id_fkey(id, title),
         order:orders!disputes_order_id_fkey(id, total_amount)
       `, { count: 'exact' })

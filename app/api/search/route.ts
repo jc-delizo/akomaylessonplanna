@@ -31,7 +31,13 @@ import { trackSearchImpressions } from '@/lib/analytics/track-search-impressions
  */
 export async function GET(request: NextRequest) {
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:32',message:'GET /api/search entry',data:{url:request.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     const supabase = await createClient()
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:35',message:'Supabase client created',data:{hasClient:!!supabase},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     const { searchParams } = new URL(request.url)
 
     // Parse query parameters (support both 'q' and 'query')
@@ -51,6 +57,9 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'relevance'
 
     // Check cache first
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:54',message:'Before cache check',data:{query,page,limit,gradeId,subjectId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     const cacheKey = generateSearchCacheKey(query, {
       gradeId,
       subjectId,
@@ -65,6 +74,9 @@ export async function GET(request: NextRequest) {
     }, sort)
 
     const cachedResult = await getCachedSearchResults<any>(cacheKey)
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:68',message:'Cache check result',data:{hasCache:!!cachedResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     if (cachedResult) {
       return NextResponse.json(cachedResult, {
         headers: {
@@ -81,7 +93,8 @@ export async function GET(request: NextRequest) {
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           is_verified_teacher
@@ -204,10 +217,19 @@ export async function GET(request: NextRequest) {
     dbQuery = dbQuery.range(from, to)
 
     // Execute query
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:207',message:'Before database query execution',data:{hasQuery:!!dbQuery},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     const { data: products, error, count } = await dbQuery
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:208',message:'Database query result',data:{hasError:!!error,errorMessage:error?.message,errorCode:error?.code,productsCount:products?.length,count},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
 
     if (error) {
       console.error('Error searching products:', error)
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:210',message:'Database query error detected',data:{error:error?.message,code:error?.code,details:error?.details,hint:error?.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       return NextResponse.json(
         { error: 'Failed to search products' },
         { status: 500 }
@@ -219,6 +241,18 @@ export async function GET(request: NextRequest) {
     // For now, we filter in memory and adjust the count
     let filteredProducts = products || []
     let adjustedCount = count || 0
+    
+    // Transform products to add 'name' field for backward compatibility
+    // (database now uses first_name + last_name instead of name)
+    filteredProducts = filteredProducts.map((p: any) => {
+      if (p.seller) {
+        const firstName = p.seller.first_name || ''
+        const lastName = p.seller.last_name || ''
+        p.seller.name = `${firstName} ${lastName}`.trim() || firstName
+      }
+      return p
+    })
+    
     if (verifiedSellerOnly) {
       filteredProducts = filteredProducts.filter(
         (p: any) => p.seller?.is_verified_teacher === true
@@ -274,7 +308,13 @@ export async function GET(request: NextRequest) {
     let suggestions: string[] = []
     if (filteredProducts.length === 0 && query) {
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:277',message:'Before createAdminClient for suggestions',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         const adminClient = createAdminClient()
+        // #region agent log
+        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:279',message:'Admin client created for suggestions',data:{hasClient:!!adminClient},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         // Try to get similar queries using trigram similarity
         const { data: similarQueries } = await adminClient
           .from('search_queries')
@@ -315,6 +355,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get filter counts (simplified - can be enhanced later)
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:318',message:'Before getFilterCounts',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     const filterCounts = await getFilterCounts(supabase, {
       gradeId,
       subjectId,
@@ -328,6 +371,9 @@ export async function GET(request: NextRequest) {
       dateAdded,
       query
     })
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:330',message:'After getFilterCounts',data:{hasFilterCounts:!!filterCounts},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
 
     // Prepare response
     const response = {
@@ -374,6 +420,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Return results
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:377',message:'Before returning response',data:{productsCount:response.products.length,totalResults:response.pagination.total},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json(response, {
       headers: {
         'X-Cache': 'MISS',
@@ -382,6 +431,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in GET /api/search:', error)
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:384',message:'Top-level catch block',data:{errorMessage:error instanceof Error?error.message:String(error),errorStack:error instanceof Error?error.stack:undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

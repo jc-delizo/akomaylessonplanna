@@ -23,7 +23,7 @@ export async function createMessageNotification(
   // Get sender info
   const { data: sender } = await supabase
     .from('users')
-    .select('name, username')
+    .select('first_name, last_name, username')
     .eq('id', senderId)
     .single()
 
@@ -34,7 +34,9 @@ export async function createMessageNotification(
     .eq('id', conversationId)
     .single()
 
-  const senderName = sender?.name || sender?.username || 'Someone'
+  const senderName = sender
+    ? `${sender.first_name} ${sender.last_name || ''}`.trim() || sender.username || 'Someone'
+    : 'Someone'
   const product = getRelation(conversation?.product)
   const productTitle = product?.title
 

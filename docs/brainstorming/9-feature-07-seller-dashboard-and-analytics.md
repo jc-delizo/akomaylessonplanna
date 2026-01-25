@@ -187,7 +187,7 @@ Your earnings: ₱80
 BUYER INFORMATION
 Teacher Maria M. (anonymized)
 Location: NCR
-Member since: January 2025
+Member since: January 2026
 Downloaded: 3 times
 
 PAYMENT
@@ -1387,7 +1387,7 @@ DELETE /api/seller/reports/scheduled/:reportId
 │ BUYER INFORMATION                         │
 │ Teacher Maria M. (anonymized)            │
 │ Location: NCR                             │
-│ Member since: January 2025               │
+│ Member since: January 2026               │
 │ Downloaded: 3 times                      │
 │                                           │
 │ PAYMENT                                   │

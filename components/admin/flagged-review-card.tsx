@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { StarRating } from '@/components/reviews/star-rating'
 import { formatRelativeTime } from '@/lib/utils/date'
 import { useRouter } from 'next/navigation'
+import { getFullName } from '@/lib/utils/profile'
 
 interface FlaggedReviewCardProps {
   flag: {
@@ -24,7 +25,9 @@ interface FlaggedReviewCardProps {
       created_at: string
       buyer: {
         id: string
-        name: string
+        first_name: string
+        last_name: string
+        name?: string // For backward compatibility
         email: string
       } | null
       product: {
@@ -32,14 +35,18 @@ interface FlaggedReviewCardProps {
         title: string
         seller: {
           id: string
-          name: string
+          first_name: string
+          last_name: string
+          name?: string // For backward compatibility
           username: string
         }
       }
     }
     reporter?: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
     } | null
   }
 }
@@ -116,7 +123,7 @@ export function FlaggedReviewCard({ flag }: FlaggedReviewCardProps) {
             </p>
             <p className="text-xs text-gray-500">
               Flagged {formatRelativeTime(flag.created_at)}
-              {flag.reporter && ` by ${flag.reporter.name}`}
+              {flag.reporter && ` by ${getFullName(flag.reporter)}`}
             </p>
           </div>
         </div>
@@ -139,7 +146,7 @@ export function FlaggedReviewCard({ flag }: FlaggedReviewCardProps) {
                 href={`/sellers/${flag.review.product.seller.username}`}
                 className="text-purple-600 hover:underline"
               >
-                {flag.review.product.seller.name}
+                {getFullName(flag.review.product.seller)}
               </a>
             </p>
           </div>
@@ -147,7 +154,7 @@ export function FlaggedReviewCard({ flag }: FlaggedReviewCardProps) {
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="font-semibold">
-                {flag.review.buyer?.name || 'Teacher'}
+                {flag.review.buyer ? getFullName(flag.review.buyer) : 'Teacher'}
               </span>
               {flag.review.verified_purchase && (
                 <Badge variant="outline" className="text-xs">

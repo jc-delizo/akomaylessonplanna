@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { Download, Star, Search, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { getFullName } from '@/lib/utils/profile'
 
 interface LibraryItem {
   id: string
@@ -21,7 +22,9 @@ interface LibraryItem {
     cover_image_url?: string
     seller: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
     }
   }
@@ -240,7 +243,7 @@ export default function LibraryPage() {
                 </h3>
               </Link>
               <p className="text-sm text-gray-600 mb-2">
-                Seller: {item.product.seller.name}
+                Seller: {getFullName(item.product.seller)}
               </p>
               <p className="text-xs text-gray-500 mb-4">
                 Purchased: {new Date(item.purchased_at).toLocaleDateString()}

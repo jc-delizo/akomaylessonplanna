@@ -110,8 +110,16 @@ export default async function DisputesPage() {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-600">Buyer: {dispute.buyer?.name || 'Unknown'}</p>
-                        <p className="text-gray-600">Seller: {dispute.seller?.name || 'Unknown'}</p>
+                        <p className="text-gray-600">Buyer: {dispute.buyer 
+                          ? (dispute.buyer.first_name && dispute.buyer.last_name
+                            ? `${dispute.buyer.first_name} ${dispute.buyer.last_name}`.trim()
+                            : dispute.buyer.first_name || 'Unknown')
+                          : 'Unknown'}</p>
+                        <p className="text-gray-600">Seller: {dispute.seller 
+                          ? (dispute.seller.first_name && dispute.seller.last_name
+                            ? `${dispute.seller.first_name} ${dispute.seller.last_name}`.trim()
+                            : dispute.seller.first_name || 'Unknown')
+                          : 'Unknown'}</p>
                       </div>
                       <div>
                         {dispute.product && (

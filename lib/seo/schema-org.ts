@@ -2,6 +2,7 @@
  * Schema.org structured data utilities
  * For SEO and rich snippets in search results
  */
+import { getFullName } from '@/lib/utils/profile'
 
 interface ProductSchema {
   '@context': string
@@ -34,7 +35,9 @@ export function generateProductSchema(product: {
   avg_rating?: number
   reviews_count?: number
   seller: {
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
   }
 }): ProductSchema {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
@@ -52,7 +55,7 @@ export function generateProductSchema(product: {
     },
     brand: {
       '@type': 'Brand',
-      name: product.seller.name,
+      name: getFullName(product.seller),
     },
   }
 
@@ -130,7 +133,9 @@ interface PersonSchema {
 }
 
 export function generateSellerSchema(seller: {
-  name: string
+  first_name: string
+  last_name: string
+  name?: string // For backward compatibility
   username: string
   avatar_url?: string
   bio?: string
@@ -140,7 +145,7 @@ export function generateSellerSchema(seller: {
   return {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: seller.name,
+    name: getFullName(seller),
     url: `${baseUrl}/sellers/${seller.username}`,
     ...(seller.avatar_url && { image: seller.avatar_url }),
     jobTitle: 'Teacher',

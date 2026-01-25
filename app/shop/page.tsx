@@ -188,6 +188,18 @@ export default function DashboardOverviewPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <Link href="/shop/orders">
+            <Button variant="outline" size="sm">
+              <FileText className="h-4 w-4 mr-2" />
+              View Orders
+            </Button>
+          </Link>
+          <Link href="/shop/earnings">
+            <Button variant="outline" size="sm">
+              <Wallet className="h-4 w-4 mr-2" />
+              Request Withdrawal
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -357,33 +369,6 @@ export default function DashboardOverviewPage() {
           </div>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <GlareButton>
-            <Link href="/shop/products/new">
-              <Button className="w-full justify-start" size="lg">
-                <Upload className="h-5 w-5 mr-2" />
-                Upload New Product
-              </Button>
-            </Link>
-          </GlareButton>
-          <Link href="/shop/orders">
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              <FileText className="h-5 w-5 mr-2" />
-              View Orders
-            </Button>
-          </Link>
-          <Link href="/shop/earnings">
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              <Wallet className="h-5 w-5 mr-2" />
-              Request Withdrawal
-            </Button>
-          </Link>
-        </div>
-      </Card>
       </div>
     </PullToRefresh>
   )

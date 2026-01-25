@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import { ArrowLeft, MoreVertical, ShieldAlert } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,14 +28,18 @@ interface ConversationHeaderProps {
     }
     buyer?: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
       avatar_url?: string
       is_verified_teacher?: boolean
     }
     seller?: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
       avatar_url?: string
       is_verified_teacher?: boolean
@@ -131,7 +136,7 @@ export function ConversationHeader({
         {otherParty?.avatar_url ? (
           <Image
             src={otherParty.avatar_url}
-            alt={otherParty.name || 'User'}
+            alt={otherParty ? getFullName(otherParty) : 'User'}
             width={40}
             height={40}
             className="rounded-full flex-shrink-0"
@@ -139,7 +144,7 @@ export function ConversationHeader({
         ) : (
           <div className="size-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-medium">
-              {otherParty?.name?.[0]?.toUpperCase() || 'U'}
+              {otherParty ? getInitials(otherParty.first_name || '', otherParty.last_name || '') : 'U'}
             </span>
           </div>
         )}
@@ -148,7 +153,7 @@ export function ConversationHeader({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="font-medium text-sm truncate">
-              {otherParty?.name || 'Unknown User'}
+              {otherParty ? getFullName(otherParty) : 'Unknown User'}
             </h2>
             {otherParty?.is_verified_teacher && (
               <Badge variant="outline" className="text-xs">
@@ -158,7 +163,7 @@ export function ConversationHeader({
           </div>
           {conversation.seller && (
             <p className="text-xs text-muted-foreground truncate">
-              {conversation.seller.name || 'Seller'}
+              {getFullName(conversation.seller)}
             </p>
           )}
         </div>

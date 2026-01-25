@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Search, Filter, Download } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getUsers(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -28,7 +29,8 @@ async function getUsers(
     .select(`
       id,
       email,
-      name,
+      first_name,
+      last_name,
       username,
       avatar_url,
       role,
@@ -43,7 +45,7 @@ async function getUsers(
   // Search filter
   if (search) {
     query = query.or(
-      `name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`
     )
   }
 
@@ -220,13 +222,13 @@ export default async function AdminUsersPage({
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                         {user.avatar_url ? (
-                          <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full" />
+                          <img src={user.avatar_url} alt={getFullName(user)} className="w-10 h-10 rounded-full" />
                         ) : (
-                          <span className="text-sm font-medium">{user.name?.[0]?.toUpperCase()}</span>
+                          <span className="text-sm font-medium">{getInitials(user.first_name || '', user.last_name || '')}</span>
                         )}
                       </div>
                       <div>
-                        <p className="font-medium">{user.name}</p>
+                        <p className="font-medium">{getFullName(user)}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>

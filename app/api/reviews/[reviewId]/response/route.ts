@@ -82,7 +82,8 @@ export async function PUT(
         *,
         buyer:users!reviews_buyer_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           email
         ),
         product:products!reviews_product_id_fkey(
@@ -105,9 +106,13 @@ export async function PUT(
     
     if (updatedReview.buyer?.email) {
       await sendSellerResponseNotificationEmail({
-        buyerName: updatedReview.buyer.name || 'Teacher',
+        buyerName: updatedReview.buyer.first_name && updatedReview.buyer.last_name
+          ? `${updatedReview.buyer.first_name} ${updatedReview.buyer.last_name}`.trim()
+          : updatedReview.buyer.first_name || 'Teacher',
         buyerEmail: updatedReview.buyer.email,
-        sellerName: user.user_metadata.name || 'Seller',
+        sellerName: (user.user_metadata?.first_name && user.user_metadata?.last_name
+          ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`.trim()
+          : user.user_metadata?.first_name) || 'Seller',
         productTitle: updatedReview.product.title,
         buyerReviewComment: updatedReview.comment || undefined,
         sellerResponse: response,

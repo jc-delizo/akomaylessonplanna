@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import type { User } from '@/lib/utils/profile'
 import { toPromise } from '@/lib/utils/supabase-promise'
+import { getFullName } from '@/lib/utils/profile'
 
 /**
  * GET /api/sellers/[username]
@@ -33,7 +34,8 @@ export async function GET(
       .select(
         `
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         bio,
@@ -98,7 +100,9 @@ export async function GET(
     // Build public profile response (only public fields)
     const publicProfile = {
       id: user.id,
-      name: user.name,
+      name: getFullName(user), // For backward compatibility, include full name as 'name'
+      first_name: user.first_name,
+      last_name: user.last_name,
       username: user.username,
       avatar_url: user.avatar_url,
       bio: user.bio,

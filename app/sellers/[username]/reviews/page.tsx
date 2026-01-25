@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 
 interface PageProps {
   params: Promise<{ username: string }>
@@ -22,7 +23,7 @@ export default async function SellerReviewsPage({
   // Get user by username
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('id, name, username, avg_rating, reviews_count')
+    .select('id, first_name, last_name, username, avg_rating, reviews_count')
     .eq('username', username)
     .single()
 
@@ -70,7 +71,7 @@ export default async function SellerReviewsPage({
           </Button>
         </Link>
         <h1 className="text-2xl font-bold mb-2">
-          Reviews for {user.name}
+          Reviews for {getFullName(user)}
         </h1>
         {user.avg_rating && (
           <p className="text-gray-600">

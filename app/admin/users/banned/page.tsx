@@ -4,6 +4,7 @@ import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getBannedUsers(
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -14,7 +15,8 @@ async function getBannedUsers(
     .select(`
       id,
       email,
-      name,
+      first_name,
+      last_name,
       username,
       avatar_url,
       role,
@@ -85,13 +87,13 @@ export default async function BannedUsersPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                           {user.avatar_url ? (
-                            <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full" />
+                            <img src={user.avatar_url} alt={getFullName(user)} className="w-10 h-10 rounded-full" />
                           ) : (
-                            <span className="text-sm font-medium">{user.name?.[0]?.toUpperCase()}</span>
+                            <span className="text-sm font-medium">{getInitials(user.first_name || '', user.last_name || '')}</span>
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{user.name}</p>
+                          <p className="font-medium">{getFullName(user)}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
                       </div>

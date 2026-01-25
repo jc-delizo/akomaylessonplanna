@@ -9,6 +9,8 @@ interface FollowButtonProps {
   initialFollowersCount: number
   initialIsFollowing?: boolean
   className?: string
+  hideFollowerCount?: boolean
+  buttonClassName?: string
 }
 
 /**
@@ -24,6 +26,8 @@ export function FollowButton({
   initialFollowersCount,
   initialIsFollowing = false,
   className,
+  hideFollowerCount = false,
+  buttonClassName,
 }: FollowButtonProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [followersCount, setFollowersCount] = useState(initialFollowersCount)
@@ -126,10 +130,11 @@ export function FollowButton({
         disabled={loading}
         variant={isFollowing ? 'outline' : 'default'}
         size="default"
+        className={buttonClassName}
       >
         {loading ? '...' : isFollowing ? 'Following' : 'Follow'}
       </Button>
-      {followersCount > 0 && (
+      {!hideFollowerCount && followersCount > 0 && (
         <span className="text-sm text-muted-foreground">
           {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
         </span>

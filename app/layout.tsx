@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Akomay Lesson Planna",
+  title: "Ako may lesson plan na!",
   description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
   icons: {
     icon: [

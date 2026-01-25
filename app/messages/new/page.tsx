@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { ArrowLeft, Search } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 export default function NewMessagePage() {
   const router = useRouter()
@@ -76,7 +77,7 @@ export default function NewMessagePage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, name, username, avatar_url, is_verified_teacher')
+      .select('id, first_name, last_name, username, avatar_url, is_verified_teacher')
       .eq('id', sellerId)
       .single()
 
@@ -109,9 +110,9 @@ export default function NewMessagePage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, name, username, avatar_url, is_verified_teacher')
+      .select('id, first_name, last_name, username, avatar_url, is_verified_teacher')
       .eq('can_sell', true)
-      .or(`name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%`)
+      .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%`)
       .limit(10)
 
     if (data) {
@@ -190,7 +191,7 @@ export default function NewMessagePage() {
               {seller.avatar_url ? (
                 <Image
                   src={seller.avatar_url}
-                  alt={seller.name}
+                  alt={getFullName(seller)}
                   width={40}
                   height={40}
                   className="rounded-full"
@@ -198,12 +199,12 @@ export default function NewMessagePage() {
               ) : (
                 <div className="size-10 rounded-full bg-muted flex items-center justify-center">
                   <span className="text-sm font-medium">
-                    {seller.name?.[0]?.toUpperCase() || 'S'}
+                    {getInitials(seller.first_name || '', seller.last_name || '')}
                   </span>
                 </div>
               )}
               <div className="flex-1">
-                <p className="font-medium">{seller.name}</p>
+                <p className="font-medium">{getFullName(seller)}</p>
                 <p className="text-sm text-muted-foreground">@{seller.username}</p>
               </div>
               <Button
@@ -246,20 +247,20 @@ export default function NewMessagePage() {
                         {result.avatar_url ? (
                           <Image
                             src={result.avatar_url}
-                            alt={result.name}
-                            width={32}
-                            height={32}
-                            className="rounded-full"
-                          />
-                        ) : (
-                          <div className="size-8 rounded-full bg-muted flex items-center justify-center">
-                            <span className="text-xs font-medium">
-                              {result.name?.[0]?.toUpperCase() || 'S'}
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-sm">{result.name}</p>
+                          alt={getFullName(result)}
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="size-8 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-xs font-medium">
+                            {getInitials(result.first_name || '', result.last_name || '')}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{getFullName(result)}</p>
                           <p className="text-xs text-muted-foreground">
                             @{result.username}
                           </p>

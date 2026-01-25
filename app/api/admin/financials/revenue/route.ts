@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       .select(`
         seller_id,
         price,
-        seller:users!order_items_seller_id_fkey(id, name)
+        seller:users!order_items_seller_id_fkey(id, first_name, last_name)
       `)
       .gte('created_at', startDate.toISOString())
 

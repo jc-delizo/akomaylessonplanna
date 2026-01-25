@@ -10,7 +10,9 @@ config({ path: resolve(process.cwd(), '.env.local') })
 interface SellerData {
   email: string
   password: string
-  name: string
+  first_name: string
+  last_name: string
+  name?: string // For backward compatibility
   username: string
   bio: string
   subjects_taught: string[]
@@ -347,10 +349,15 @@ async function createSeller(
 ): Promise<SellerData | null> {
   const email = `seller${index + 1}@akomaylessonplanna.test`
   const password = generatePassword()
-  const username = template.name.toLowerCase().replace(/\s+/g, '_').substring(0, 20)
+  // Split name into first and last
+  const nameParts = template.name.trim().split(' ')
+  const firstName = nameParts[0] || 'Seller'
+  const lastName = nameParts.slice(1).join(' ') || ''
+  const fullName = `${firstName} ${lastName}`.trim()
+  const username = fullName.toLowerCase().replace(/\s+/g, '_').substring(0, 20)
 
   try {
-    console.log(`\n👤 Creating seller ${index + 1}/20: ${template.name}`)
+    console.log(`\n👤 Creating seller ${index + 1}/20: ${fullName}`)
 
     // Step 1: Create auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -358,7 +365,9 @@ async function createSeller(
       password,
       email_confirm: true,
       user_metadata: {
-        name: template.name,
+        name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         role: 'seller',
       },
     })
@@ -382,7 +391,8 @@ async function createSeller(
       .upsert({
         id: authData.user.id,
         email,
-        name: template.name,
+        first_name: firstName,
+        last_name: lastName,
         username,
         role: 'seller',
         is_verified_teacher: true,
@@ -412,7 +422,9 @@ async function createSeller(
     return {
       email,
       password,
-      name: template.name,
+      first_name: firstName,
+      last_name: lastName,
+      name: fullName, // For backward compatibility
       username,
       bio: template.bio,
       subjects_taught: template.subjects_taught,
@@ -696,7 +708,10 @@ function generateCredentialsFile(sellers: SellerData[], outputPath: string) {
 `
 
   sellers.forEach((seller, index) => {
-    content += `| ${index + 1} | ${seller.email} | \`${seller.password}\` | ${seller.username} | ${seller.name} | seller | ${seller.subscription_tier} |\n`
+    const sellerFullName = seller.first_name && seller.last_name
+      ? `${seller.first_name} ${seller.last_name}`.trim()
+      : seller.first_name || seller.name || 'Seller'
+    content += `| ${index + 1} | ${seller.email} | \`${seller.password}\` | ${seller.username} | ${sellerFullName} | seller | ${seller.subscription_tier} |\n`
   })
 
   content += `

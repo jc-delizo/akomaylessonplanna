@@ -1,8 +1,12 @@
 # Deployment Architecture Guide
 
+> **⚠️ LEGACY DOCUMENT**: This guide describes a single-environment architecture. For the current recommended approach with isolated dev/prod environments, see:
+> - **[DEV-PROD-SETUP-GUIDE.md](implementationplan/DEV-PROD-SETUP-GUIDE.md)** - Dev/prod isolated architecture
+> - **[DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md)** - Branch-based deployment workflow
+
 ## Overview
 
-This document explains how all components connect: **GitHub** (code repository) → **Vercel** (hosting) → **Supabase** (database) → **Hostinger** (domain).
+This document explains how all components connect: **GitHub** (code repository) → **Vercel** (hosting) → **Supabase** (database) → **Hostinger** (domain) in a single-environment setup.
 
 ## Architecture Diagram
 

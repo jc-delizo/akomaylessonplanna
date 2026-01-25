@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { getFullName } from '@/lib/utils/profile'
 
 interface GenerateMetadataOptions {
   title: string
@@ -65,7 +66,9 @@ export function generateProductMetadata(product: {
   avg_rating?: number
   reviews_count?: number
   seller: {
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
   }
   grade: {
@@ -77,7 +80,7 @@ export function generateProductMetadata(product: {
 }): Metadata {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
   const url = `${baseUrl}/products/${product.slug}`
-  const description = `${product.description.substring(0, 155)}... ${product.grade.name} ${product.subject.name} lesson plan by ${product.seller.name}.`
+  const description = `${product.description.substring(0, 155)}... ${product.grade.name} ${product.subject.name} lesson plan by ${getFullName(product.seller)}.`
 
   return generateMetadata({
     title: product.title,

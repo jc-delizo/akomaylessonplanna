@@ -71,7 +71,8 @@ export async function PUT(request: NextRequest) {
     // Parse request body
     const body = await request.json()
     const {
-      name,
+      first_name,
+      last_name,
       username,
       bio,
       subjects_taught,
@@ -107,19 +108,28 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Bio must be 500 characters or less' }, { status: 400 })
     }
 
-    // Validate name length (3-50 chars)
-    if (name !== undefined) {
-      if (name.length < 3 || name.length > 50) {
+    // Validate first_name length (1-255 chars)
+    if (first_name !== undefined) {
+      if (first_name.length < 1 || first_name.length > 255) {
         return NextResponse.json(
-          { error: 'Name must be between 3 and 50 characters' },
+          { error: 'First name must be between 1 and 255 characters' },
           { status: 400 }
         )
       }
     }
 
+    // Validate last_name length (0-255 chars, can be empty)
+    if (last_name !== undefined && last_name.length > 255) {
+      return NextResponse.json(
+        { error: 'Last name must be 255 characters or less' },
+        { status: 400 }
+      )
+    }
+
     // Build update object (only include provided fields)
     const updateData: any = {}
-    if (name !== undefined) updateData.name = name
+    if (first_name !== undefined) updateData.first_name = first_name
+    if (last_name !== undefined) updateData.last_name = last_name || ''
     if (username !== undefined) updateData.username = username
     if (bio !== undefined) updateData.bio = bio
     if (subjects_taught !== undefined) updateData.subjects_taught = subjects_taught

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatRelativeTime } from '@/lib/utils/date'
 import { AlertTriangle, CheckCircle, X } from 'lucide-react'
 import Link from 'next/link'
+import { getFullName } from '@/lib/utils/profile'
 
 interface Report {
   id: string
@@ -16,12 +17,16 @@ interface Report {
   created_at: string
   reporter: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
   }
   reported_user: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
   }
   conversation?: {
@@ -125,11 +130,11 @@ export default function AdminDisputesPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Reporter:</span>
-                      <p className="font-medium">{report.reporter.name}</p>
+                      <p className="font-medium">{getFullName(report.reporter)}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Reported User:</span>
-                      <p className="font-medium">{report.reported_user.name}</p>
+                      <p className="font-medium">{getFullName(report.reported_user)}</p>
                     </div>
                   </div>
                 </div>

@@ -85,19 +85,19 @@ WCAG 2.1 AA compliance, screen reader compatibility.
 
 ### Unit Tests
 
-#### Password Validation
+#### Password Validation - Done
 - **TC-01-001**: Password minimum length (8 characters)
 - **TC-01-002**: Password complexity requirements
 - **TC-01-003**: Password hash generation (bcrypt)
 - **TC-01-004**: Password comparison (hashed vs plaintext)
 
-#### Email Validation
+#### Email Validation - Done
 - **TC-01-005**: Valid email format acceptance
 - **TC-01-006**: Invalid email format rejection
 - **TC-01-007**: Email uniqueness check
 - **TC-01-008**: Email normalization (lowercase)
 
-#### Username Validation
+#### Username Validation - Done
 - **TC-01-009**: Username length (3-20 characters)
 - **TC-01-010**: Username format (alphanumeric + underscores)
 - **TC-01-011**: Username uniqueness check
@@ -124,43 +124,45 @@ WCAG 2.1 AA compliance, screen reader compatibility.
 
 ### Integration Tests
 
-#### Authentication Endpoints
-- **TC-01-026**: POST /api/auth/signup - Email/password registration
-  - Valid signup data → User created, session established
-  - Duplicate email → Error 409
-  - Invalid email format → Error 400
-  - Weak password → Error 400
+#### Authentication (Supabase Client-Side)
+**Note**: Authentication uses Supabase client directly, not custom API routes.
 
-- **TC-01-027**: POST /api/auth/login - Email/password login
+- **TC-01-026**: `supabase.auth.signUp()` - Email/password registration
+  - Valid signup data → User created, session established
+  - Duplicate email → Supabase auth error
+  - Invalid email format → Supabase auth error
+  - Weak password (< 8 chars) → Validation error
+
+- **TC-01-027**: `supabase.auth.signInWithPassword()` - Email/password login
   - Valid credentials → Session created
-  - Invalid email → Error 401
-  - Invalid password → Error 401
+  - Invalid email → Supabase auth error
+  - Invalid password → Supabase auth error
   - Remember me checked → 90-day session
   - Remember me unchecked → Browser session
 
-- **TC-01-028**: POST /api/auth/google - Google OAuth flow
-  - OAuth callback → User created/logged in
+- **TC-01-028**: `supabase.auth.signInWithOAuth({ provider: 'google' })` - Google OAuth
+  - OAuth callback → User created/logged in via `/auth/callback`
   - Existing user → Login successful
-  - Invalid OAuth token → Error 401
+  - Invalid OAuth token → Supabase auth error
 
-- **TC-01-029**: POST /api/auth/facebook - Facebook OAuth flow
-  - OAuth callback → User created/logged in
+- **TC-01-029**: `supabase.auth.signInWithOAuth({ provider: 'facebook' })` - Facebook OAuth
+  - OAuth callback → User created/logged in via `/auth/callback`
   - Existing user → Login successful
-  - Invalid OAuth token → Error 401
+  - Invalid OAuth token → Supabase auth error
 
-- **TC-01-030**: POST /api/auth/logout - Session termination
+- **TC-01-030**: `supabase.auth.signOut()` - Session termination
   - Valid session → Session cleared, redirect to home
-  - Invalid session → Error 401
+  - No session → Graceful handling
 
-- **TC-01-031**: POST /api/auth/forgot-password - Password reset request
-  - Valid email → Reset email sent
-  - Invalid email → Error 404 (don't reveal if email exists)
-  - Rate limiting → Max 3 requests per hour
+- **TC-01-031**: `supabase.auth.resetPasswordForEmail()` - Password reset request
+  - Valid email → Reset email sent via Supabase Auth
+  - Invalid email → No error (security - don't reveal if email exists)
+  - Rate limiting → Handled by Supabase
 
-- **TC-01-032**: POST /api/auth/reset-password - Password reset completion
-  - Valid token → Password updated
-  - Expired token (1 hour) → Error 400
-  - Invalid token → Error 400
+- **TC-01-032**: `supabase.auth.updateUser()` - Password reset completion
+  - Valid recovery session → Password updated
+  - Expired token (1 hour) → Supabase auth error
+  - Invalid token → Supabase auth error
 
 #### User Management Endpoints
 - **TC-01-033**: POST /api/users/verify-teacher - PRC ID upload
@@ -213,7 +215,7 @@ WCAG 2.1 AA compliance, screen reader compatibility.
   4. Reopen browser
   5. Verify logged out
 
-#### Password Reset Flow
+#### Password Reset Flow - Done
 - **TC-01-040**: Complete password reset
   1. Click "Forgot password"
   2. Enter email
@@ -223,7 +225,7 @@ WCAG 2.1 AA compliance, screen reader compatibility.
   6. Verify password updated
   7. Login with new password
 
-#### Teacher Verification Flow
+#### Teacher Verification Flow - Done
 - **TC-01-041**: Complete teacher verification
   1. Sign up as buyer
   2. Click "Become a Seller"

@@ -116,7 +116,7 @@ export default function AdminConversationViewPage({
         <div>
           <h1 className="text-2xl font-bold">Conversation Details</h1>
           <p className="text-sm text-muted-foreground">
-            {conversation.buyer?.name} ↔ {conversation.seller?.name}
+            {conversation.buyer ? `${conversation.buyer.first_name} ${conversation.buyer.last_name || ''}`.trim() : 'Unknown'} ↔ {conversation.seller ? `${conversation.seller.first_name} ${conversation.seller.last_name || ''}`.trim() : 'Unknown'}
           </p>
         </div>
       </div>

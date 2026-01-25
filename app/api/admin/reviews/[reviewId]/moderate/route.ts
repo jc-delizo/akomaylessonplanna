@@ -131,14 +131,17 @@ export async function PUT(
       // Get buyer info
       const { data: buyerData } = await supabase
         .from('users')
-        .select('email, name')
+        .select('email, first_name, last_name')
         .eq('id', review.buyer_id)
         .single()
       
       if (buyerData?.email) {
+        const buyerName = buyerData.first_name && buyerData.last_name
+          ? `${buyerData.first_name} ${buyerData.last_name}`.trim()
+          : buyerData.first_name || 'Teacher'
         await sendReviewRemovedEmail(
           buyerData.email,
-          buyerData.name || 'Teacher',
+          buyerName,
           notes || 'violation of our review policy'
         )
       }

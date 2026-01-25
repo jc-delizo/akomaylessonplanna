@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import { Eye, RotateCcw } from 'lucide-react'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getSuspendedProducts(
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -28,7 +29,8 @@ async function getSuspendedProducts(
       updated_at,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         email
@@ -134,15 +136,15 @@ export default async function SuspendedProductsPage() {
                           {product.seller?.avatar_url ? (
                             <img
                               src={product.seller.avatar_url}
-                              alt={product.seller.name}
+                              alt={product.seller ? getFullName(product.seller) : 'Seller'}
                               className="w-8 h-8 rounded-full"
                             />
                           ) : (
-                            <span className="text-xs">{product.seller?.name?.[0]?.toUpperCase()}</span>
+                            <span className="text-xs">{product.seller ? getInitials(product.seller.first_name || '', product.seller.last_name || '') : ''}</span>
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{product.seller?.name}</p>
+                          <p className="text-sm font-medium">{product.seller ? getFullName(product.seller) : 'N/A'}</p>
                           <p className="text-xs text-gray-500">{product.seller?.email}</p>
                         </div>
                       </div>

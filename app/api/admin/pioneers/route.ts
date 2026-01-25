@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select(`
         id,
-        name,
+        first_name,
+        last_name,
         username,
         email,
         avatar_url,

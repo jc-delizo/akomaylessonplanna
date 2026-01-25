@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
         created_at,
         seller:users!followers_following_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           bio,
@@ -55,7 +56,9 @@ export async function GET(request: NextRequest) {
       if (!seller) return null
       return {
         id: seller.id,
-        name: seller.name,
+        name: `${seller.first_name} ${seller.last_name || ''}`.trim(), // For backward compatibility
+        first_name: seller.first_name,
+        last_name: seller.last_name,
         username: seller.username,
         avatar_url: seller.avatar_url,
         bio: seller.bio,

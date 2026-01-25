@@ -58,7 +58,13 @@ Facebook OAuth allows users to sign up and sign in using their Facebook accounts
    - **App Domains**: Add your domains (e.g., `localhost`, `yourdomain.com`)
    - **Privacy Policy URL**: Your privacy policy URL (required for production)
    - **Terms of Service URL**: Your terms of service URL (optional)
-   - **User Data Deletion**: URL for data deletion requests (optional but recommended)
+   - **User Data Deletion**: URL for data deletion requests (REQUIRED)
+     
+     **User Data Deletion URL:**
+     - For development: `http://localhost:3000/api/webhooks/facebook/data-deletion`
+     - For production: `https://yourdomain.com/api/webhooks/facebook/data-deletion`
+     
+     **Important:** This URL is required by Facebook to comply with data protection regulations (GDPR, CCPA). When a user requests data deletion through Facebook, Facebook will send a POST request to this endpoint.
 
 3. Add **Website** platform:
    - Click **+ Add Platform** → **Website**
@@ -285,11 +291,79 @@ For production use, Facebook may require app review:
 4. **Submit for review** (can take several days)
 5. **Monitor review status** in App Review dashboard
 
+## User Data Deletion Callback
+
+Facebook requires a User Data Deletion Callback URL to comply with data protection regulations. This endpoint has been implemented at `/api/webhooks/facebook/data-deletion`.
+
+### How It Works
+
+1. **User requests deletion through Facebook:**
+   - User goes to Facebook Settings → Apps and Websites
+   - User requests to remove their data from your app
+   - Facebook sends a POST request to your callback URL
+
+2. **Your endpoint processes the request:**
+   - Verifies the request is from Facebook (using signed_request)
+   - Finds the user by their Facebook user ID
+   - Deletes all user data from your system
+   - Returns a confirmation URL
+
+3. **User sees confirmation:**
+   - Facebook shows the confirmation URL to the user
+   - User can verify their data has been deleted
+
+### Configuration
+
+1. **Set up the callback URL in Facebook:**
+   - Go to Facebook Developers → Your App → **Settings** → **Basic**
+   - Under **User Data Deletion**, enter:
+     - Development: `http://localhost:3000/api/webhooks/facebook/data-deletion`
+     - Production: `https://yourdomain.com/api/webhooks/facebook/data-deletion`
+
+2. **Set environment variable:**
+   - Add `FACEBOOK_APP_SECRET` to your environment variables
+   - This is required to verify requests from Facebook
+   - Get it from Facebook Developers → Your App → **Settings** → **Basic** → **App Secret**
+
+3. **For production deployment:**
+   - Add `FACEBOOK_APP_SECRET` to Vercel environment variables
+   - Ensure the callback URL is accessible via HTTPS
+
+### Testing
+
+To test the endpoint:
+
+1. **Verify endpoint is accessible:**
+   ```bash
+   curl https://yourdomain.com/api/webhooks/facebook/data-deletion
+   ```
+   Should return: `{"message":"Facebook Data Deletion Callback is active","status":"ok"}`
+
+2. **Test with Facebook:**
+   - Facebook will automatically test the endpoint when you save the URL
+   - Check Facebook Developer Console for any errors
+
+### What Gets Deleted
+
+When a user requests data deletion:
+- User profile from `users` table
+- User account from Supabase Auth
+- Related data (orders, products, messages) via CASCADE constraints
+- All user-generated content
+
+### Important Notes
+
+- The endpoint must return a confirmation URL (required by Facebook)
+- The endpoint verifies requests using Facebook's signed_request mechanism
+- User data is permanently deleted (not just anonymized)
+- Make sure `FACEBOOK_APP_SECRET` is kept secure and never exposed
+
 ## Additional Resources
 
 - [Supabase Facebook OAuth Documentation](https://supabase.com/docs/guides/auth/social-login/auth-facebook)
 - [Facebook Login Documentation](https://developers.facebook.com/docs/facebook-login/)
 - [Facebook OAuth 2.0 Guide](https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow)
+- [Facebook Data Deletion Callback](https://developers.facebook.com/docs/apps/delete-data)
 - [Supabase Auth Helpers](https://supabase.com/docs/guides/auth/auth-helpers)
 
 ## Support

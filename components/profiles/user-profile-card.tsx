@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BadgeDisplay } from './badge-display'
 import { FollowButton } from './follow-button'
-import { getUserBadges } from '@/lib/utils/profile'
+import { getUserBadges, getFullName, getInitials } from '@/lib/utils/profile'
 import type { User } from '@/lib/utils/profile'
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
 
@@ -27,15 +27,7 @@ export function UserProfileCard({ user, showFollowButton = true, className }: Us
   const badges = getUserBadges(user)
   const profileUrl = `/sellers/${user.username || user.id}`
 
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+  const fullName = getFullName(user)
 
   return (
     <Card className={className}>
@@ -43,14 +35,14 @@ export function UserProfileCard({ user, showFollowButton = true, className }: Us
         <div className="flex items-start gap-4">
           <Link href={profileUrl}>
             <Avatar className="h-16 w-16">
-              {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              {user.avatar_url && <AvatarImage src={user.avatar_url} alt={fullName} />}
+              <AvatarFallback>{getInitials(user.first_name, user.last_name)}</AvatarFallback>
             </Avatar>
           </Link>
           <div className="flex-1 min-w-0">
             <CardTitle>
               <Link href={profileUrl} className="hover:underline">
-                {user.name}
+                {fullName}
               </Link>
             </CardTitle>
             {user.username && (

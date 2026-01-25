@@ -49,7 +49,6 @@ Feature 10 (Email System) has been fully implemented according to the design doc
 - `resend` - Email sending service
 - `@react-email/components` - React Email components
 - `react-email` - Template rendering
-- `@radix-ui/react-switch` - Switch component for admin UI
 
 ---
 

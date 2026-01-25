@@ -41,7 +41,7 @@ export async function sendEmailNotification(
     // Get user info
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, email, name')
+      .select('id, email, first_name, last_name')
       .eq('id', userId)
       .single()
 
@@ -78,10 +78,13 @@ export async function sendEmailNotification(
     })
 
     // Prepare template data
+    const fullName = user.first_name && user.last_name
+      ? `${user.first_name} ${user.last_name}`.trim()
+      : user.first_name || 'User'
     const templateData = prepareTemplateData({
-      user_name: user.name || 'User',
+      user_name: fullName,
       user_email: user.email,
-      user_username: user.name?.toLowerCase().replace(/\s+/g, '_') || '',
+      user_username: fullName.toLowerCase().replace(/\s+/g, '_') || '',
       ...data,
     })
 

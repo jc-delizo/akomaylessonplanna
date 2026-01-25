@@ -17,7 +17,8 @@ import { getGuestCartProductIds, clearGuestCart } from '@/lib/utils/guest-cart'
 export function SignupForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +42,7 @@ export function SignupForm() {
     setLoading(true)
 
     try {
-      await signup(email, password, name, rememberMe)
+      await signup(email, password, firstName, lastName, rememberMe)
       
       // Merge guest cart if it exists
       const guestCartProductIds = getGuestCartProductIds()
@@ -159,17 +160,32 @@ export function SignupForm() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Juan dela Cruz"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={loading}
-            />
+          <div className="flex flex-row gap-3">
+            <div className="space-y-2 flex-1">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Juan"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2 flex-1">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="dela Cruz"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
           </div>
 
           <div className="flex flex-row gap-3">
@@ -195,13 +211,13 @@ export function SignupForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 disabled={loading}
               />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Must be at least 6 characters
+            Must be at least 8 characters
           </p>
 
           <div className="flex items-center space-x-2">

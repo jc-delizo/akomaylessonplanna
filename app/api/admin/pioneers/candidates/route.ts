@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // Get all verified sellers who are not already Pioneers
     const { data: sellers, error: sellersError } = await supabase
       .from('users')
-      .select('id, name, username, email, avatar_url, created_at, is_verified_teacher')
+      .select('id, first_name, last_name, username, email, avatar_url, created_at, is_verified_teacher')
       .eq('role', 'seller')
       .eq('is_verified_teacher', true)
       .eq('is_pioneer', false)

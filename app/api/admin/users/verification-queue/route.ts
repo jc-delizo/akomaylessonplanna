@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
         *,
         user:users!teacher_id_verifications_user_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           email,
           username,
           avatar_url,

@@ -77,17 +77,20 @@ export async function GET(request: NextRequest) {
     try {
       const { data: sellers } = await supabase
         .from('users')
-        .select('name, username')
+        .select('first_name, last_name, username')
         .eq('role', 'seller')
         .eq('can_sell', true)
-        .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,username.ilike.%${query}%`)
         .limit(2)
 
       if (sellers) {
         sellers.forEach((seller: any) => {
+          const fullName = seller.first_name && seller.last_name
+            ? `${seller.first_name} ${seller.last_name}`.trim()
+            : seller.first_name || seller.username
           suggestions.push({
             type: 'seller',
-            text: seller.name || seller.username,
+            text: fullName,
             url: `/sellers/${seller.username}`
           })
         })

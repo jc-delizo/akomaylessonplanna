@@ -31,7 +31,8 @@ export async function GET(
         *,
         buyer:users!reviews_buyer_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           avatar_url
         )
       `, { count: 'exact' })
@@ -65,7 +66,7 @@ export async function GET(
       ...review,
       buyer: review.buyer ? {
         ...review.buyer,
-        name: anonymizeName(review.buyer.name),
+        name: anonymizeName(review.buyer.first_name, review.buyer.last_name), // For backward compatibility
       } : null,
     })) || []
 
@@ -199,7 +200,8 @@ export async function POST(
         *,
         buyer:users!reviews_buyer_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           avatar_url
         )
       `)
@@ -231,7 +233,7 @@ export async function POST(
       ...review,
       buyer: review.buyer ? {
         ...review.buyer,
-        name: anonymizeName(review.buyer.name),
+        name: anonymizeName(review.buyer.first_name, review.buyer.last_name), // For backward compatibility
       } : null,
     }
 
@@ -249,7 +251,7 @@ export async function POST(
           productData.seller_id,
           productId,
           productData.title,
-          review.buyer?.name || 'A buyer',
+          review.buyer ? anonymizeName(review.buyer.first_name, review.buyer.last_name) : 'A buyer',
           rating,
           comment || undefined
         )
@@ -271,14 +273,13 @@ export async function POST(
  * Format: "Teacher [First Name] [Last Initial]."
  * Example: "Maria Santos" -> "Teacher Maria S."
  */
-function anonymizeName(fullName: string): string {
-  if (!fullName) return 'Teacher'
+function anonymizeName(firstName: string, lastName: string): string {
+  const first = (firstName || '').trim()
+  const last = (lastName || '').trim()
   
-  const parts = fullName.trim().split(' ')
-  if (parts.length === 0) return 'Teacher'
+  if (!first) return 'Teacher'
   
-  const firstName = parts[0]
-  const lastInitial = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  const lastInitial = last ? last[0] : ''
   
-  return `Teacher ${firstName} ${lastInitial ? lastInitial + '.' : ''}`.trim()
+  return `Teacher ${first} ${lastInitial ? lastInitial + '.' : ''}`.trim()
 }

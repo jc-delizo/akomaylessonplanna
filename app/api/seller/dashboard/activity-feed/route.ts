@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         order:orders!order_items_order_id_fkey(
           payment_status,
           buyer_id,
-          buyer:users!orders_buyer_id_fkey(name)
+          buyer:users!orders_buyer_id_fkey(first_name, last_name)
         )
       `
       )
@@ -88,8 +88,9 @@ export async function GET(request: Request) {
       for (const sale of recentSales) {
         const order = Array.isArray(sale.order) ? sale.order[0] : sale.order
         const buyer = Array.isArray(order?.buyer) ? order.buyer[0] : order?.buyer
-        const buyerName = buyer?.name || 'Anonymous'
-        const anonymizedName = formatBuyerName(buyerName)
+        const anonymizedName = buyer?.first_name
+          ? formatBuyerName(buyer.first_name, buyer.last_name || '')
+          : 'Anonymous'
 
         activities.push({
           type: 'sale',
@@ -111,7 +112,7 @@ export async function GET(request: Request) {
         rating,
         comment,
         created_at,
-        buyer:users!reviews_buyer_id_fkey(name),
+        buyer:users!reviews_buyer_id_fkey(first_name, last_name),
         product:products!reviews_product_id_fkey(
           id,
           title,
@@ -126,8 +127,9 @@ export async function GET(request: Request) {
     if (recentReviews) {
       for (const review of recentReviews) {
         const buyer = Array.isArray(review.buyer) ? review.buyer[0] : review.buyer
-        const buyerName = buyer?.name || 'Anonymous'
-        const anonymizedName = formatBuyerName(buyerName)
+        const anonymizedName = buyer?.first_name
+          ? formatBuyerName(buyer.first_name, buyer.last_name || '')
+          : 'Anonymous'
 
         const product = Array.isArray(review.product) ? review.product[0] : review.product
         activities.push({
@@ -148,7 +150,7 @@ export async function GET(request: Request) {
         `
         id,
         created_at,
-        follower:users!followers_follower_id_fkey(name)
+        follower:users!followers_follower_id_fkey(first_name, last_name)
       `
       )
       .eq('following_id', user.id)
@@ -158,8 +160,9 @@ export async function GET(request: Request) {
     if (recentFollowers) {
       for (const follower of recentFollowers) {
         const followerUser = Array.isArray(follower.follower) ? follower.follower[0] : follower.follower
-        const followerName = followerUser?.name || 'Someone'
-        const anonymizedName = formatBuyerName(followerName)
+        const anonymizedName = followerUser?.first_name
+          ? formatBuyerName(followerUser.first_name, followerUser.last_name || '')
+          : 'Someone'
 
         activities.push({
           type: 'follower',
@@ -210,10 +213,11 @@ export async function GET(request: Request) {
   }
 }
 
-function formatBuyerName(name: string): string {
-  const parts = name.split(' ')
-  if (parts.length >= 2) {
-    return `Teacher ${parts[0]} ${parts[parts.length - 1].charAt(0)}.`
+function formatBuyerName(firstName: string, lastName: string): string {
+  const first = (firstName || '').trim()
+  const last = (lastName || '').trim()
+  if (last) {
+    return `Teacher ${first} ${last.charAt(0)}.`
   }
-  return `Teacher ${name.charAt(0)}.`
+  return `Teacher ${first.charAt(0)}.`
 }

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Award, Plus, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { headers } from 'next/headers'
+import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getPioneers() {
   const headersList = await headers()
@@ -120,18 +121,18 @@ export default async function PioneersPage() {
                   {pioneer.avatar_url ? (
                     <img
                       src={pioneer.avatar_url}
-                      alt={pioneer.name}
+                      alt={getFullName(pioneer)}
                       className="w-16 h-16 rounded-full"
                     />
                   ) : (
                     <span className="text-lg font-medium">
-                      {pioneer.name?.[0]?.toUpperCase()}
+                      {getInitials(pioneer.first_name || '', pioneer.last_name || '')}
                     </span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold truncate">{pioneer.name}</h3>
+                    <h3 className="font-semibold truncate">{getFullName(pioneer)}</h3>
                     <Badge className="bg-purple-100 text-purple-700">
                       <Award className="h-3 w-3 mr-1" />
                       Pioneer

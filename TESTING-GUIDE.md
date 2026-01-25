@@ -8,11 +8,12 @@ Before testing, ensure you have:
    - Create `.env.local` file in project root (if not already created)
    - Add your Supabase credentials:
      ```
-     NEXT_PUBLIC_SUPABASE_URL=https://enxtvupbiezvwrnuzwsl.supabase.co
+     NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
      NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
      SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
      NEXT_PUBLIC_APP_URL=http://localhost:3000
      ```
+   - See [.env.example](.env.example) for a complete template with all required variables
 
 2. **Start the Development Server**
    ```bash
@@ -57,7 +58,7 @@ Before testing, ensure you have:
 2. Fill in the form:
    - Full Name: "Test User"
    - Email: "test@example.com"
-   - Password: "password123" (min 6 characters)
+   - Password: "password123" (min 8 characters)
 3. Click "Create account"
 
 **Expected Result:**

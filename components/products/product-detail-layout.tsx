@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewsSection } from '@/components/reviews/reviews-section'
 import { ShareDropdown } from '@/components/social/share-dropdown'
@@ -14,7 +15,12 @@ import { ProductStats } from '@/components/social-proof/product-stats'
 import { ProductBadge } from '@/components/social-proof/product-badge'
 import { calculateProductBadgeClient } from '@/lib/social-proof/calculate-badges-client'
 import { useGuestCart } from '@/lib/hooks/useGuestCart'
-import { MessageSquare, Heart, Star, ShoppingBag } from 'lucide-react'
+import { BadgeDisplay } from '@/components/profiles/badge-display'
+import { getUserBadges, getFullName, getInitials } from '@/lib/utils/profile'
+import { FollowButton } from '@/components/profiles/follow-button'
+import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
+import { MessageSquare, Heart, Star, ShoppingBag, CheckCircle2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Product {
   id: string
@@ -38,7 +44,9 @@ interface Product {
   published_at?: string
   seller: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
     avatar_url?: string
     bio?: string
@@ -47,6 +55,10 @@ interface Product {
     subscription_tier?: string
     followers_count?: number
     response_time_hours?: number
+    role?: 'buyer' | 'seller' | 'admin'
+    can_sell?: boolean
+    avg_rating?: number
+    reviews_count?: number
   }
   grade: {
     id: string
@@ -71,6 +83,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
 
@@ -139,7 +152,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
       if (!user) {
         // Guest user - add to localStorage guest cart
         addToGuestCart(product.id)
-        alert('Added to cart!')
+        toast.success('Added to cart!')
         return
       }
 
@@ -154,11 +167,11 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
         throw new Error('Failed to add to cart')
       }
 
-      // Show success message (could use toast here)
-      alert('Added to cart!')
+      // Show success message
+      toast.success('Added to cart!')
     } catch (error) {
       console.error('Error adding to cart:', error)
-      alert('Failed to add to cart. Please try again.')
+      toast.error('Failed to add to cart. Please try again.')
     } finally {
       setIsAddingToCart(false)
     }
@@ -166,7 +179,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
 
   const handleBuyNow = async () => {
     try {
-      setIsAddingToCart(true)
+      setIsBuyingNow(true)
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -199,9 +212,9 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
       }
     } catch (error) {
       console.error('Error in buy now:', error)
-      alert('Failed to proceed to checkout. Please try again.')
+      toast.error('Failed to proceed to checkout. Please try again.')
     } finally {
-      setIsAddingToCart(false)
+      setIsBuyingNow(false)
     }
   }
 
@@ -237,7 +250,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
       }
     } catch (error) {
       console.error('Error toggling wishlist:', error)
-      alert('Failed to update wishlist. Please try again.')
+      toast.error('Failed to update wishlist. Please try again.')
     } finally {
       setIsTogglingWishlist(false)
     }
@@ -420,14 +433,14 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
               variant="outline"
               className="flex-1 h-10 border-2 border-[#ff7201] text-[#ff7201] bg-transparent hover:bg-[#ff7201]/10"
               onClick={handleBuyNow}
-              disabled={isAddingToCart}
+              disabled={isBuyingNow || isAddingToCart}
             >
-              {isAddingToCart ? 'Processing...' : 'Buy Now'}
+              {isBuyingNow ? 'Processing...' : 'Buy Now'}
             </Button>
             <Button 
               className="flex-1 h-10 bg-[#ff7201] hover:bg-[#ff7201]/90 text-white"
               onClick={handleAddToCart}
-              disabled={isAddingToCart}
+              disabled={isAddingToCart || isBuyingNow}
             >
               {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </Button>
@@ -449,66 +462,99 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
           </div>
 
           {/* Seller Card */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3">Seller Information</h3>
-            <div className="flex items-start gap-3">
-              <Link href={`/sellers/${product.seller.username}`}>
-                {product.seller.avatar_url ? (
-                  <img
-                    src={product.seller.avatar_url}
-                    alt={product.seller.name}
-                    className="w-12 h-12 rounded-full"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300" />
-                )}
-              </Link>
-              <div className="flex-1">
-                <Link
-                  href={`/sellers/${product.seller.username}`}
-                  className="font-semibold hover:text-purple-600 flex items-center gap-1"
-                >
-                  {product.seller.name}
-                  {product.seller.is_verified_teacher && (
-                    <svg
-                      className="w-4 h-4 text-blue-600"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                  {product.seller.is_pioneer && (
-                    <Badge className="bg-yellow-600 text-white text-xs">
-                      PIONEER
-                    </Badge>
-                  )}
+          <Card className="p-5">
+            <h3 className="font-semibold text-lg mb-4">Seller Information</h3>
+            
+            {/* Seller Profile Section - Horizontal Layout */}
+            <div className="flex items-start justify-between gap-4">
+              {/* Left Side: Seller Info */}
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <Link href={`/sellers/${product.seller.username}`} className="shrink-0">
+                  <Avatar className="h-12 w-12">
+                    {product.seller.avatar_url ? (
+                      <AvatarImage src={product.seller.avatar_url} alt={getFullName(product.seller)} />
+                    ) : null}
+                    <AvatarFallback>
+                      {getInitials(product.seller.first_name || '', product.seller.last_name || '')}
+                    </AvatarFallback>
+                  </Avatar>
                 </Link>
-                <p className="text-sm text-gray-600">
-                  {product.seller.followers_count || 0} followers
-                </p>
-                {product.seller.response_time_hours !== undefined &&
-                  product.seller.response_time_hours !== null && (
-                    <p className="text-sm text-gray-600">
-                      Responds in ~{product.seller.response_time_hours}h
-                    </p>
+                <div className="flex-1 min-w-0">
+                  {/* Seller Name with Verified Icon */}
+                  <Link
+                    href={`/sellers/${product.seller.username}`}
+                    className="flex items-center gap-2 hover:text-purple-600 transition-colors mb-1"
+                  >
+                    {product.seller.is_verified_teacher && (
+                      <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" fill="currentColor" />
+                    )}
+                    <span className="text-xl font-bold">{getFullName(product.seller)}</span>
+                  </Link>
+                  
+                  {/* Username */}
+                  {product.seller.username && (
+                    <p className="text-sm text-muted-foreground mb-2">@{product.seller.username}</p>
                   )}
+                  
+                  {/* Ratings and Response Time */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 flex-wrap">
+                    {product.seller.avg_rating !== undefined && product.seller.avg_rating !== null && (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          <span className="font-medium">{product.seller.avg_rating.toFixed(1)}</span>
+                          {product.seller.reviews_count !== undefined && product.seller.reviews_count !== null && (
+                            <span>({product.seller.reviews_count} {product.seller.reviews_count === 1 ? 'review' : 'reviews'})</span>
+                          )}
+                        </div>
+                        {product.seller.response_time_hours !== undefined &&
+                          product.seller.response_time_hours !== null && (
+                            <span>•</span>
+                          )}
+                      </>
+                    )}
+                    {product.seller.response_time_hours !== undefined &&
+                      product.seller.response_time_hours !== null && (
+                        <span>Responds in ~{product.seller.response_time_hours}h</span>
+                      )}
+                  </div>
+                  
+                  {/* Badges */}
+                  {(() => {
+                    const sellerForBadges = {
+                      ...product.seller,
+                      role: product.seller.role || 'seller',
+                      can_sell: product.seller.can_sell ?? true,
+                    }
+                    const badges = getUserBadges(sellerForBadges as any)
+                    return badges.length > 0 ? <BadgeDisplay badges={badges} className="mb-2" /> : null
+                  })()}
+                  
+                  {/* Followers Count */}
+                  <p className="text-sm text-muted-foreground">
+                    {product.seller.followers_count || 0} {product.seller.followers_count === 1 ? 'follower' : 'followers'}
+                  </p>
+                </div>
               </div>
-              <Button variant="outline" size="sm">
-                Follow
-              </Button>
+
+              {/* Right Side: Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Link 
+                  href={`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`}
+                >
+                  <Button variant="outline" className="h-10">
+                    <MessageSquare className="size-4 mr-2" />
+                    Chat
+                  </Button>
+                </Link>
+                <FollowButton
+                  username={product.seller.username}
+                  initialFollowersCount={product.seller.followers_count || 0}
+                  hideFollowerCount={true}
+                  buttonClassName="h-10"
+                />
+              </div>
             </div>
-            {/* Ask a Question Button */}
-            <Link href={`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`} className="mt-4 block">
-              <Button variant="outline" className="w-full">
-                <MessageSquare className="size-4 mr-2" />
-                Ask a Question
-              </Button>
-            </Link>
           </Card>
         </div>
       </div>

@@ -67,7 +67,7 @@ export async function GET(
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url)
+        sender:sender_id(id, first_name, last_name, username, avatar_url)
       `
       )
       .eq('conversation_id', conversationId)

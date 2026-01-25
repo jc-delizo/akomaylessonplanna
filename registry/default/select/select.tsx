@@ -78,6 +78,8 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
+        collisionPadding={8}
+        disableAnchorTracking={true}
         className="isolate z-50"
       >
         <SelectPrimitive.Popup

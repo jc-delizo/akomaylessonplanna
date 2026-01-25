@@ -142,7 +142,7 @@ Digital marketplace combining:
 ### Tech Stack
 
 **Frontend:**
-- **Framework:** Next.js 14 (React)
+- **Framework:** Next.js 16.1.1 (React)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS or CSS Modules
 - **State Management:** React Context/Zustand
@@ -3150,7 +3150,7 @@ Buyer-seller messaging system with **Messenger-like UX** for pre-purchase inquir
 ### Phase 1: Foundation (Weeks 1-8)
 
 **Week 1-2: Project Setup & Database**
-- Set up Next.js 14 + TypeScript
+- Set up Next.js 16.1.1 + TypeScript
 - Initialize Supabase
 - Create database schema
 - Configure RLS

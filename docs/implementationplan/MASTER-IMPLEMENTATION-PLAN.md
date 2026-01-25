@@ -323,7 +323,7 @@ akomaylessonplanna/
 2. **Shared Components First** - Invest heavily in reusable components
 3. **Custom Hooks** - All business logic in hooks, NOT in components
 4. **TypeScript Strict** - Full type safety with Supabase generated types
-5. **Server Components** - Use Next.js 15 Server Components by default
+5. **Server Components** - Use Next.js 16 Server Components by default
 6. **API Layer** - Server Actions for mutations, API routes for webhooks
 
 ---
@@ -337,7 +337,7 @@ Based on dependencies, user journey, and complexity considerations for a solo de
 **Priority: CRITICAL - Must be completed first**
 
 1. **Project Setup**
-   - Initialize Next.js 15 with TypeScript
+   - Initialize Next.js 16 with TypeScript
    - Install and configure shadcn/ui
    - Set up Tailwind CSS
    - Configure ESLint + Prettier
@@ -2417,7 +2417,7 @@ This Master Implementation Plan provides a comprehensive roadmap for building AK
 - **Full 11-feature MVP** - Complete platform at launch
 
 **Technical Foundation:**
-- **Next.js 15 + Supabase** - Modern, scalable stack
+- **Next.js 16.1.1 + Supabase** - Modern, scalable stack
 - **TypeScript + Zod** - Type safety throughout
 - **React Query + Zustand** - Optimized state management
 - **shadcn/ui** - Beautiful, accessible components

@@ -17,7 +17,8 @@ async function getPendingProducts(
       *,
       seller:users!products_seller_id_fkey(
         id,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         created_at,
@@ -170,15 +171,15 @@ export default async function PendingProductsPage() {
                         {seller?.avatar_url ? (
                           <img
                             src={seller.avatar_url}
-                            alt={seller.name}
+                            alt={seller ? `${seller.first_name} ${seller.last_name || ''}`.trim() : 'Seller'}
                             className="w-8 h-8 rounded-full"
                           />
                         ) : (
-                          <span className="text-xs">{seller?.name?.[0]?.toUpperCase()}</span>
+                          <span className="text-xs">{seller?.first_name?.[0]?.toUpperCase() || ''}</span>
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{seller?.name}</p>
+                        <p className="text-sm font-medium">{seller ? `${seller.first_name} ${seller.last_name || ''}`.trim() : 'Seller'}</p>
                         <p className="text-xs text-gray-500">
                           Product #{product.productNumber} of 3 • {product.submissionCount} submission
                         </p>

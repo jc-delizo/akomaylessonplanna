@@ -10,6 +10,8 @@ import { Trash2, Heart, ShoppingCart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useGuestCart } from '@/lib/hooks/useGuestCart'
 import { getGuestCartProductIds, clearGuestCart } from '@/lib/utils/guest-cart'
+import { toast } from 'sonner'
+import { getFullName } from '@/lib/utils/profile'
 
 interface CartItem {
   id: string
@@ -22,7 +24,9 @@ interface CartItem {
     cover_image_url?: string
     seller: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
     }
   }
@@ -39,7 +43,9 @@ interface GuestCartItem {
     cover_image_url?: string
     seller: {
       id: string
-      name: string
+      first_name: string
+      last_name: string
+      name?: string // For backward compatibility
       username: string
     }
   }
@@ -239,25 +245,20 @@ export default function CartPage() {
     }
 
     try {
-      const response = await fetch('/api/cart/move-to-wishlist', {
+      const response = await fetch('/api/wishlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id: productId }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to move to wishlist')
+        throw new Error('Failed to add to wishlist')
       }
 
-      setCartItems(items => items.filter(item => item.id !== itemId))
-      setSelectedItems(selected => {
-        const newSelected = new Set(selected)
-        newSelected.delete(itemId)
-        return newSelected
-      })
+      toast.success('Added to wishlist!')
     } catch (error) {
-      console.error('Error moving to wishlist:', error)
-      alert('Failed to move to wishlist. Please try again.')
+      console.error('Error adding to wishlist:', error)
+      toast.error('Failed to add to wishlist. Please try again.')
     }
   }
 
@@ -323,7 +324,7 @@ export default function CartPage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Button asChild size="lg">
-              <Link href="/marketplace">Browse Products</Link>
+              <Link href="/marketplace/browse">Browse Products</Link>
             </Button>
             <Button variant="outline" asChild size="lg" className="gap-2">
               <Link href="/wishlist">
@@ -449,7 +450,7 @@ export default function CartPage() {
                       href={`/sellers/${item.product.seller.username}`}
                       className="hover:text-purple-600 transition-colors font-medium"
                     >
-                      {item.product.seller.name}
+                      {getFullName(item.product.seller)}
                     </Link>
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
@@ -464,7 +465,7 @@ export default function CartPage() {
                     size="icon"
                     onClick={() => handleMoveToWishlist(item.id, item.product.id)}
                     className="h-9 w-9 text-gray-600 hover:text-purple-600 hover:bg-purple-50"
-                    title="Move to Wishlist"
+                    title="Add to Wishlist"
                   >
                     <Heart className="w-4 h-4" />
                   </Button>

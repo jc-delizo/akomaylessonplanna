@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/utils/date'
 import { Search, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import { getFullName } from '@/lib/utils/profile'
 
 interface Conversation {
   id: string
@@ -19,13 +20,17 @@ interface Conversation {
   created_at: string
   buyer: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
     email: string
   }
   seller: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
+    name?: string // For backward compatibility
     username: string
     email: string
   }
@@ -61,9 +66,11 @@ export default function AdminConversationsPage() {
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
+    const buyerFullName = getFullName(conv.buyer).toLowerCase()
+    const sellerFullName = getFullName(conv.seller).toLowerCase()
     return (
-      conv.buyer.name.toLowerCase().includes(query) ||
-      conv.seller.name.toLowerCase().includes(query) ||
+      buyerFullName.includes(query) ||
+      sellerFullName.includes(query) ||
       conv.product?.title.toLowerCase().includes(query) ||
       conv.buyer.email.toLowerCase().includes(query) ||
       conv.seller.email.toLowerCase().includes(query)
@@ -122,12 +129,12 @@ export default function AdminConversationsPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Buyer:</span>
-                      <p className="font-medium">{conv.buyer.name}</p>
+                      <p className="font-medium">{getFullName(conv.buyer)}</p>
                       <p className="text-xs text-muted-foreground">{conv.buyer.email}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Seller:</span>
-                      <p className="font-medium">{conv.seller.name}</p>
+                      <p className="font-medium">{getFullName(conv.seller)}</p>
                       <p className="text-xs text-muted-foreground">{conv.seller.email}</p>
                     </div>
                   </div>

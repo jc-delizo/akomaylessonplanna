@@ -100,7 +100,8 @@ CREATE TABLE users (
   -- Authentication
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255), -- Null for OAuth users
-  name VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) DEFAULT '',
   username VARCHAR(20) UNIQUE, -- For SEO-friendly URLs /sellers/[username]
   avatar_url TEXT,
 
@@ -1012,28 +1013,41 @@ CREATE INDEX idx_seller_response_times_seller ON seller_response_times(seller_id
 
 ```sql
 CREATE TABLE email_queue (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_type VARCHAR(100) NOT NULL,
   recipient_email VARCHAR(255) NOT NULL,
-  recipient_name VARCHAR(255),
-  email_type VARCHAR(50) NOT NULL, -- welcome, order_confirmation, etc.
-  subject VARCHAR(500) NOT NULL,
-  body_html TEXT NOT NULL,
-  body_text TEXT,
-  priority INTEGER DEFAULT 5 CHECK (priority BETWEEN 1 AND 10), -- 1 = highest, 10 = lowest
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'sent', 'failed')),
-  scheduled_at TIMESTAMP, -- For scheduled emails
-  sent_at TIMESTAMP,
-  error_message TEXT,
+  recipient_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+
+  -- Template data (uses email_templates)
+  template_id UUID REFERENCES email_templates(id) ON DELETE SET NULL,
+  template_data JSONB NOT NULL DEFAULT '{}', -- Variables for template rendering
+
+  -- Priority & Timing
+  priority INTEGER DEFAULT 5 CHECK (priority BETWEEN 1 AND 10), -- 1=highest, 10=lowest
+  send_after TIMESTAMP DEFAULT NOW(),
   attempts INTEGER DEFAULT 0,
   max_attempts INTEGER DEFAULT 3,
-  metadata JSONB, -- Additional email-specific data
-  created_at TIMESTAMP DEFAULT NOW()
+
+  -- Status
+  status VARCHAR(20) CHECK (status IN ('pending', 'processing', 'sent', 'failed', 'cancelled')) DEFAULT 'pending',
+
+  -- Error tracking
+  last_error TEXT,
+  error_details JSONB,
+
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW(),
+  processed_at TIMESTAMP,
+  sent_at TIMESTAMP,
+  failed_at TIMESTAMP
 );
 
 -- Indexes
-CREATE INDEX idx_email_queue_status ON email_queue(status, scheduled_at) WHERE status IN ('pending', 'failed');
-CREATE INDEX idx_email_queue_priority ON email_queue(priority, scheduled_at) WHERE status IN ('pending', 'failed');
+CREATE INDEX idx_email_queue_status ON email_queue(status, send_after) WHERE status = 'pending';
+CREATE INDEX idx_email_queue_priority ON email_queue(priority ASC, send_after ASC) WHERE status = 'pending';
 CREATE INDEX idx_email_queue_type ON email_queue(email_type);
+CREATE INDEX idx_email_queue_recipient ON email_queue(recipient_user_id) WHERE recipient_user_id IS NOT NULL;
+CREATE INDEX idx_email_queue_created ON email_queue(created_at DESC);
 ```
 
 ---
@@ -1114,14 +1128,13 @@ CREATE INDEX idx_email_configuration_type ON email_configuration(email_type);
 
 ```sql
 CREATE TABLE user_email_preferences (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
 
   -- 4 Category Toggles (Feature 10)
-  sales_notifications BOOLEAN DEFAULT true, -- New sales, reviews
-  product_updates BOOLEAN DEFAULT true, -- Product approvals, rejections
-  promotions BOOLEAN DEFAULT true, -- Price drops, new products
-  platform_updates BOOLEAN DEFAULT true, -- System announcements
+  selling_notifications BOOLEAN DEFAULT true, -- New sales, reviews, orders
+  buying_notifications BOOLEAN DEFAULT true, -- Order confirmations, delivery updates
+  social_notifications BOOLEAN DEFAULT true, -- Follows, likes, messages
+  announcements BOOLEAN DEFAULT true, -- System announcements, platform updates
 
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -2710,26 +2723,27 @@ CREATE INDEX idx_disputes_status ON disputes(status, created_at DESC);
 
 -- Email queue
 CREATE TABLE email_queue (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_type VARCHAR(100) NOT NULL,
   recipient_email VARCHAR(255) NOT NULL,
-  recipient_name VARCHAR(255),
-  email_type VARCHAR(50) NOT NULL,
-  subject VARCHAR(500) NOT NULL,
-  body_html TEXT NOT NULL,
-  body_text TEXT,
+  recipient_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  template_id UUID REFERENCES email_templates(id) ON DELETE SET NULL,
+  template_data JSONB NOT NULL DEFAULT '{}',
   priority INTEGER DEFAULT 5 CHECK (priority BETWEEN 1 AND 10),
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'sent', 'failed')),
-  scheduled_at TIMESTAMP,
-  sent_at TIMESTAMP,
-  error_message TEXT,
+  send_after TIMESTAMP DEFAULT NOW(),
   attempts INTEGER DEFAULT 0,
   max_attempts INTEGER DEFAULT 3,
-  metadata JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
+  status VARCHAR(20) CHECK (status IN ('pending', 'processing', 'sent', 'failed', 'cancelled')) DEFAULT 'pending',
+  last_error TEXT,
+  error_details JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  processed_at TIMESTAMP,
+  sent_at TIMESTAMP,
+  failed_at TIMESTAMP
 );
 
-CREATE INDEX idx_email_queue_status ON email_queue(status, scheduled_at) WHERE status IN ('pending', 'failed');
-CREATE INDEX idx_email_queue_priority ON email_queue(priority, scheduled_at) WHERE status IN ('pending', 'failed');
+CREATE INDEX idx_email_queue_status ON email_queue(status, send_after) WHERE status = 'pending';
+CREATE INDEX idx_email_queue_priority ON email_queue(priority ASC, send_after ASC) WHERE status = 'pending';
 
 -- Email templates
 CREATE TABLE email_templates (
@@ -2776,12 +2790,11 @@ CREATE TABLE email_configuration (
 
 -- User email preferences
 CREATE TABLE user_email_preferences (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  sales_notifications BOOLEAN DEFAULT true,
-  product_updates BOOLEAN DEFAULT true,
-  promotions BOOLEAN DEFAULT true,
-  platform_updates BOOLEAN DEFAULT true,
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  selling_notifications BOOLEAN DEFAULT true,
+  buying_notifications BOOLEAN DEFAULT true,
+  social_notifications BOOLEAN DEFAULT true,
+  announcements BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

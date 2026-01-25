@@ -47,7 +47,7 @@ export async function sendReviewReminderEmail(
     // Get buyer info
     const { data: buyer } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('email', data.buyerEmail)
       .single()
 
@@ -57,8 +57,11 @@ export async function sendReviewReminderEmail(
     }
 
     // Build template data
+    const buyerFullName = data.buyerName || (buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`.trim()
+      : buyer.first_name || 'Valued Customer')
     const templateData = buildReviewReminderData({
-      userName: data.buyerName || buyer.name || 'Valued Customer',
+      userName: buyerFullName,
       userEmail: buyer.email,
       userId: buyer.id,
       productTitle: data.productTitle,

@@ -23,7 +23,7 @@ export async function sendVerificationApprovedEmail(
     // Get user info
     const { data: user } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', userId)
       .single()
 
@@ -33,8 +33,11 @@ export async function sendVerificationApprovedEmail(
     }
 
     // Build template data
+    const userFullName = user.first_name && user.last_name
+      ? `${user.first_name} ${user.last_name}`.trim()
+      : user.first_name || 'Teacher'
     const templateData = buildVerificationApprovedData({
-      userName: user.name || 'Teacher',
+      userName: userFullName,
       userEmail: user.email,
       userId: user.id,
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'}/seller/dashboard`,

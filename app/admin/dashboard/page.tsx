@@ -8,6 +8,7 @@ import { ActivityFeed } from '@/components/admin/dashboard/activity-feed'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 import { cookies } from 'next/headers'
 
 async function getDashboardMetrics(timeRange: string = 'last_30_days') {
@@ -54,7 +55,7 @@ async function getRecentActivity() {
     .from('audit_log')
     .select(`
       *,
-      admin:users!audit_log_admin_id_fkey(id, name)
+      admin:users!audit_log_admin_id_fkey(id, first_name, last_name)
     `)
     .order('created_at', { ascending: false })
     .limit(20)
@@ -71,7 +72,7 @@ async function getRecentActivity() {
       type,
       action: log.action.replace(/_/g, ' '),
       target: `${log.entity_type} #${log.entity_id.substring(0, 8)}`,
-      admin: (log.admin as any)?.name || 'System',
+      admin: log.admin ? getFullName(log.admin as any) : 'System',
       timestamp: log.created_at,
     }
   })

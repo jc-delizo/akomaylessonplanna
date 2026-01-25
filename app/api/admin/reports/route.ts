@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       .from('reports')
       .select(`
         *,
-        reporter:users!reports_reporter_id_fkey(id, name, email, avatar_url)
+        reporter:users!reports_reporter_id_fkey(id, first_name, last_name, email, avatar_url)
       `, { count: 'exact' })
       .eq('status', status)
       .order('created_at', { ascending: false })

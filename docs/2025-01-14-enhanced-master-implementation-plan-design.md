@@ -261,7 +261,7 @@ supabase db inspect --table users --column can_sell || echo "❌ Schema not read
 
 2. **Implement the signup form** with these elements:
    - Email input (type="email", required, validate format)
-   - Password input (type="password", required, min 6 characters)
+   - Password input (type="password", required, min 8 characters)
    - Full Name input (type="text", required)
    - OAuth buttons in this order (per brainstorming line 41):
      * Google button (largest, first)
