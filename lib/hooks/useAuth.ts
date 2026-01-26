@@ -268,11 +268,56 @@ export function useAuth() {
   }
 
   const resetPassword = async (email: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:270',message:'resetPassword entry',data:{email,windowOrigin:typeof window !== 'undefined' ? window.location.origin : 'N/A',envAppUrl:process.env.NEXT_PUBLIC_APP_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+    // #endregion
+    
+    // Use NEXT_PUBLIC_APP_URL if available, otherwise fall back to window.location.origin
+    // This ensures consistency across environments
+    const baseUrl = typeof window !== 'undefined' 
+      ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+      : (process.env.NEXT_PUBLIC_APP_URL || '')
+    const redirectToUrl = `${baseUrl}/reset-password`
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:276',message:'Before resetPasswordForEmail call',data:{email,redirectTo:redirectToUrl,baseUrl,emailLength:email?.length,emailFormat:email?.includes('@')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: redirectToUrl,
     })
 
-    if (error) throw error
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:290',message:'After resetPasswordForEmail call',data:{hasError:!!error,errorMessage:error?.message,errorStatus:error?.status,errorCode:error?.code,errorDetails:error?.details,errorHint:error?.hint,fullError:JSON.stringify(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'smtp-check',hypothesisId:'B,C'})}).catch(()=>{});
+    // #endregion
+
+    if (error) {
+      // Provide more helpful error message for configuration issues
+      if (error.status === 500 && error.message?.includes('recovery email')) {
+        // This is likely a Supabase SMTP configuration issue
+        // Common causes:
+        // 1. SMTP password is not the Resend API key (should start with 're_')
+        // 2. Sender email not verified in Resend
+        // 3. Port/encryption mismatch (465 needs SSL, 587 needs STARTTLS)
+        // 4. Wrong SMTP credentials
+        const configError = new Error(
+          `Password reset failed: ${error.message}\n\n` +
+          `SMTP Configuration Check:\n` +
+          `1. Verify SMTP password is your Resend API key (starts with 're_'), not a regular password\n` +
+          `2. Ensure sender email (support@akomaylessonplanna.com) is verified in Resend Dashboard → Domains\n` +
+          `3. For port 465: Use SSL/TLS encryption\n` +
+          `4. For port 587: Use STARTTLS encryption\n` +
+          `5. Verify redirect URL "${redirectToUrl}" is in Supabase → Authentication → URL Configuration → Redirect URLs\n\n` +
+          `Check Supabase Dashboard → Logs → Auth Logs for detailed error messages.`
+        )
+        // Preserve original error details
+        ;(configError as any).originalError = error
+        ;(configError as any).redirectUrl = redirectToUrl
+        ;(configError as any).isSmtpConfigIssue = true
+        throw configError
+      }
+      throw error
+    }
     // Always return success to prevent email enumeration
     return { success: true }
   }

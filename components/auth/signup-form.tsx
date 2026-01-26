@@ -117,29 +117,16 @@ export function SignupForm() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* OAuth Buttons */}
-        <div className="flex flex-row gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="flex-1"
-            onClick={() => handleOAuth('google')}
-            disabled={loading}
-          >
-            Continue with Gmail
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="flex-1"
-            onClick={() => handleOAuth('facebook')}
-            disabled={loading}
-          >
-            Continue with Facebook
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="w-full"
+          onClick={() => handleOAuth('google')}
+          disabled={loading}
+        >
+          Continue with Gmail
+        </Button>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
