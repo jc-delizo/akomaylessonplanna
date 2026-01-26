@@ -76,7 +76,7 @@ export async function sendVerificationRejectedEmail(
     // Get user info
     const { data: user } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', userId)
       .single()
 
@@ -86,8 +86,11 @@ export async function sendVerificationRejectedEmail(
     }
 
     // Build template data
+    const userFullName = user.first_name && user.last_name
+      ? `${user.first_name} ${user.last_name}`.trim()
+      : user.first_name || 'Teacher'
     const templateData = buildVerificationRejectedData({
-      userName: user.name || 'Teacher',
+      userName: userFullName,
       userEmail: user.email,
       userId: user.id,
       rejectionReason,

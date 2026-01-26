@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select(
-        'id, name, username, avatar_url, bio, gcash_number, maya_number, shop_name, shop_description, auto_publish, subscription_tier, can_sell'
+        'id, first_name, last_name, username, avatar_url, bio, gcash_number, maya_number, shop_name, shop_description, auto_publish, subscription_tier, can_sell'
       )
       .eq('id', user.id)
       .single()
@@ -46,9 +46,14 @@ export async function GET(request: NextRequest) {
       .eq('seller_id', user.id)
       .single()
 
+    // Build full name from first_name and last_name
+    const fullName = userData.first_name && userData.last_name
+      ? `${userData.first_name} ${userData.last_name}`.trim()
+      : userData.first_name || ''
+
     return NextResponse.json({
       account: {
-        name: userData.name,
+        name: fullName,
         username: userData.username,
         avatar_url: userData.avatar_url,
         bio: userData.bio,
