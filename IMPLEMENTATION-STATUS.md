@@ -5,7 +5,7 @@
 
 ---
 
-## Feature Completion Overview
+## Feature Completion Overview 
 
 | Feature # | Feature Name | Status | Documentation | Summary |
 |-----------|--------------|--------|---------------|---------|
