@@ -288,7 +288,7 @@ export function useAuth() {
     })
 
     // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:290',message:'After resetPasswordForEmail call',data:{hasError:!!error,errorMessage:error?.message,errorStatus:error?.status,errorCode:error?.code,errorDetails:error?.details,errorHint:error?.hint,fullError:JSON.stringify(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'smtp-check',hypothesisId:'B,C'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useAuth.ts:290',message:'After resetPasswordForEmail call',data:{hasError:!!error,errorMessage:error?.message,errorStatus:error?.status,errorCode:error?.code,fullError:JSON.stringify(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'smtp-check',hypothesisId:'B,C'})}).catch(()=>{});
     // #endregion
 
     if (error) {
