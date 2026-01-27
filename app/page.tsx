@@ -1,5 +1,11 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PageContent } from './page-content'
+
+export const metadata: Metadata = {
+  title: 'Ako may lesson plan na!',
+  description: 'A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers',
+}
 
 function PageLoading() {
   return (

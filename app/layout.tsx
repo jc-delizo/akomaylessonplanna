@@ -16,9 +16,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://akomaylessonplanna.com";
+
 export const metadata: Metadata = {
   title: "Ako may lesson plan na!",
   description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
+  openGraph: {
+    title: "Ako may lesson plan na!",
+    description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
+    url: baseUrl,
+    siteName: "Ako may lesson plan na!",
+    type: "website",
+    images: [{ url: `${baseUrl}/akomaylogo.png`, width: 192, height: 192, alt: "Ako may lesson plan na!" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ako may lesson plan na!",
+    description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
+  },
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
