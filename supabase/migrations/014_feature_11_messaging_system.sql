@@ -225,27 +225,57 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Allow authenticated users to upload images to their own folder
 -- Path format: {conversation_id}/{user_id}/{timestamp}-{filename}
-CREATE POLICY "Users can upload message images"
-  ON storage.objects FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    bucket_id = 'message-images'
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'storage' 
+    AND tablename = 'objects' 
+    AND policyname = 'Users can upload message images'
+  ) THEN
+    CREATE POLICY "Users can upload message images"
+      ON storage.objects FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        bucket_id = 'message-images'
+      );
+  END IF;
+END $$;
 
 -- Allow public to read message images (participants can view)
-CREATE POLICY "Public can read message images"
-  ON storage.objects FOR SELECT
-  TO public
-  USING (bucket_id = 'message-images');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'storage' 
+    AND tablename = 'objects' 
+    AND policyname = 'Public can read message images'
+  ) THEN
+    CREATE POLICY "Public can read message images"
+      ON storage.objects FOR SELECT
+      TO public
+      USING (bucket_id = 'message-images');
+  END IF;
+END $$;
 
 -- Allow users to delete their own uploaded images
-CREATE POLICY "Users can delete own message images"
-  ON storage.objects FOR DELETE
-  TO authenticated
-  USING (
-    bucket_id = 'message-images' AND
-    (storage.foldername(name))[2] = auth.uid()::text
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'storage' 
+    AND tablename = 'objects' 
+    AND policyname = 'Users can delete own message images'
+  ) THEN
+    CREATE POLICY "Users can delete own message images"
+      ON storage.objects FOR DELETE
+      TO authenticated
+      USING (
+        bucket_id = 'message-images' AND
+        (storage.foldername(name))[2] = auth.uid()::text
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 9. Enable RLS on All Tables

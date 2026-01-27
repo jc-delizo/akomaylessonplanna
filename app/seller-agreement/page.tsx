@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = {
-  title: 'Seller Agreement | AKOMAYLESSONPLANNA',
-  description: 'Seller Agreement for AKOMAYLESSONPLANNA - Terms and conditions for sellers on our platform',
+  title: 'Seller Agreement | Ako may lesson plan na!',
+  description: 'Seller Agreement for Ako may lesson plan na! - Terms and conditions for sellers on our platform',
   openGraph: {
-    title: 'Seller Agreement | AKOMAYLESSONPLANNA',
-    description: 'Seller Agreement for AKOMAYLESSONPLANNA',
+    title: 'Seller Agreement | Ako may lesson plan na!',
+    description: 'Seller Agreement for Ako may lesson plan na!',
   },
 }
 
@@ -24,7 +24,7 @@ export default function SellerAgreementPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <p className="text-gray-700 mb-6">
-            This Seller Agreement governs your use of AKOMAYLESSONPLANNA as a seller. By becoming a seller 
+            This Seller Agreement governs your use of Ako may lesson plan na! as a seller. By becoming a seller 
             on our platform, you agree to be bound by this agreement in addition to our{' '}
             <Link href="/terms" className="text-[#ff7200] hover:underline">
               Terms of Service
@@ -38,7 +38,7 @@ export default function SellerAgreementPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">1. Eligibility</h2>
           <div className="space-y-3 text-gray-700">
-            <p>To become a seller on AKOMAYLESSONPLANNA, you must:</p>
+            <p>To become a seller on Ako may lesson plan na!, you must:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Be a licensed teacher in the Philippines</li>
               <li>Have a valid teacher ID (PRC License preferred)</li>
@@ -126,7 +126,7 @@ export default function SellerAgreementPage() {
           <div className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>You are responsible for declaring your income from sales</li>
-              <li>AKOMAYLESSONPLANNA will issue earnings statements for tax purposes</li>
+              <li>Ako may lesson plan na! will issue earnings statements for tax purposes</li>
               <li>Tax withholding may apply as required by Philippine law</li>
               <li>You should consult with a tax professional regarding your tax obligations</li>
             </ul>
@@ -141,7 +141,7 @@ export default function SellerAgreementPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">6. Platform Rights</h2>
           <div className="space-y-3 text-gray-700">
-            <p>By uploading content to AKOMAYLESSONPLANNA, you grant us:</p>
+            <p>By uploading content to Ako may lesson plan na!, you grant us:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>A non-exclusive license to display, market, and sell your products</li>
               <li>The right to review and moderate your content</li>
@@ -177,7 +177,7 @@ export default function SellerAgreementPage() {
           <div className="space-y-4 text-gray-700">
             <div>
               <h3 className="text-xl font-medium mb-2">Voluntary Termination</h3>
-              <p>You may stop selling on AKOMAYLESSONPLANNA at any time by:</p>
+              <p>You may stop selling on Ako may lesson plan na! at any time by:</p>
               <ul className="list-disc list-inside space-y-2 ml-4 mt-2">
                 <li>Removing your products from the platform</li>
                 <li>Requesting account deletion</li>
@@ -186,7 +186,7 @@ export default function SellerAgreementPage() {
             </div>
             <div>
               <h3 className="text-xl font-medium mb-2">Platform Termination</h3>
-              <p>AKOMAYLESSONPLANNA may suspend or terminate your seller account for:</p>
+              <p>Ako may lesson plan na! may suspend or terminate your seller account for:</p>
               <ul className="list-disc list-inside space-y-2 ml-4 mt-2">
                 <li>Violations of this Seller Agreement</li>
                 <li>Violations of our Terms of Service</li>
@@ -223,7 +223,7 @@ export default function SellerAgreementPage() {
           <h2 className="text-2xl font-semibold mb-4">Dispute Resolution</h2>
           <div className="space-y-3 text-gray-700">
             <p>
-              Disputes between buyers and sellers will be mediated by AKOMAYLESSONPLANNA. Our decisions 
+              Disputes between buyers and sellers will be mediated by Ako may lesson plan na!. Our decisions 
               are final and binding. For more information, please refer to our{' '}
               <Link href="/terms" className="text-[#ff7200] hover:underline">
                 Terms of Service

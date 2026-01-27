@@ -30,7 +30,7 @@ export function VerificationApprovedEmail({
       </Text>
 
       <Text style={paragraph}>
-        Great news! Your teacher verification has been approved. You can now start selling on AKOMAYLESSONPLANNA!
+        Great news! Your teacher verification has been approved. You can now start selling on Ako may lesson plan na!!
       </Text>
 
       <Section style={infoBox}>
@@ -51,7 +51,7 @@ export function VerificationApprovedEmail({
       )}
 
       <Text style={paragraph}>
-        Welcome to the AKOMAYLESSONPLANNA seller community! We're excited to have you on board.
+        Welcome to the Ako may lesson plan na! seller community! We're excited to have you on board.
       </Text>
     </BaseEmail>
   )

@@ -137,7 +137,7 @@ export async function processEmailQueueItem(queueId: string): Promise<{
     // If no template, use basic HTML
     if (!htmlTemplate) {
       htmlTemplate = '<html><body>{{content}}</body></html>'
-      subject = 'Notification from AKOMAYLESSONPLANNA'
+      subject = 'Notification from Ako may lesson plan na!'
     }
 
     // Prepare template data

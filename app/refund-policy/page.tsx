@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = {
-  title: 'Refund Policy | AKOMAYLESSONPLANNA',
-  description: 'Refund Policy for AKOMAYLESSONPLANNA - Learn about our refund process for digital educational resources',
+  title: 'Refund Policy | Ako may lesson plan na!',
+  description: 'Refund Policy for Ako may lesson plan na! - Learn about our refund process for digital educational resources',
   openGraph: {
-    title: 'Refund Policy | AKOMAYLESSONPLANNA',
-    description: 'Refund Policy for AKOMAYLESSONPLANNA',
+    title: 'Refund Policy | Ako may lesson plan na!',
+    description: 'Refund Policy for Ako may lesson plan na!',
   },
 }
 
@@ -24,7 +24,7 @@ export default function RefundPolicyPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <p className="text-gray-700 mb-6">
-            This Refund Policy outlines the terms and conditions for refunds on AKOMAYLESSONPLANNA. 
+            This Refund Policy outlines the terms and conditions for refunds on Ako may lesson plan na!. 
             Please read this policy carefully before making a purchase.
           </p>
         </CardContent>
@@ -155,7 +155,7 @@ export default function RefundPolicyPage() {
           <div className="space-y-3 text-gray-700">
             <p>
               Sellers have the right to approve or deny refund requests for their products. However, 
-              AKOMAYLESSONPLANNA reserves the right to override seller decisions in cases of clear violations 
+              Ako may lesson plan na! reserves the right to override seller decisions in cases of clear violations 
               of our Terms of Service or when products are demonstrably defective.
             </p>
             <p>

@@ -136,7 +136,7 @@ function getEmailSubject(type: NotificationType, data: Record<string, any>): str
     case 'system_announcement':
       return data.title || 'Platform Announcement'
     default:
-      return 'Notification from AKOMAYLESSONPLANNA'
+      return 'Notification from Ako may lesson plan na!'
   }
 }
 

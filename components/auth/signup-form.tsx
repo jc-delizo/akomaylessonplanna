@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { GlareButton } from '@/components/ui/glare-button'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -94,13 +93,13 @@ export function SignupForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md ring-0">
       <CardHeader className="space-y-4 text-center">
         <div className="flex justify-center">
           <GlareButton>
             <Image
               src="/akomaylogo.png"
-              alt="Akomay Logo"
+              alt="Ako may lesson plan na! Logo"
               width={120}
               height={120}
               className="h-auto w-auto"
@@ -121,22 +120,16 @@ export function SignupForm() {
           type="button"
           variant="outline"
           size="lg"
-          className="w-full"
+          className="w-full border-2 border-black dark:border-white gap-2 text-lg h-11"
           onClick={() => handleOAuth('google')}
           disabled={loading}
         >
+          <Image src="/google-g.svg" alt="" width={20} height={20} className="shrink-0" />
           Continue with Gmail
         </Button>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <Separator />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or sign up with email
-            </span>
-          </div>
+        <div className="flex justify-center text-xs uppercase text-muted-foreground py-2">
+          Or sign up with email
         </div>
 
         {/* Email/Password Form */}
@@ -158,6 +151,7 @@ export function SignupForm() {
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={loading}
+                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
 
@@ -171,6 +165,7 @@ export function SignupForm() {
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={loading}
+                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
           </div>
@@ -186,6 +181,7 @@ export function SignupForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
 
@@ -200,6 +196,7 @@ export function SignupForm() {
                 required
                 minLength={8}
                 disabled={loading}
+                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
           </div>
@@ -219,7 +216,7 @@ export function SignupForm() {
             </Label>
           </div>
 
-          <Button type="submit" className="w-full uppercase text-lg" size="lg" disabled={loading}>
+          <Button type="submit" className="w-full uppercase text-lg h-11" size="lg" disabled={loading}>
             {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
           </Button>
         </form>

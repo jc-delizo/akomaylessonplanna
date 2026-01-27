@@ -8,6 +8,12 @@ export async function GET(request: Request) {
   const errorDescription = requestUrl.searchParams.get('error_description')
   const next = requestUrl.searchParams.get('next') || '/marketplace'
 
+  // #region agent log
+  try {
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'app/auth/callback/route.ts:GET', message: 'auth callback entry', data: { hasCode: !!code, hasError: !!error, errorDesc: errorDescription ?? null }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'H1,H3,H5' }) }).catch(() => {})
+  } catch (_) {}
+  // #endregion
+
   // Handle OAuth errors from provider
   if (error) {
     console.error('OAuth error:', error, errorDescription)

@@ -56,7 +56,7 @@ export function ForgotPasswordForm() {
             <GlareButton>
               <Image
                 src="/akomaylogo.png"
-                alt="Akomay Logo"
+                alt="Ako may lesson plan na! Logo"
                 width={120}
                 height={120}
                 className="h-auto w-auto"
@@ -99,7 +99,7 @@ export function ForgotPasswordForm() {
           <GlareButton>
             <Image
               src="/akomaylogo.png"
-              alt="Akomay Logo"
+              alt="Ako may lesson plan na! Logo"
               width={120}
               height={120}
               className="h-auto w-auto"

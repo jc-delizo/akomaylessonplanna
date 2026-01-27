@@ -9,7 +9,7 @@
 
 | Feature # | Feature Name | Status | Documentation | Summary |
 |-----------|--------------|--------|---------------|---------|
-| 01 | Authentication & User Management | 🚧 In Progress | [Design](docs/brainstorming/2-feature-01-authentication-user-management.md) | - |
+| 01 | Authentication & User Management | 🚧 In Progress | [Design](docs/brainstorming/2-feature-01-authentication-user-management.md) \| [Summary](FEATURE-01-IMPLEMENTATION-SUMMARY.md) | Signin/Signup UI updated (Jan 2026) |
 | 02 | User Profiles & Profile Management | 🚧 In Progress | [Design](docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md) | - |
 | 03 | Product Listings & Management | ✅ Complete | [Design](docs/brainstorming/5-feature-03-product-listings-and-management.md) \| [Summary](FEATURE-03-IMPLEMENTATION-SUMMARY.md) | All 7 phases complete |
 | 04 | Shopping Cart & Checkout Flow | ✅ Complete | [Design](docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md) \| [Summary](FEATURE-04-IMPLEMENTATION-SUMMARY.md) | All 11 phases complete |
@@ -29,6 +29,17 @@
 ---
 
 ## Detailed Feature Status
+
+### 🚧 Feature 01: Authentication & User Management
+
+**Status**: In Progress (January 2026)
+
+**Implemented:**
+- Signin/Signup UI update (Jan 2026): neutral background, borderless card and inputs, "Continue with Gmail" button with black border and Google logo
+
+**Summary**: [FEATURE-01-IMPLEMENTATION-SUMMARY.md](FEATURE-01-IMPLEMENTATION-SUMMARY.md)
+
+---
 
 ### ✅ Feature 03: Product Listings & Management
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { generateOrganizationSchema, generateWebSiteSchema, generateSiteNavigationSchema } from "@/lib/seo/schema-org";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/akomaylogo.png', sizes: '192x192', type: 'image/png' },
       { url: '/favicon.ico', sizes: 'any' }
     ],
     apple: [
@@ -44,11 +46,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationSchema = generateOrganizationSchema();
+  const websiteSchema = generateWebSiteSchema();
+  const navigationSchema = generateSiteNavigationSchema();
+
   return (
     <html lang="en" className={inter.variable}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(navigationSchema) }}
+        />
         {children}
         <Toaster position="top-right" />
       </body>

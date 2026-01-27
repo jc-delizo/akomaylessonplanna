@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | AKOMAYLESSONPLANNA',
-  description: 'Privacy Policy for AKOMAYLESSONPLANNA - How we collect, use, and protect your personal information',
+  title: 'Privacy Policy | Ako may lesson plan na!',
+  description: 'Privacy Policy for Ako may lesson plan na! - How we collect, use, and protect your personal information',
   openGraph: {
-    title: 'Privacy Policy | AKOMAYLESSONPLANNA',
-    description: 'Privacy Policy for AKOMAYLESSONPLANNA',
+    title: 'Privacy Policy | Ako may lesson plan na!',
+    description: 'Privacy Policy for Ako may lesson plan na!',
   },
 }
 
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <p className="text-gray-700 mb-6">
-            At AKOMAYLESSONPLANNA, we are committed to protecting your privacy. This Privacy Policy explains how we collect, 
+            At Ako may lesson plan na!, we are committed to protecting your privacy. This Privacy Policy explains how we collect, 
             use, disclose, and safeguard your information when you use our platform. We comply with the Data Privacy Act 
             of the Philippines (Republic Act No. 10173).
           </p>

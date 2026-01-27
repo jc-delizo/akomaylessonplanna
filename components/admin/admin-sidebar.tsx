@@ -165,7 +165,7 @@ export function AdminSidebar() {
             <Link href="/admin/dashboard" className="flex items-center gap-2">
               <Image
                 src="/android-chrome-192x192.png"
-                alt="Akomay Lesson Planna"
+                alt="Ako may lesson plan na!"
                 width={32}
                 height={32}
                 className="w-8 h-8"

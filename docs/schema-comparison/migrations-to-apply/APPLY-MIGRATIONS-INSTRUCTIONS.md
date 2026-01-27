@@ -6,8 +6,11 @@ This directory contains SQL migration files ready to be applied via Supabase Das
 
 ## Files
 
-- `dev-migrations-combined.sql` - Apply to Dev database (migrations 009, 011, 012, 013)
+- **`dev-migrations-combined-safe.sql`** ⭐ **RECOMMENDED** - Safe version without DROP statements (no destructive operation warning)
+- `dev-migrations-combined.sql` - Original version (may show destructive operation warning)
 - `prod-migration-018.sql` - Apply to Prod database (migration 018)
+
+**Note:** The safe version removes `DROP POLICY` and `DROP TRIGGER` statements to avoid Supabase's destructive operation warning. Both versions are functionally identical and safe to use. See `WHY-DESTRUCTIVE-WARNING.md` for details.
 
 ## Step 1: Apply Migrations to Dev Database
 
@@ -16,7 +19,8 @@ This directory contains SQL migration files ready to be applied via Supabase Das
    - Navigate to: SQL Editor
 
 2. **Open Dev Migration File**
-   - Open: `docs/schema-comparison/migrations-to-apply/dev-migrations-combined.sql`
+   - **Recommended:** Open `docs/schema-comparison/migrations-to-apply/dev-migrations-combined-safe.sql` (no warnings)
+   - Or use: `docs/schema-comparison/migrations-to-apply/dev-migrations-combined.sql` (may show destructive operation warning, but safe to proceed)
    - Copy all SQL content
 
 3. **Execute in SQL Editor**

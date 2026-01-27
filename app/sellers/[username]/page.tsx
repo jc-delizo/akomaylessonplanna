@@ -408,15 +408,15 @@ export async function generateMetadata({ params }: PageProps) {
   const profileUrl = `${baseUrl}/sellers/${username}`
 
   return {
-    title: `${getFullName(user)} - Seller Profile | AKOMAYLESSONPLANNA`,
-    description: user.bio || `View ${getFullName(user)}'s products and reviews on AKOMAYLESSONPLANNA`,
+    title: `${getFullName(user)} - Seller Profile | Ako may lesson plan na!`,
+    description: user.bio || `View ${getFullName(user)}'s products and reviews on Ako may lesson plan na!`,
     openGraph: {
       title: `${getFullName(user)} - Seller Profile`,
-      description: user.bio || `View ${getFullName(user)}'s products and reviews on AKOMAYLESSONPLANNA`,
+      description: user.bio || `View ${getFullName(user)}'s products and reviews on Ako may lesson plan na!`,
       url: profileUrl,
       type: 'profile',
       images: user.banner_url || user.avatar_url ? [user.banner_url || user.avatar_url || ''] : [],
-      siteName: 'AKOMAYLESSONPLANNA',
+      siteName: 'Ako may lesson plan na!',
     },
   }
 }

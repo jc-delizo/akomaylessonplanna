@@ -118,7 +118,7 @@ export function prepareTemplateData(
 
   return {
     // Platform defaults
-    platform_name: 'AKOMAYLESSONPLANNA',
+    platform_name: 'Ako may lesson plan na!',
     platform_url: process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com',
     logo_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'}/logo.png`,
     support_email: 'support@akomaylessonplanna.com',

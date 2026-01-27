@@ -17,21 +17,21 @@ ADD COLUMN IF NOT EXISTS auto_publish BOOLEAN DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS seller_messaging_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Seller
   seller_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  
+
   -- Away Message Settings
   away_message_enabled BOOLEAN DEFAULT false,
   away_message_return_date TIMESTAMP,
   away_message_text TEXT,
-  
+
   -- Timestamps
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
   
-  -- Constraints
-  CHECK (seller_id IN (SELECT id FROM users WHERE can_sell = true))
+  -- Note: Seller validation is enforced via RLS policies and application logic
+  -- PostgreSQL CHECK constraints cannot use subqueries
 );
 
 -- Indexes

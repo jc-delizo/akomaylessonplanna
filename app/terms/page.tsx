@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | AKOMAYLESSONPLANNA',
-  description: 'Terms of Service for AKOMAYLESSONPLANNA - A marketplace for educational resources',
+  title: 'Terms of Service | Ako may lesson plan na!',
+  description: 'Terms of Service for Ako may lesson plan na! - A marketplace for educational resources',
   openGraph: {
-    title: 'Terms of Service | AKOMAYLESSONPLANNA',
-    description: 'Terms of Service for AKOMAYLESSONPLANNA',
+    title: 'Terms of Service | Ako may lesson plan na!',
+    description: 'Terms of Service for Ako may lesson plan na!',
   },
 }
 
@@ -24,7 +24,7 @@ export default function TermsPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <p className="text-gray-700 mb-6">
-            Welcome to AKOMAYLESSONPLANNA. By accessing or using our platform, you agree to be bound by these Terms of Service. 
+            Welcome to Ako may lesson plan na! By accessing or using our platform, you agree to be bound by these Terms of Service. 
             Please read them carefully before using our services.
           </p>
         </CardContent>
@@ -35,7 +35,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">1. Acceptance</h2>
           <div className="space-y-3 text-gray-700">
-            <p>By using AKOMAYLESSONPLANNA, you agree to these Terms of Service:</p>
+            <p>By using Ako may lesson plan na!, you agree to these Terms of Service:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>You must be 18 years or older to sell products on the platform</li>
               <li>Teachers under 18 years old need parent or guardian permission to purchase products</li>
@@ -62,7 +62,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">3. Seller Obligations</h2>
           <div className="space-y-3 text-gray-700">
-            <p>As a seller on AKOMAYLESSONPLANNA, you agree to:</p>
+            <p>As a seller on Ako may lesson plan na!, you agree to:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Be a verified teacher with valid credentials</li>
               <li>Own all rights to the content you upload, or have proper authorization</li>
@@ -77,7 +77,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-semibold mb-4">4. Buyer Rights</h2>
           <div className="space-y-3 text-gray-700">
-            <p>When you purchase products on AKOMAYLESSONPLANNA:</p>
+            <p>When you purchase products on Ako may lesson plan na!:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>You may use purchased products for personal or classroom use only</li>
               <li>You may not resell or redistribute purchased products</li>
@@ -154,7 +154,7 @@ export default function TermsPage() {
           <div className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>The first 3 products from new sellers are reviewed before publication</li>
-              <li>AKOMAYLESSONPLANNA reserves the right to remove any content that violates these terms</li>
+              <li>Ako may lesson plan na! reserves the right to remove any content that violates these terms</li>
               <li>Accounts may be suspended or banned for violations</li>
             </ul>
           </div>
@@ -166,7 +166,7 @@ export default function TermsPage() {
           <div className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>The platform is provided &quot;as is&quot; without warranties</li>
-              <li>AKOMAYLESSONPLANNA is not responsible for product quality or disputes between buyers and sellers</li>
+              <li>Ako may lesson plan na! is not responsible for product quality or disputes between buyers and sellers</li>
               <li>Maximum liability is limited to the amount paid by the user in the past 12 months</li>
             </ul>
           </div>
@@ -177,7 +177,7 @@ export default function TermsPage() {
           <h2 className="text-2xl font-semibold mb-4">11. Termination</h2>
           <div className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>AKOMAYLESSONPLANNA may terminate accounts for violations of these terms</li>
+              <li>Ako may lesson plan na! may terminate accounts for violations of these terms</li>
               <li>Users may delete their accounts at any time</li>
               <li>Outstanding payments will be processed within 30 days of account deletion</li>
               <li>Banned users forfeit any outstanding earnings</li>
@@ -190,7 +190,7 @@ export default function TermsPage() {
           <h2 className="text-2xl font-semibold mb-4">12. Dispute Resolution</h2>
           <div className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>AKOMAYLESSONPLANNA will mediate disputes between buyers and sellers</li>
+              <li>Ako may lesson plan na! will mediate disputes between buyers and sellers</li>
               <li>The platform&apos;s decision in disputes is final</li>
               <li>These terms are governed by Philippine law</li>
               <li>Any legal proceedings shall be subject to the jurisdiction of Philippine courts</li>

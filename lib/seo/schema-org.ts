@@ -109,6 +109,11 @@ interface OrganizationSchema {
   url: string
   logo?: string
   description?: string
+  contactPoint?: {
+    '@type': string
+    email: string
+    contactType: string
+  }
 }
 
 export function generateOrganizationSchema(): OrganizationSchema {
@@ -117,9 +122,15 @@ export function generateOrganizationSchema(): OrganizationSchema {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'AKOMAYLESSONPLANNA',
+    name: 'Ako may lesson plan na!',
     url: baseUrl,
+    logo: `${baseUrl}/akomaylogo.png`,
     description: 'Marketplace for Filipino teachers to buy and sell lesson plans, exams, and teaching resources',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'support@akomaylessonplanna.com',
+      contactType: 'customer support',
+    },
   }
 }
 
@@ -149,5 +160,70 @@ export function generateSellerSchema(seller: {
     url: `${baseUrl}/sellers/${seller.username}`,
     ...(seller.avatar_url && { image: seller.avatar_url }),
     jobTitle: 'Teacher',
+  }
+}
+
+interface WebSiteSchema {
+  '@context': string
+  '@type': string
+  name: string
+  url: string
+  description?: string
+  potentialAction?: {
+    '@type': string
+    target: {
+      '@type': string
+      urlTemplate: string
+    }
+    'query-input': string
+  }
+}
+
+export function generateWebSiteSchema(): WebSiteSchema {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Ako may lesson plan na!',
+    url: baseUrl,
+    description: 'Marketplace for Filipino K-12 teachers to buy and sell educational resources',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${baseUrl}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  }
+}
+
+interface SiteNavigationElementSchema {
+  '@context': string
+  '@type': string
+  name: string
+  hasPart?: Array<{
+    '@type': string
+    name: string
+    url: string
+  }>
+}
+
+export function generateSiteNavigationSchema(): SiteNavigationElementSchema {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SiteNavigationElement',
+    name: 'Main Navigation',
+    hasPart: [
+      { '@type': 'SiteNavigationElement', name: 'Marketplace', url: `${baseUrl}/marketplace` },
+      { '@type': 'SiteNavigationElement', name: 'How It Works', url: `${baseUrl}/how-it-works` },
+      { '@type': 'SiteNavigationElement', name: 'Become a Seller', url: `${baseUrl}/become-seller` },
+      { '@type': 'SiteNavigationElement', name: 'About', url: `${baseUrl}/about` },
+      { '@type': 'SiteNavigationElement', name: 'For Teachers', url: `${baseUrl}/for-teachers` },
+      { '@type': 'SiteNavigationElement', name: 'Contact', url: `${baseUrl}/contact` },
+    ],
   }
 }

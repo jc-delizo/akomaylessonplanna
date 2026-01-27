@@ -1,7 +1,7 @@
 # Database Migrations Index
 
 **Last Updated**: January 25, 2026  
-**Total Migrations**: 18  
+**Total Migrations**: 20  
 **Status**: All migrations applied to development database
 
 ---
@@ -376,6 +376,36 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 ---
 
+### 019_handle_new_user_trigger.sql
+
+**Purpose**: Create trigger on auth.users to insert into public.users when a new auth user is created (OAuth or email signup). Uses first_name/last_name to match migration 018. Fixes "Database error saving new user" when an existing trigger used the old `name` column.
+
+**What it does:**
+1. Drops existing triggers on auth.users (on_auth_user_created, handle_new_user_trigger)
+2. Drops and recreates `public.handle_new_user()` with first_name/last_name logic
+3. Creates trigger `on_auth_user_created` AFTER INSERT ON auth.users
+
+**Dependencies**: 001, 018 (users table with first_name/last_name)
+
+**Status**: Pending / apply to dev
+
+---
+
+### 020_fix_users_rls_recursion.sql
+
+**Purpose**: Fix "infinite recursion detected in policy for relation users" (42P17). Admin policies used `EXISTS (SELECT 1 FROM users WHERE ...)`, which re-triggers RLS. Use a SECURITY DEFINER helper so the check bypasses RLS.
+
+**What it does:**
+1. Creates `public.is_admin()` SECURITY DEFINER STABLE that returns true iff current user has role 'admin'
+2. Drops "Admins can select users", "Admins can update users", "Admins can delete users" on users
+3. Recreates those policies using `public.is_admin()`
+
+**Dependencies**: 001, 003 (users table and existing RLS)
+
+**Status**: Pending / apply to dev
+
+---
+
 ## Migration Dependencies Graph
 
 ```
@@ -398,6 +428,30 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
  ├─> 013 (email system)
  └─> 016 (teacher verification storage)
 ```
+
+---
+
+## Feature-Based Organization
+
+Migrations are logically organized by feature for easier understanding. See `docs/migrations/MIGRATION-BY-FEATURE.md` for detailed feature breakdown.
+
+### Feature Groups
+
+- **Foundation** (001-002): Extensions, ENUMs, core tables, seed data
+- **Feature 02: User Profiles** (003, 004, 016, 017, 018): Profiles, authentication, teacher verification, seller settings
+- **Feature 03: Products** (005, 006): Product listings, storage buckets
+- **Feature 04: Cart & Checkout** (007): Shopping cart, orders, wishlist, library
+- **Feature 05: Reviews** (008): Reviews and ratings system
+- **Feature 06: Social Features** (009): Notifications, recently viewed, sharing
+- **Feature 07: Seller Dashboard** (010): Seller analytics and dashboard
+- **Feature 08: Advanced Search** (011): Search analytics and full-text search
+- **Feature 09: Admin Panel** (012, 015): Admin features, moderation, support
+- **Feature 10: Email System** (013): Complete email system with templates
+- **Feature 11: Messaging** (014): Buyer-seller messaging system
+
+**Quick Reference**: Use `docs/migrations/MIGRATION-ORGANIZATION.md` for feature-based navigation.
+
+---
 
 ---
 
@@ -606,6 +660,8 @@ npx supabase db rollback
 - [Migration Alignment Guide](MIGRATION-ALIGNMENT-GUIDE.md) - Alignment checking
 - [Deployment Workflow](implementationplan/DEPLOYMENT-WORKFLOW.md) - Dev/prod migration workflow
 - [Master Implementation Plan](implementationplan/MASTER-IMPLEMENTATION-PLAN.md) - Overall plan
+- [Migration Organization](migrations/MIGRATION-ORGANIZATION.md) - Feature-based organization guide
+- [Migrations by Feature](migrations/MIGRATION-BY-FEATURE.md) - Quick feature lookup
 
 ---
 
@@ -624,3 +680,7 @@ When planning new features, follow this pattern:
 ---
 
 **For AI Agents**: This index provides a complete overview of all database migrations. Always check this before modifying the database schema to understand dependencies and existing structures.
+
+**Feature Organization**: Migrations are organized by feature for easier navigation. See `docs/migrations/MIGRATION-BY-FEATURE.md` for quick feature lookups and `docs/migrations/MIGRATION-ORGANIZATION.md` for organization details.
+
+**Helper Scripts**: Use `scripts/migration-utils.ts` for programmatic access to migration information.

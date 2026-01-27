@@ -28,7 +28,7 @@ export function BaseEmail({
   preview,
   children,
   logoUrl = 'https://akomaylessonplanna.com/logo.png',
-  platformName = 'AKOMAYLESSONPLANNA',
+  platformName = 'Ako may lesson plan na!',
   platformUrl = 'https://akomaylessonplanna.com',
   supportEmail = 'support@akomaylessonplanna.com',
   unsubscribeLink,
@@ -38,7 +38,7 @@ export function BaseEmail({
   return (
     <Html>
       <Head />
-      <Preview>{preview || 'Email from AKOMAYLESSONPLANNA'}</Preview>
+      <Preview>{preview || 'Email from Ako may lesson plan na!'}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}

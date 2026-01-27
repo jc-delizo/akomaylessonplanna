@@ -12,7 +12,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Platform Info */}
           <div>
-            <h3 className="font-semibold text-base mb-2">AKOMAYLESSONPLANNA</h3>
+            <h3 className="font-semibold text-base mb-2">Ako may lesson plan na!</h3>
             <p className="text-gray-600 text-xs mb-3">
               A marketplace for Filipino K-12 teachers to buy and sell educational resources.
             </p>
@@ -41,6 +41,26 @@ export function Footer() {
               <li>
                 <Link href="/become-seller" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
                   Become a Seller
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/how-it-works" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link href="/for-teachers" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
+                  For Teachers
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
+                  Contact
                 </Link>
               </li>
             </ul>
@@ -100,7 +120,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t pt-4 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="text-gray-600 text-xs">
-            © {currentYear} AKOMAYLESSONPLANNA. All rights reserved.
+            © {currentYear} Ako may lesson plan na! All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <a 

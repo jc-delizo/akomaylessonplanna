@@ -25,13 +25,13 @@ export function generateMetadata({
   const ogImage = image || `${baseUrl}/og-image.jpg`
 
   return {
-    title: `${title} | AKOMAYLESSONPLANNA`,
+    title: `${title} | Ako may lesson plan na!`,
     description,
     openGraph: {
       title,
       description,
       url: fullUrl,
-      siteName: 'AKOMAYLESSONPLANNA',
+      siteName: 'Ako may lesson plan na!',
       images: [
         {
           url: ogImage,

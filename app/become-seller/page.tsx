@@ -238,7 +238,7 @@ export default function BecomeSellerPage() {
               <div>
                 <CardTitle className="text-green-900">Verification Approved!</CardTitle>
                 <CardDescription className="text-green-700">
-                  You can now start selling on AKOMAYLESSONPLANNA
+                  You can now start selling on Ako may lesson plan na!
                 </CardDescription>
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function BecomeSellerPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-3">Become a Seller</h1>
         <p className="text-gray-600 text-base">
-          Verify your teacher credentials to start selling educational resources on AKOMAYLESSONPLANNA
+          Verify your teacher credentials to start selling educational resources on Ako may lesson plan na!
         </p>
       </div>
 

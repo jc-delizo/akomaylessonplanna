@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         previewPages: 3,
       },
       seo: {
-        platformName: 'AKOMAYLESSONPLANNA',
+        platformName: 'Ako may lesson plan na!',
         tagline: 'Quality Lesson Plans from Filipino Teachers',
       },
     })

@@ -1,0 +1,28 @@
+-- Reset Dev Database
+-- Drop all existing tables
+-- Generated: 2026-01-26T14:16:14.054Z
+
+DROP TABLE IF EXISTS admin_notes CASCADE;
+DROP TABLE IF EXISTS announcements CASCADE;
+DROP TABLE IF EXISTS audit_log CASCADE;
+DROP TABLE IF EXISTS cart_items CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
+DROP TABLE IF EXISTS disputes CASCADE;
+DROP TABLE IF EXISTS followers CASCADE;
+DROP TABLE IF EXISTS grade_subjects CASCADE;
+DROP TABLE IF EXISTS grades CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS product_views CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS subjects CASCADE;
+DROP TABLE IF EXISTS support_tickets CASCADE;
+DROP TABLE IF EXISTS teacher_id_verifications CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS wishlist CASCADE;
+DROP TABLE IF EXISTS withdrawal_requests CASCADE;
+
+-- Note: This will also drop all dependent objects (indexes, triggers, policies, etc.)

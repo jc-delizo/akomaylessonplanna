@@ -322,7 +322,7 @@ export function MainNav({ user }: MainNavProps) {
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <Image
               src="/android-chrome-192x192.png"
-              alt="Akomay Lesson Planna Logo"
+              alt="Ako may lesson plan na! Logo"
               width={32}
               height={32}
               className="w-8 h-8"

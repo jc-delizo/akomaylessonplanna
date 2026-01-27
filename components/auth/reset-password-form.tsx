@@ -131,7 +131,7 @@ export function ResetPasswordForm() {
             <GlareButton>
               <Image
                 src="/akomaylogo.png"
-                alt="Akomay Logo"
+                alt="Ako may lesson plan na! Logo"
                 width={120}
                 height={120}
                 className="h-auto w-auto"
@@ -177,7 +177,7 @@ export function ResetPasswordForm() {
             <GlareButton>
               <Image
                 src="/akomaylogo.png"
-                alt="Akomay Logo"
+                alt="Ako may lesson plan na! Logo"
                 width={120}
                 height={120}
                 className="h-auto w-auto"
@@ -208,7 +208,7 @@ export function ResetPasswordForm() {
           <GlareButton>
             <Image
               src="/akomaylogo.png"
-              alt="Akomay Logo"
+              alt="Ako may lesson plan na! Logo"
               width={120}
               height={120}
               className="h-auto w-auto"
