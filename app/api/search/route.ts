@@ -22,9 +22,13 @@ import { trackSearchImpressions } from '@/lib/analytics/track-search-impressions
  * - product_type: string
  * - specific_type: string
  * - quarter: number (1-4)
+ * - weeks: comma-separated (e.g. "1,2,3") — overlap with products.weeks
  * - min_price: number
  * - max_price: number
  * - language: string
+ * - modalities: comma-separated (e.g. "face_to_face,online") — overlap with products.modalities
+ * - curriculum: string (matatag, k_to_12)
+ * - document_type: alias for specific_type when filtering lesson plans
  * - verified_seller_only: boolean (true/false)
  * - date_added: string (last_7_days, last_30_days, last_3_months)
  * - sort: string (relevance, newest, price_asc, price_desc, best_selling, highest_rated)
@@ -45,32 +49,57 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '24')
     const gradeId = searchParams.get('grade_id')
-    const subjectId = searchParams.get('subject_id')
+    const subjectIdParam = searchParams.get('subject_id')
+    const subjectIdsParam = searchParams.get('subject_ids')
+    // Phase B: subject_ids (multiselect) or legacy subject_id
+    const subjectIds = subjectIdsParam
+      ? subjectIdsParam.split(',').map((s) => s.trim()).filter(Boolean)
+      : subjectIdParam
+        ? [subjectIdParam]
+        : []
     const productType = searchParams.get('product_type')
-    const specificType = searchParams.get('specific_type')
     const quarter = searchParams.get('quarter')
+    const weeksParam = searchParams.get('weeks')
+    const weeks = weeksParam
+      ? weeksParam.split(',').map((w) => parseInt(w.trim(), 10)).filter((n) => !Number.isNaN(n) && n >= 1 && n <= 9)
+      : null
+    const modalitiesParam = searchParams.get('modalities')
+    const modalities = modalitiesParam ? modalitiesParam.split(',').map((m) => m.trim()).filter(Boolean) : null
+    const curriculum = searchParams.get('curriculum')
+    const specificType = searchParams.get('document_type') || searchParams.get('specific_type')
     const minPrice = searchParams.get('min_price')
     const maxPrice = searchParams.get('max_price')
     const language = searchParams.get('language')
     const verifiedSellerOnly = searchParams.get('verified_seller_only') === 'true'
     const dateAdded = searchParams.get('date_added') // last_7_days, last_30_days, last_3_months
     const sort = searchParams.get('sort') || 'relevance'
+    const classType = searchParams.get('class_type')
+    const strandId = searchParams.get('strand_id')
+    const learnerPath = searchParams.get('learner_path')
+    const spedLevelId = searchParams.get('sped_level_id')
 
     // Check cache first
     // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:54',message:'Before cache check',data:{query,page,limit,gradeId,subjectId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/search/route.ts:54',message:'Before cache check',data:{query,page,limit,gradeId,subjectIds},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
     const cacheKey = generateSearchCacheKey(query, {
       gradeId,
-      subjectId,
+      subjectIds: subjectIds.length ? subjectIds.join(',') : null,
       productType,
       specificType,
       quarter,
+      weeks: weeks?.length ? weeks.join(',') : null,
+      modalities: modalities?.length ? modalities.join(',') : null,
+      curriculum,
       minPrice,
       maxPrice,
       language,
       verifiedSellerOnly,
-      dateAdded
+      dateAdded,
+      classType,
+      strandId,
+      learnerPath,
+      spedLevelId,
     }, sort)
 
     const cachedResult = await getCachedSearchResults<any>(cacheKey)
@@ -125,8 +154,24 @@ export async function GET(request: NextRequest) {
       dbQuery = dbQuery.eq('grade_id', gradeId)
     }
 
-    if (subjectId) {
-      dbQuery = dbQuery.eq('subject_id', subjectId)
+    // Phase B: filter by subject_ids (any of these subjects via product_subjects or primary subject_id)
+    if (subjectIds.length > 0) {
+      const { data: psRows } = await supabase
+        .from('product_subjects')
+        .select('product_id')
+        .in('subject_id', subjectIds)
+      const idsFromPs = [...new Set((psRows || []).map((r: { product_id: string }) => r.product_id))]
+      const { data: byPrimary } = await supabase
+        .from('products')
+        .select('id')
+        .in('subject_id', subjectIds)
+      const idsFromPrimary = (byPrimary || []).map((p: { id: string }) => p.id)
+      const productIdsMatch = [...new Set([...idsFromPs, ...idsFromPrimary])]
+      if (productIdsMatch.length > 0) {
+        dbQuery = dbQuery.in('id', productIdsMatch)
+      } else {
+        dbQuery = dbQuery.eq('id', '00000000-0000-0000-0000-000000000000') // no matches
+      }
     }
 
     if (productType) {
@@ -141,6 +186,18 @@ export async function GET(request: NextRequest) {
       dbQuery = dbQuery.eq('quarter', parseInt(quarter))
     }
 
+    if (weeks && weeks.length > 0) {
+      dbQuery = dbQuery.overlaps('weeks', weeks)
+    }
+
+    if (modalities && modalities.length > 0) {
+      dbQuery = dbQuery.overlaps('modalities', modalities)
+    }
+
+    if (curriculum) {
+      dbQuery = dbQuery.eq('curriculum', curriculum)
+    }
+
     if (minPrice) {
       dbQuery = dbQuery.gte('price', parseFloat(minPrice))
     }
@@ -151,6 +208,19 @@ export async function GET(request: NextRequest) {
 
     if (language) {
       dbQuery = dbQuery.eq('language', language)
+    }
+
+    if (classType) {
+      dbQuery = dbQuery.eq('class_type', classType)
+    }
+    if (strandId) {
+      dbQuery = dbQuery.eq('strand_id', strandId)
+    }
+    if (learnerPath) {
+      dbQuery = dbQuery.eq('learner_path', learnerPath)
+    }
+    if (spedLevelId) {
+      dbQuery = dbQuery.eq('sped_level_id', spedLevelId)
     }
 
     // Verified seller filter - filter by seller's is_verified_teacher
@@ -360,10 +430,14 @@ export async function GET(request: NextRequest) {
     // #endregion
     const filterCounts = await getFilterCounts(supabase, {
       gradeId,
-      subjectId,
+      subjectId: subjectIds[0] || null,
+      subjectIds: subjectIds.length ? subjectIds : null,
       productType,
       specificType,
       quarter,
+      weeks,
+      modalities,
+      curriculum,
       minPrice,
       maxPrice,
       language,
@@ -381,10 +455,14 @@ export async function GET(request: NextRequest) {
       query,
       filters: {
         grade_id: gradeId,
-        subject_id: subjectId,
+        subject_id: subjectIds[0] || null,
+        subject_ids: subjectIds.length ? subjectIds : null,
         product_type: productType,
         specific_type: specificType,
         quarter,
+        weeks: weeks?.length ? weeks : null,
+        modalities: modalities?.length ? modalities : null,
+        curriculum,
         min_price: minPrice,
         max_price: maxPrice,
         language,
@@ -447,9 +525,13 @@ async function getFilterCounts(
   activeFilters: {
     gradeId?: string | null
     subjectId?: string | null
+    subjectIds?: string[] | null
     productType?: string | null
     specificType?: string | null
     quarter?: string | null
+    weeks?: number[] | null
+    modalities?: string[] | null
+    curriculum?: string | null
     minPrice?: string | null
     maxPrice?: string | null
     language?: string | null

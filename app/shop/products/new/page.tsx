@@ -42,6 +42,16 @@ import {
   Calendar,
   FileCheck,
 } from 'lucide-react'
+import {
+  WEEKS_OPTIONS,
+  MODALITIES,
+  LANGUAGES,
+  CURRICULA,
+  TEACHING_FRAMEWORKS,
+  CLASS_TYPES,
+  LEARNER_PATHS,
+  SUBJECT_SELECTION,
+} from '@/lib/config/lesson-plan-config'
 
 // Product types as per design
 const PRODUCT_TYPES = [
@@ -70,7 +80,7 @@ const QUARTERS = [
   { value: '4', label: 'Quarter 4' },
 ]
 
-const WEEKS = [1, 2, 3, 4, 5, 6, 7, 8]
+const WEEKS = [...WEEKS_OPTIONS]
 
 const STEPS = [
   { number: 1, label: 'Basic Info', icon: FileText },
@@ -87,11 +97,20 @@ interface FormData {
   specific_type: string
   description: string
 
-  // Step 2: Categorization
+  // Step 2: Categorization (Phase 2 hierarchy)
+  class_type?: string
+  learner_path?: string
   grade_id: string
   subject_id: string
+  subject_ids: string[]
+  strand_id?: string
+  sped_level_id?: string
   quarter: string
   weeks: number[]
+  language?: string
+  curriculum?: string
+  modalities?: string[]
+  teaching_framework?: string
   theme?: string
   size?: string
   season?: string
@@ -111,8 +130,10 @@ export default function NewProductPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [grades, setGrades] = useState<any[]>([])
-  const [subjects, setSubjects] = useState<any[]>([])
+  const [hierarchy, setHierarchy] = useState<{
+    regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
+    sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
+  } | null>(null)
   const [canSell, setCanSell] = useState<boolean | null>(null)
 
   const [formData, setFormData] = useState<FormData>({
@@ -122,8 +143,13 @@ export default function NewProductPage() {
     description: '',
     grade_id: '',
     subject_id: '',
+    subject_ids: [],
     quarter: '',
     weeks: [],
+    language: '',
+    curriculum: '',
+    modalities: [],
+    teaching_framework: '',
     file_urls: [],
     price: 50,
   })
@@ -155,44 +181,38 @@ export default function NewProductPage() {
     checkPermissions()
   }, [router])
 
-  // Fetch grades
+  // Fetch lesson-plan hierarchy from config API
   useEffect(() => {
-    async function fetchGrades() {
+    async function fetchHierarchy() {
       try {
-        const response = await fetch('/api/grades')
+        const response = await fetch('/api/lesson-plan-config')
         if (response.ok) {
-          const { grades: fetchedGrades } = await response.json()
-          setGrades(fetchedGrades)
+          const data = await response.json()
+          setHierarchy({
+            regular: { grades: data.regular.grades, strands: data.regular.strands, subjectsByGrade: data.regular.subjectsByGrade || {}, subjectsByStrand: data.regular.subjectsByStrand || {} },
+            sped: { levels: data.sped.levels, spedSubjects: data.sped.spedSubjects || [] },
+          })
         }
       } catch (err) {
-        console.error('Error fetching grades:', err)
+        console.error('Error fetching lesson-plan config:', err)
       }
     }
-
-    fetchGrades()
+    fetchHierarchy()
   }, [])
 
-  // Fetch subjects when grade changes
-  useEffect(() => {
-    async function fetchSubjects() {
-      if (!formData.grade_id) {
-        setSubjects([])
-        return
-      }
-
-      try {
-        const response = await fetch(`/api/grades/${formData.grade_id}/subjects`)
-        if (response.ok) {
-          const { subjects: fetchedSubjects } = await response.json()
-          setSubjects(fetchedSubjects)
-        }
-      } catch (err) {
-        console.error('Error fetching subjects:', err)
-      }
-    }
-
-    fetchSubjects()
-  }, [formData.grade_id])
+  const grades = hierarchy?.regular?.grades ?? []
+  const strands = hierarchy?.regular?.strands ?? []
+  const isSpedNonGraded = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
+  const selectedGrade = grades.find((g) => g.id === formData.grade_id)
+  const isGrade11Or12 = selectedGrade && (selectedGrade.name === 'Grade 11' || selectedGrade.name === 'Grade 12')
+  const subjects = isSpedNonGraded
+    ? (hierarchy?.sped?.spedSubjects ?? [])
+    : formData.grade_id
+      ? [
+          ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
+          ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
+        ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+      : []
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -228,11 +248,21 @@ export default function NewProductPage() {
     }
 
     if (step === 2) {
-      if (!formData.grade_id) {
-        errors.grade_id = 'Grade level is required'
+      const isSpedNonGradedVal = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
+      const selectedGradeVal = grades.find((g) => g.id === formData.grade_id)
+      const isG11Or12 = selectedGradeVal && (selectedGradeVal.name === 'Grade 11' || selectedGradeVal.name === 'Grade 12')
+
+      const sidCount = (formData.subject_ids ?? []).length
+      if (sidCount === 0 && !formData.subject_id) {
+        errors.subject_ids = 'At least one subject is required'
       }
-      if (!formData.subject_id) {
-        errors.subject_id = 'Subject is required'
+      if (isSpedNonGradedVal) {
+        if (!formData.sped_level_id) errors.sped_level_id = 'Level is required for SPED Non-Graded'
+      } else {
+        if (!formData.grade_id) errors.grade_id = 'Grade level is required'
+        if (formData.class_type === 'regular' && isG11Or12 && !formData.strand_id) {
+          errors.strand_id = 'Strand is required for Grade 11/12'
+        }
       }
       if (!formData.quarter) {
         errors.quarter = 'Quarter is required'
@@ -709,7 +739,104 @@ export default function NewProductPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Class type — Regular | SPED */}
+            <div className="space-y-2">
+              <Label htmlFor="class_type" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Class type
+              </Label>
+              <Select
+                value={formData.class_type || ''}
+                onValueChange={(v) => {
+                  updateField('class_type', v)
+                  updateField('learner_path', '')
+                  updateField('strand_id', '')
+                  updateField('sped_level_id', '')
+                  updateField('subject_ids', [])
+                  updateField('subject_id', '')
+                  updateField('grade_id', '')
+                }}
+              >
+                <SelectTrigger id="class_type" className="w-full">
+                  <SelectValue placeholder="Select class type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASS_TYPES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* SPED: Learner path */}
+            {formData.class_type === 'sped' && (
+              <div className="space-y-2">
+                <Label htmlFor="learner_path" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Learner path
+                </Label>
+                <Select
+                  value={formData.learner_path || ''}
+                  onValueChange={(v) => {
+                    updateField('learner_path', v)
+                    updateField('sped_level_id', '')
+                    updateField('grade_id', '')
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                    if (v === 'graded') updateField('strand_id', '')
+                  }}
+                >
+                  <SelectTrigger id="learner_path" className="w-full">
+                    <SelectValue placeholder="Select path" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEARNER_PATHS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* SPED Non-Graded: Level */}
+            {isSpedNonGraded && (
+              <div className="space-y-2">
+                <Label htmlFor="sped_level_id" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Level *
+                </Label>
+                <Select
+                  value={formData.sped_level_id || ''}
+                  onValueChange={(v) => updateField('sped_level_id', v)}
+                >
+                  <SelectTrigger
+                    id="sped_level_id"
+                    className={`w-full ${validation.sped_level_id ? 'border-destructive' : ''}`}
+                  >
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(hierarchy?.sped?.levels ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {validation.sped_level_id && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <X className="h-3 w-3" />
+                    {validation.sped_level_id}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Grade Level — when Regular or SPED Graded */}
+            {!isSpedNonGraded && (
               <div className="space-y-2">
                 <Label htmlFor="grade_id" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
@@ -719,7 +846,11 @@ export default function NewProductPage() {
                   value={formData.grade_id}
                   onValueChange={(value) => {
                     updateField('grade_id', value)
-                    updateField('subject_id', '') // Reset subject when grade changes
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                    const g = grades.find((gr) => gr.id === value)
+                    if (!g || (g.name !== 'Grade 11' && g.name !== 'Grade 12')) {
+                      updateField('strand_id', '')
+                    }
                   }}
                 >
                   <SelectTrigger
@@ -743,45 +874,94 @@ export default function NewProductPage() {
                   </p>
                 )}
               </div>
+            )}
 
+            {/* Strand — when Regular and Grade 11 or 12 */}
+            {formData.class_type === 'regular' && isGrade11Or12 && (
               <div className="space-y-2">
-                <Label htmlFor="subject_id" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Subject *
+                <Label htmlFor="strand_id" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Strand *
                 </Label>
                 <Select
-                  value={formData.subject_id}
-                  onValueChange={(value) => updateField('subject_id', value)}
-                  disabled={!formData.grade_id}
+                  value={formData.strand_id || ''}
+                  onValueChange={(v) => {
+                    updateField('strand_id', v)
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                  }}
                 >
                   <SelectTrigger
-                    id="subject_id"
-                    className={`w-full ${validation.subject_id ? 'border-destructive' : ''}`}
-                    disabled={!formData.grade_id}
+                    id="strand_id"
+                    className={`w-full ${validation.strand_id ? 'border-destructive' : ''}`}
                   >
-                    <SelectValue
-                      placeholder={
-                        formData.grade_id
-                          ? 'Select subject'
-                          : 'Select grade level first'
-                      }
-                    />
+                    <SelectValue placeholder="Select strand" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.id}>
-                        {subject.name}
+                    {strands.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {validation.subject_id && (
+                {validation.strand_id && (
                   <p className="text-sm text-destructive flex items-center gap-1">
                     <X className="h-3 w-3" />
-                    {validation.subject_id}
+                    {validation.strand_id}
                   </p>
                 )}
               </div>
+            )}
+
+            {/* Subject: SUBJECT_SELECTION === 'multi' (Phase B) */}
+            <div className="space-y-2">
+              <Label htmlFor="subject_ids" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {SUBJECT_SELECTION === 'multi' ? 'Subjects * (at least one; select multiple for integrated teaching)' : 'Subject *'}
+              </Label>
+              <div
+                id="subject_ids"
+                className={`max-h-48 overflow-y-auto rounded-md border p-3 space-y-2 ${validation.subject_ids ? 'border-destructive' : ''}`}
+              >
+                {subjects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}
+                  </p>
+                ) : (
+                  subjects.map((subject) => {
+                    const sidList = formData.subject_ids ?? []
+                    const checked = sidList.includes(subject.id)
+                    return (
+                      <div key={subject.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subject-${subject.id}`}
+                          checked={checked}
+                          disabled={subjects.length === 0}
+                          onCheckedChange={(checked) => {
+                            const next = checked
+                              ? [...sidList, subject.id]
+                              : sidList.filter((id) => id !== subject.id)
+                            updateField('subject_ids', next)
+                            updateField('subject_id', next[0] ?? '')
+                          }}
+                        />
+                        <label
+                          htmlFor={`subject-${subject.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {subject.name}
+                        </label>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+              {validation.subject_ids && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <X className="h-3 w-3" />
+                  {validation.subject_ids}
+                </p>
+              )}
             </div>
 
             <Separator />
@@ -862,6 +1042,112 @@ export default function NewProductPage() {
                 </p>
               )}
             </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="language" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Language of instruction
+              </Label>
+              <Select
+                value={formData.language || ''}
+                onValueChange={(value) => updateField('language', value)}
+              >
+                <SelectTrigger id="language" className="w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+            <div className="space-y-2">
+              <Label htmlFor="curriculum" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Curriculum (optional)
+              </Label>
+              <Select
+                value={formData.curriculum || ''}
+                onValueChange={(value) => updateField('curriculum', value)}
+              >
+                <SelectTrigger id="curriculum" className="w-full">
+                  <SelectValue placeholder="Select curriculum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {CURRICULA.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">Modality (optional)</Label>
+              <div className="flex flex-wrap gap-2">
+                {MODALITIES.map((mod) => {
+                  const selected = formData.modalities ?? []
+                  const isSelected = selected.includes(mod.value)
+                  return (
+                    <label
+                      key={mod.value}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition-all text-sm ${
+                        isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => {
+                          const next = isSelected
+                            ? (formData.modalities ?? []).filter((m) => m !== mod.value)
+                            : [...(formData.modalities ?? []), mod.value]
+                          updateField('modalities', next.length > 0 ? next : [])
+                        }}
+                      />
+                      <span>{mod.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {formData.product_type === 'lesson_plans' && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="teaching_framework" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Teaching framework (optional)
+                  </Label>
+                  <Select
+                    value={formData.teaching_framework || ''}
+                    onValueChange={(value) => updateField('teaching_framework', value)}
+                  >
+                    <SelectTrigger id="teaching_framework" className="w-full">
+                      <SelectValue placeholder="Select framework" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {TEACHING_FRAMEWORKS.map((f) => (
+                        <SelectItem key={f.value} value={f.value}>
+                          {f.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </CardContent>
           <CardFooter className="flex justify-between border-t pt-4">
             <Button variant="outline" onClick={prevStep} className="gap-2">
@@ -1295,10 +1581,14 @@ export default function NewProductPage() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Subject</Label>
+                    <Label className="text-xs text-muted-foreground">Subjects</Label>
                     <p className="text-sm font-medium">
-                      {subjects.find((s) => s.id === formData.subject_id)?.name ||
-                        'N/A'}
+                      {(formData.subject_ids ?? []).length > 0
+                        ? (formData.subject_ids ?? [])
+                            .map((id) => subjects.find((s) => s.id === id)?.name)
+                            .filter(Boolean)
+                            .join(', ') || 'N/A'
+                        : subjects.find((s) => s.id === formData.subject_id)?.name || 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">

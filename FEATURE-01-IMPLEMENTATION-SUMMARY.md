@@ -66,6 +66,25 @@ All overrides are applied at the auth call sites to keep changes local.
 
 ---
 
+## Nav: Sign In only, highlighted; Sign Up removed (January 2026) ✅
+
+### Scope
+
+When no user is logged in, show a single highlighted “Sign In” button in the nav (desktop and mobile) and remove the “Sign Up” button. Sign-up remains reachable from the login page via the “Sign up” link.
+
+### Changes Made
+
+- **File:** `components/navigation/main-nav.tsx`
+- **Desktop:** Replaced the two links (plain “Sign In” + highlighted “Sign Up”) with one “Sign In” link using the same orange button styling as the former Sign Up (`bg-[#ff7200]`, `rounded-lg`, etc.).
+- **Mobile:** Same change in the mobile menu: one “Sign In” link with orange styling, `onClick` to close the menu; Sign Up link removed.
+
+### Related UI polish (same session)
+
+- **Footer:** `components/layout/footer.tsx` — reduced vertical padding, gaps, and margins (e.g. `py-6` → `py-4`, `gap-6 mb-6` → `gap-4 mb-4`, `space-y-1.5` → `space-y-1`, `pt-4` → `pt-3`, section headings `mb-2` → `mb-1.5`) for a more compact footer.
+- **Browse loader:** `app/marketplace/browse/page.tsx` — inline loading state (when filters change) now uses `PageLoader` with message “Loading products…” so it matches the Marketplace loader (Spinner + message) instead of the previous custom purple spinner.
+
+---
+
 ## Next Steps (Feature 01)
 
 Feature 01 remains in progress. Pending work includes (refer to [Design](docs/brainstorming/2-feature-01-authentication-user-management.md)):

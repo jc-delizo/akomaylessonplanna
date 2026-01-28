@@ -7,13 +7,13 @@ export function Footer() {
 
   return (
     <footer className="border-t bg-gray-100 shadow-sm mt-auto w-full relative z-50">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-4">
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {/* Platform Info */}
           <div>
-            <h3 className="font-semibold text-base mb-2">Ako may lesson plan na!</h3>
-            <p className="text-gray-600 text-xs mb-3">
+            <h3 className="font-semibold text-base mb-1.5">Ako may lesson plan na!</h3>
+            <p className="text-gray-600 text-xs mb-2">
               A marketplace for Filipino K-12 teachers to buy and sell educational resources.
             </p>
             <a 
@@ -26,8 +26,8 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-base mb-2">Quick Links</h3>
-            <ul className="space-y-1.5">
+            <h3 className="font-semibold text-base mb-1.5">Quick Links</h3>
+            <ul className="space-y-1">
               <li>
                 <Link href="/marketplace" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
                   Marketplace
@@ -68,8 +68,8 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="font-semibold text-base mb-2">Legal</h3>
-            <ul className="space-y-1.5">
+            <h3 className="font-semibold text-base mb-1.5">Legal</h3>
+            <ul className="space-y-1">
               <li>
                 <Link href="/terms" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
                   Terms of Service
@@ -95,7 +95,7 @@ export function Footer() {
 
           {/* Payment Methods */}
           <div>
-            <h3 className="font-semibold text-base mb-2">Payment Methods</h3>
+            <h3 className="font-semibold text-base mb-1.5">Payment Methods</h3>
             <div className="flex flex-col items-start gap-2">
               {/* GCash Logo */}
               <Image
@@ -118,11 +118,11 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t pt-4 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div className="border-t pt-3 flex flex-col md:flex-row justify-between items-center gap-2">
           <p className="text-gray-600 text-xs">
             © {currentYear} Ako may lesson plan na! All rights reserved.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <a 
               href="#" 
               className="text-gray-500 hover:text-[#ff7200] transition-colors"

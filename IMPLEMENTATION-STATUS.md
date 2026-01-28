@@ -36,6 +36,7 @@
 
 **Implemented:**
 - Signin/Signup UI update (Jan 2026): neutral background, borderless card and inputs, "Continue with Gmail" button with black border and Google logo
+- Recent UI polish (Jan 2026): Sign In highlighted and Sign Up removed in nav when logged out; footer made more compact; Browse page uses Marketplace loader (PageLoader) for loading state
 
 **Summary**: [FEATURE-01-IMPLEMENTATION-SUMMARY.md](FEATURE-01-IMPLEMENTATION-SUMMARY.md)
 
@@ -293,6 +294,42 @@
 | **Production** | akomaylessonplanna.com | `main` | Prod Supabase | 🟡 Setup pending |
 
 **Note**: Dev/prod isolated environment setup is documented but not yet configured. See [DEV-PROD-SETUP-GUIDE.md](docs/implementationplan/DEV-PROD-SETUP-GUIDE.md).
+
+---
+
+## Lesson Plan Phase 2 (Hierarchy) — Verification Checklist
+
+Phase 2 adds Class type (Regular/SPED), SPED path/level, SHS strand–subject mapping. See [LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md](docs/implementationplan/LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md) and [LESSON-PLAN-HIERARCHY-SPEC.md](docs/implementationplan/LESSON-PLAN-HIERARCHY-SPEC.md).
+
+**Completed (Jan 2026):**
+- [x] Migration 022 applied; `sped_levels`, `sped_level_id`, nullable `grade_id`, SPED subjects, `strand_subjects` present.
+- [x] All subject codes used in 022’s strand_subjects seed exist in `subjects` (see [supabase/scripts/verify_strand_subject_codes.sql](supabase/scripts/verify_strand_subject_codes.sql)).
+- [x] `/api/lesson-plan-config` documents response shape and references LESSON-PLAN-HIERARCHY-SPEC.md for the SHS rule.
+- [x] Filter sidebar: Class type → SPED path → Level / Strand → Grade → Subject; SHS specialized subjects only after strand (code verified).
+- [x] Browse: URL and search use `class_type`, `strand_id`, `learner_path`, `sped_level_id`; filters restore from URL.
+- [x] Product new/edit: hierarchy fields loaded and persisted; validation and clearing behavior match spec.
+- [x] Filter chips and search API include hierarchy params.
+
+**Manual QA (when testing UI):**
+- Filter sidebar: SPED → Non-Graded → Level + SPED subject; Regular → G11/12 → Strand → core+specialized subjects (specialized only after strand).
+- Browse: Load with `?class_type=sped&learner_path=non_graded&sped_level_id=<id>` and confirm filters/results match.
+- Edit product: Confirm class_type, strand_id, learner_path, sped_level_id load and save; clearing class_type clears dependents.
+
+---
+
+## Lesson Plan Phase 2 — Phase B (Subject multiselect)
+
+Phase B adds subject multiselect via `product_subjects` and `subject_ids`. See Todo 12 in [LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md](docs/implementationplan/LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md).
+
+**Completed (Jan 2026):**
+- [x] Migration 023 applied; `product_subjects` table and backfill from `products.subject_id`.
+- [x] Products API: POST/GET/PUT accept and return `subject_ids`; product_subjects written/replaced; `products.subject_id` = first of subject_ids.
+- [x] Search API: accepts `subject_ids` (comma-separated) or `subject_id`, filters by product_subjects and primary subject_id; cache key includes subjectIds.
+- [x] Product forms (new + edit): subject multiselect (checkboxes), `subject_ids` + `subject_id`, validation at least one, clear on hierarchy change, submit `subject_ids`.
+- [x] Filter sidebar: subject multiselect (checkboxes), `filters.subject_ids`; clear subject_ids/subject_id on class_type, grade_id, strand_id, learner_path change.
+- [x] Browse: parse `subject_ids` from URL (comma-separated), pass to search; on subject chip remove, clear subject_ids and subject_id.
+- [x] Filter chips: show "Subject(s)" chip when subject_ids/subject_id set; on remove clear both.
+- [x] Config: `SUBJECT_SELECTION === 'multi'` used in filter sidebar and product form labels.
 
 ---
 

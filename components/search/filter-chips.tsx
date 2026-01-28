@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { MODALITIES, LANGUAGES, CURRICULA, DOCUMENT_TYPES, CLASS_TYPES, LEARNER_PATHS } from '@/lib/config/lesson-plan-config'
 
 interface FilterChip {
   key: string
@@ -19,47 +20,55 @@ interface FilterChipsProps {
 }
 
 export function FilterChips({ filters, onRemove, onClearAll, resultCount }: FilterChipsProps) {
-  const [grades, setGrades] = useState<any[]>([])
-  const [subjects, setSubjects] = useState<any[]>([])
+  const [grades, setGrades] = useState<{ id: string; name: string }[]>([])
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([])
+  const [strands, setStrands] = useState<{ id: string; name: string }[]>([])
+  const [spedLevels, setSpedLevels] = useState<{ id: string; name: string }[]>([])
 
-  // Fetch grades on mount
+  // Fetch lesson-plan config once (grades, strands, levels, subjectsByGrade)
   useEffect(() => {
-    async function fetchGrades() {
+    async function fetchConfig() {
       try {
-        const response = await fetch('/api/grades')
+        const response = await fetch('/api/lesson-plan-config')
         if (response.ok) {
-          const { grades: fetchedGrades } = await response.json()
-          setGrades(fetchedGrades || [])
+          const data = await response.json()
+          setGrades(data.regular?.grades ?? [])
+          setStrands(data.regular?.strands ?? [])
+          setSpedLevels(data.sped?.levels ?? [])
         }
       } catch (err) {
-        console.error('Error fetching grades:', err)
+        console.error('Error fetching lesson-plan config:', err)
       }
     }
-
-    fetchGrades()
+    fetchConfig()
   }, [])
 
-  // Fetch subjects when grade_id is present
+  // Resolve subjects from config when grade_id or SPED (subject_id in spedSubjects)
   useEffect(() => {
-    async function fetchSubjects() {
-      if (!filters.grade_id) {
-        setSubjects([])
-        return
-      }
-
+    if (!filters.grade_id && !filters.subject_id) {
+      setSubjects([])
+      return
+    }
+    async function fetchConfig() {
       try {
-        const response = await fetch(`/api/grades/${filters.grade_id}/subjects`)
+        const response = await fetch('/api/lesson-plan-config')
         if (response.ok) {
-          const { subjects: fetchedSubjects } = await response.json()
-          setSubjects(fetchedSubjects || [])
+          const data = await response.json()
+          if (filters.grade_id) {
+            const byGrade = (data.regular?.subjectsByGrade ?? {})[filters.grade_id] ?? []
+            const strandId = filters.strand_id
+            const byStrand = strandId ? ((data.regular?.subjectsByStrand ?? {})[strandId] ?? []) : []
+            setSubjects([...byGrade, ...byStrand].filter((s: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex((x) => x.id === s.id) === i))
+          } else {
+            setSubjects(data.sped?.spedSubjects ?? [])
+          }
         }
       } catch (err) {
-        console.error('Error fetching subjects:', err)
+        console.error('Error fetching lesson-plan config:', err)
       }
     }
-
-    fetchSubjects()
-  }, [filters.grade_id])
+    fetchConfig()
+  }, [filters.grade_id, filters.strand_id, filters.subject_id])
 
   // Helper function to resolve grade name
   const getGradeName = (gradeId: string): string => {
@@ -82,6 +91,30 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
   // Convert filters to chips
   const chips: FilterChip[] = []
 
+  // Class type filter
+  if (filters.class_type) {
+    const label = CLASS_TYPES.find((c) => c.value === filters.class_type)?.label ?? filters.class_type
+    chips.push({ key: 'class_type', label: 'Class type', value: label })
+  }
+
+  // SPED Path (Learner path) filter
+  if (filters.class_type === 'sped' && filters.learner_path) {
+    const pathLabel = LEARNER_PATHS.find((p) => p.value === filters.learner_path)?.label ?? filters.learner_path
+    chips.push({ key: 'learner_path', label: 'Path', value: pathLabel })
+  }
+
+  // Strand filter
+  if (filters.strand_id) {
+    const strandName = strands.find((s) => s.id === filters.strand_id)?.name ?? filters.strand_id
+    chips.push({ key: 'strand_id', label: 'Strand', value: strandName })
+  }
+
+  // SPED Level filter
+  if (filters.sped_level_id) {
+    const levelName = spedLevels.find((l) => l.id === filters.sped_level_id)?.name ?? filters.sped_level_id
+    chips.push({ key: 'sped_level_id', label: 'Level', value: levelName })
+  }
+
   // Grade filter
   if (filters.grade_id) {
     chips.push({
@@ -91,12 +124,14 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
     })
   }
 
-  // Subject filter
-  if (filters.subject_id) {
+  // Subject filter (Phase B: subject_ids multiselect; label "Subject(s)" per Todo 12)
+  const subjectIds = (filters.subject_ids && Array.isArray(filters.subject_ids) ? filters.subject_ids : filters.subject_id ? [filters.subject_id] : []) as string[]
+  if (subjectIds.length > 0) {
+    const value = subjectIds.map((id) => getSubjectName(id)).filter(Boolean).join(', ')
     chips.push({
-      key: 'subject_id',
-      label: 'Subject',
-      value: getSubjectName(filters.subject_id)
+      key: 'subject_ids',
+      label: 'Subject(s)',
+      value
     })
   }
 
@@ -109,12 +144,14 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
     })
   }
 
-  // Specific type filter
-  if (filters.specific_type) {
+  // Document type / specific type (lesson plans)
+  const documentType = filters.document_type || filters.specific_type
+  if (documentType) {
+    const docLabel = DOCUMENT_TYPES.find((d) => d.value === documentType)?.label ?? documentType
     chips.push({
-      key: 'specific_type',
-      label: 'Specific Type',
-      value: filters.specific_type
+      key: 'document_type',
+      label: 'Document type',
+      value: docLabel
     })
   }
 
@@ -124,6 +161,37 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
       key: 'quarter',
       label: 'Quarter',
       value: `Q${filters.quarter}`
+    })
+  }
+
+  // Weeks filter (array shown as "1, 2, 3")
+  if (filters.weeks && Array.isArray(filters.weeks) && filters.weeks.length > 0) {
+    chips.push({
+      key: 'weeks',
+      label: 'Weeks',
+      value: filters.weeks.slice().sort((a: number, b: number) => a - b).join(', ')
+    })
+  }
+
+  // Modalities filter (array of values -> labels)
+  if (filters.modalities && Array.isArray(filters.modalities) && filters.modalities.length > 0) {
+    const labels = filters.modalities
+      .map((v: string) => MODALITIES.find((m) => m.value === v)?.label ?? v)
+      .join(', ')
+    chips.push({
+      key: 'modalities',
+      label: 'Modality',
+      value: labels
+    })
+  }
+
+  // Curriculum filter
+  if (filters.curriculum) {
+    const curLabel = CURRICULA.find((c) => c.value === filters.curriculum)?.label ?? filters.curriculum
+    chips.push({
+      key: 'curriculum',
+      label: 'Curriculum',
+      value: curLabel
     })
   }
 
@@ -140,10 +208,11 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
 
   // Language filter
   if (filters.language) {
+    const langLabel = LANGUAGES.find((l) => l.value === filters.language)?.label ?? filters.language
     chips.push({
       key: 'language',
       label: 'Language',
-      value: filters.language.charAt(0).toUpperCase() + filters.language.slice(1)
+      value: langLabel
     })
   }
 

@@ -124,7 +124,16 @@ export async function GET(
         })
     }
 
-    return NextResponse.json({ product })
+    // Phase B: add subject_ids from product_subjects (multiselect)
+    const { data: psRows } = await supabase
+      .from('product_subjects')
+      .select('subject_id')
+      .eq('product_id', id)
+      .order('sort_order', { ascending: true })
+    const subject_ids = (psRows || []).map((r: { subject_id: string }) => r.subject_id)
+    const productWithSubjects = { ...product, subject_ids: subject_ids.length > 0 ? subject_ids : [product.subject_id].filter(Boolean) }
+
+    return NextResponse.json({ product: productWithSubjects })
   } catch (error) {
     console.error('Error in GET /api/products/[id]:', error)
     return NextResponse.json(
@@ -218,12 +227,24 @@ export async function PUT(
     // Update product
     const updateData: any = {}
 
+    // Phase B: subject_ids (multiselect) — replace product_subjects and set subject_id to first
+    const subjectIds =
+      body.subject_ids !== undefined
+        ? (Array.isArray(body.subject_ids) ? body.subject_ids : [body.subject_ids]).filter((s: string) => s)
+        : body.subject_id !== undefined
+          ? [body.subject_id]
+          : null
+    if (subjectIds !== null && subjectIds.length > 0) {
+      updateData.subject_id = subjectIds[0]
+    } else if (body.subject_id !== undefined) {
+      updateData.subject_id = body.subject_id
+    }
+
     // Only update fields that are provided
     if (body.title) updateData.title = body.title
     if (body.description) updateData.description = body.description
     if (body.price !== undefined) updateData.price = body.price
     if (body.grade_id) updateData.grade_id = body.grade_id
-    if (body.subject_id) updateData.subject_id = body.subject_id
     if (body.quarter !== undefined) updateData.quarter = body.quarter
     if (body.weeks) updateData.weeks = body.weeks
     if (body.product_type) updateData.product_type = body.product_type
@@ -233,6 +254,14 @@ export async function PUT(
     if (body.season !== undefined) updateData.season = body.season
     if (body.occasion !== undefined) updateData.occasion = body.occasion
     if (body.language) updateData.language = body.language
+    if (body.curriculum !== undefined) updateData.curriculum = body.curriculum || null
+    if (body.modalities !== undefined) updateData.modalities = Array.isArray(body.modalities) && body.modalities.length > 0 ? body.modalities : null
+    if (body.teaching_framework !== undefined) updateData.teaching_framework = body.teaching_framework || null
+    if (body.class_type !== undefined) updateData.class_type = body.class_type ?? null
+    if (body.learner_path !== undefined) updateData.learner_path = body.learner_path ?? null
+    if (body.strand_id !== undefined) updateData.strand_id = body.strand_id ?? null
+    if (body.sped_level_id !== undefined) updateData.sped_level_id = body.sped_level_id ?? null
+    if (body.grade_id !== undefined) updateData.grade_id = body.grade_id ?? null
     if (body.file_urls) updateData.file_urls = body.file_urls
     if (body.cover_image_url !== undefined) updateData.cover_image_url = body.cover_image_url
     if (body.preview_images !== undefined) updateData.preview_images = body.preview_images
@@ -271,6 +300,18 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Failed to update product', details: updateError.message },
         { status: 500 }
+      )
+    }
+
+    // Phase B: replace product_subjects when subject_ids provided
+    if (subjectIds !== null && subjectIds.length > 0) {
+      await supabase.from('product_subjects').delete().eq('product_id', id)
+      await supabase.from('product_subjects').insert(
+        subjectIds.map((sid: string, i: number) => ({
+          product_id: id,
+          subject_id: sid,
+          sort_order: i,
+        }))
       )
     }
 

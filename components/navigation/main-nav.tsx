@@ -544,20 +544,12 @@ export function MainNav({ user }: MainNavProps) {
                 )}
               </>
             ) : mounted && !user ? (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
-                >
-                  Sign Up
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                Sign In
+              </Link>
             ) : null}
           </div>
 
@@ -677,22 +669,13 @@ export function MainNav({ user }: MainNavProps) {
                 </>
               )}
               {mounted && !user && (
-                <>
-                  <Link
-                    href="/login"
-                    className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors py-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
               )}
               </div>
             </div>

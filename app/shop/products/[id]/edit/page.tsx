@@ -8,6 +8,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  WEEKS_OPTIONS,
+  MODALITIES,
+  LANGUAGES,
+  CURRICULA,
+  TEACHING_FRAMEWORKS,
+  CLASS_TYPES,
+  LEARNER_PATHS,
+} from '@/lib/config/lesson-plan-config'
 
 const PRODUCT_TYPES = [
   { value: 'exams', label: 'Exams' },
@@ -35,17 +45,26 @@ const QUARTERS = [
   { value: '4', label: 'Quarter 4' },
 ]
 
-const WEEKS = [1, 2, 3, 4, 5, 6, 7, 8]
+const WEEKS = [...WEEKS_OPTIONS]
 
 interface FormData {
   title: string
   product_type: string
   specific_type: string
   description: string
+  class_type?: string
+  learner_path?: string
   grade_id: string
   subject_id: string
+  subject_ids: string[]
+  strand_id?: string
+  sped_level_id?: string
   quarter: string
   weeks: number[]
+  language?: string
+  curriculum?: string
+  modalities?: string[]
+  teaching_framework?: string
   file_urls: string[]
   cover_image_url?: string
   price: number
@@ -63,8 +82,10 @@ export default function EditProductPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [grades, setGrades] = useState<any[]>([])
-  const [subjects, setSubjects] = useState<any[]>([])
+  const [hierarchy, setHierarchy] = useState<{
+    regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
+    sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
+  } | null>(null)
   const [originalProduct, setOriginalProduct] = useState<any>(null)
 
   const [formData, setFormData] = useState<FormData>({
@@ -74,8 +95,13 @@ export default function EditProductPage({ params }: PageProps) {
     description: '',
     grade_id: '',
     subject_id: '',
+    subject_ids: [],
     quarter: '',
     weeks: [],
+    language: '',
+    curriculum: '',
+    modalities: [],
+    teaching_framework: '',
     file_urls: [],
     price: 50,
     changelog: '',
@@ -108,16 +134,25 @@ export default function EditProductPage({ params }: PageProps) {
         const { product } = await response.json()
         setOriginalProduct(product)
 
-        // Populate form
+        // Populate form (include Phase 2 hierarchy fields)
         setFormData({
           title: product.title,
           product_type: product.product_type,
           specific_type: product.specific_type || '',
           description: product.description,
-          grade_id: product.grade_id,
-          subject_id: product.subject_id,
+          class_type: product.class_type || undefined,
+          learner_path: product.learner_path || undefined,
+          grade_id: product.grade_id || '',
+          subject_id: product.subject_id || '',
+          subject_ids: Array.isArray(product.subject_ids) && product.subject_ids.length > 0 ? product.subject_ids : (product.subject_id ? [product.subject_id] : []),
+          strand_id: product.strand_id || undefined,
+          sped_level_id: product.sped_level_id || undefined,
           quarter: product.quarter?.toString() || '',
           weeks: product.weeks || [],
+          language: product.language || '',
+          curriculum: product.curriculum || '',
+          modalities: product.modalities || [],
+          teaching_framework: product.teaching_framework || '',
           file_urls: product.file_urls || [],
           cover_image_url: product.cover_image_url || '',
           price: product.price,
@@ -135,44 +170,38 @@ export default function EditProductPage({ params }: PageProps) {
     fetchProduct()
   }, [productId])
 
-  // Fetch grades
+  // Fetch lesson-plan hierarchy
   useEffect(() => {
-    async function fetchGrades() {
+    async function fetchHierarchy() {
       try {
-        const response = await fetch('/api/grades')
+        const response = await fetch('/api/lesson-plan-config')
         if (response.ok) {
-          const { grades: fetchedGrades } = await response.json()
-          setGrades(fetchedGrades)
+          const data = await response.json()
+          setHierarchy({
+            regular: { grades: data.regular.grades, strands: data.regular.strands, subjectsByGrade: data.regular.subjectsByGrade || {}, subjectsByStrand: data.regular.subjectsByStrand || {} },
+            sped: { levels: data.sped.levels, spedSubjects: data.sped.spedSubjects || [] },
+          })
         }
       } catch (err) {
-        console.error('Error fetching grades:', err)
+        console.error('Error fetching lesson-plan config:', err)
       }
     }
-
-    fetchGrades()
+    fetchHierarchy()
   }, [])
 
-  // Fetch subjects when grade changes
-  useEffect(() => {
-    async function fetchSubjects() {
-      if (!formData.grade_id) {
-        setSubjects([])
-        return
-      }
-
-      try {
-        const response = await fetch(`/api/grades/${formData.grade_id}/subjects`)
-        if (response.ok) {
-          const { subjects: fetchedSubjects } = await response.json()
-          setSubjects(fetchedSubjects)
-        }
-      } catch (err) {
-        console.error('Error fetching subjects:', err)
-      }
-    }
-
-    fetchSubjects()
-  }, [formData.grade_id])
+  const grades = hierarchy?.regular?.grades ?? []
+  const strands = hierarchy?.regular?.strands ?? []
+  const isSpedNonGraded = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
+  const selectedGrade = grades.find((g) => g.id === formData.grade_id)
+  const isGrade11Or12 = selectedGrade && (selectedGrade.name === 'Grade 11' || selectedGrade.name === 'Grade 12')
+  const subjects = isSpedNonGraded
+    ? (hierarchy?.sped?.spedSubjects ?? [])
+    : formData.grade_id
+      ? [
+          ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
+          ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
+        ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+      : []
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -197,11 +226,20 @@ export default function EditProductPage({ params }: PageProps) {
     if (!formData.price || formData.price < 50) {
       errors.price = 'Price must be at least ₱50'
     }
-    if (!formData.grade_id) {
-      errors.grade_id = 'Grade level is required'
+    const isSpedNonGradedVal = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
+    const selectedGradeVal = grades.find((g) => g.id === formData.grade_id)
+    const isG11Or12 = selectedGradeVal && (selectedGradeVal.name === 'Grade 11' || selectedGradeVal.name === 'Grade 12')
+    const sidCount = (formData.subject_ids ?? []).length
+    if (sidCount === 0 && !formData.subject_id) {
+      errors.subject_ids = 'At least one subject is required'
     }
-    if (!formData.subject_id) {
-      errors.subject_id = 'Subject is required'
+    if (isSpedNonGradedVal) {
+      if (!formData.sped_level_id) errors.sped_level_id = 'Level is required for SPED Non-Graded'
+    } else {
+      if (!formData.grade_id) errors.grade_id = 'Grade level is required'
+      if (formData.class_type === 'regular' && isG11Or12 && !formData.strand_id) {
+        errors.strand_id = 'Strand is required for Grade 11/12'
+      }
     }
     if (formData.file_urls.length === 0) {
       errors.file_urls = 'At least one file is required'
@@ -379,42 +417,147 @@ export default function EditProductPage({ params }: PageProps) {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="grade_id">Grade Level *</Label>
+              <Label htmlFor="class_type">Class type</Label>
               <Select
-                value={formData.grade_id}
-                onValueChange={(value) => {
-                  updateField('grade_id', value)
-                  updateField('subject_id', '')
+                value={formData.class_type || ''}
+                onValueChange={(v) => {
+                  updateField('class_type', v || undefined)
+                  updateField('learner_path', undefined)
+                  updateField('strand_id', undefined)
+                  updateField('sped_level_id', undefined)
+                  updateField('grade_id', '')
+                  updateField('subject_ids', []); updateField('subject_id', '')
                 }}
               >
-                <option value="">Select grade level</option>
-                {grades.map((grade) => (
-                  <option key={grade.id} value={grade.id}>
-                    {grade.name}
-                  </option>
+                <option value="">Select class type</option>
+                {CLASS_TYPES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </Select>
-              {validation.grade_id && (
-                <p className="text-sm text-red-600 mt-1">{validation.grade_id}</p>
-              )}
             </div>
 
+            {formData.class_type === 'sped' && (
+              <div>
+                <Label htmlFor="learner_path">Learner path</Label>
+                <Select
+                  value={formData.learner_path || ''}
+                  onValueChange={(v) => {
+                    updateField('learner_path', v || undefined)
+                    updateField('sped_level_id', undefined)
+                    updateField('grade_id', '')
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                    if (v === 'graded') updateField('strand_id', undefined)
+                  }}
+                >
+                  <option value="">Select path</option>
+                  {LEARNER_PATHS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+
+            {isSpedNonGraded && (
+              <div>
+                <Label htmlFor="sped_level_id">Level *</Label>
+                <Select
+                  value={formData.sped_level_id || ''}
+                  onValueChange={(v) => updateField('sped_level_id', v || undefined)}
+                >
+                  <option value="">Select level</option>
+                  {(hierarchy?.sped?.levels ?? []).map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </Select>
+                {validation.sped_level_id && (
+                  <p className="text-sm text-red-600 mt-1">{validation.sped_level_id}</p>
+                )}
+              </div>
+            )}
+
+            {!isSpedNonGraded && (
+              <div>
+                <Label htmlFor="grade_id">Grade Level *</Label>
+                <Select
+                  value={formData.grade_id}
+                  onValueChange={(value) => {
+                    updateField('grade_id', value)
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                    const g = grades.find((gr) => gr.id === value)
+                    if (!g || (g.name !== 'Grade 11' && g.name !== 'Grade 12')) {
+                      updateField('strand_id', undefined)
+                    }
+                  }}
+                >
+                  <option value="">Select grade level</option>
+                  {grades.map((grade) => (
+                    <option key={grade.id} value={grade.id}>
+                      {grade.name}
+                    </option>
+                  ))}
+                </Select>
+                {validation.grade_id && (
+                  <p className="text-sm text-red-600 mt-1">{validation.grade_id}</p>
+                )}
+              </div>
+            )}
+
+            {formData.class_type === 'regular' && isGrade11Or12 && (
+              <div>
+                <Label htmlFor="strand_id">Strand *</Label>
+                <Select
+                  value={formData.strand_id || ''}
+                  onValueChange={(v) => {
+                    updateField('strand_id', v || undefined)
+                    updateField('subject_ids', []); updateField('subject_id', '')
+                  }}
+                >
+                  <option value="">Select strand</option>
+                  {strands.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Select>
+                {validation.strand_id && (
+                  <p className="text-sm text-red-600 mt-1">{validation.strand_id}</p>
+                )}
+              </div>
+            )}
+
             <div>
-              <Label htmlFor="subject_id">Subject *</Label>
-              <Select
-                value={formData.subject_id}
-                onValueChange={(value) => updateField('subject_id', value)}
-                disabled={!formData.grade_id}
-              >
-                <option value="">Select subject</option>
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </option>
-                ))}
-              </Select>
-              {validation.subject_id && (
-                <p className="text-sm text-red-600 mt-1">{validation.subject_id}</p>
+              <Label htmlFor="subject_ids">Subjects * (at least one; select multiple for integrated teaching)</Label>
+              <div id="subject_ids" className={`max-h-48 overflow-y-auto rounded-md border p-3 space-y-2 mt-1 ${validation.subject_ids ? 'border-red-500' : ''}`}>
+                {subjects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}
+                  </p>
+                ) : (
+                  subjects.map((subject) => {
+                    const sidList = formData.subject_ids ?? []
+                    const checked = sidList.includes(subject.id)
+                    return (
+                      <div key={subject.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subject-${subject.id}`}
+                          checked={checked}
+                          disabled={subjects.length === 0}
+                          onCheckedChange={(checked) => {
+                            const next = checked
+                              ? [...sidList, subject.id]
+                              : sidList.filter((id) => id !== subject.id)
+                            updateField('subject_ids', next)
+                            updateField('subject_id', next[0] ?? '')
+                          }}
+                        />
+                        <label htmlFor={`subject-${subject.id}`} className="text-sm font-medium leading-none peer-disabled:opacity-70 cursor-pointer">
+                          {subject.name}
+                        </label>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+              {validation.subject_ids && (
+                <p className="text-sm text-red-600 mt-1">{validation.subject_ids}</p>
               )}
             </div>
 
@@ -435,7 +578,7 @@ export default function EditProductPage({ params }: PageProps) {
 
             <div>
               <Label>Weeks</Label>
-              <div className="grid grid-cols-4 gap-2 mt-2">
+              <div className="grid grid-cols-5 gap-2 mt-2">
                 {WEEKS.map((week) => (
                   <button
                     key={week}
@@ -452,6 +595,82 @@ export default function EditProductPage({ params }: PageProps) {
                 ))}
               </div>
             </div>
+
+            <div>
+              <Label htmlFor="language">Language of instruction</Label>
+              <Select
+                value={formData.language || ''}
+                onValueChange={(value) => updateField('language', value)}
+              >
+                <option value="">Select language</option>
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="curriculum">Curriculum</Label>
+              <Select
+                value={formData.curriculum || ''}
+                onValueChange={(value) => updateField('curriculum', value)}
+              >
+                <option value="">None</option>
+                {CURRICULA.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <Label>Modality (optional)</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {MODALITIES.map((mod) => {
+                  const selected = formData.modalities ?? []
+                  const isSelected = selected.includes(mod.value)
+                  return (
+                    <label
+                      key={mod.value}
+                      className={`flex items-center gap-2 px-3 py-2 rounded border cursor-pointer text-sm ${
+                        isSelected ? 'border-purple-600 bg-purple-50' : 'border-gray-300'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => {
+                          const next = isSelected
+                            ? (formData.modalities ?? []).filter((m) => m !== mod.value)
+                            : [...(formData.modalities ?? []), mod.value]
+                          updateField('modalities', next.length > 0 ? next : [])
+                        }}
+                      />
+                      <span>{mod.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {formData.product_type === 'lesson_plans' && (
+              <div>
+                <Label htmlFor="teaching_framework">Teaching framework</Label>
+                <Select
+                  value={formData.teaching_framework || ''}
+                  onValueChange={(value) => updateField('teaching_framework', value)}
+                >
+                  <option value="">None</option>
+                  {TEACHING_FRAMEWORKS.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {f.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </div>
         </div>
 

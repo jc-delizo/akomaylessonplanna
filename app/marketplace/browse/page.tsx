@@ -6,6 +6,7 @@ import { FilterSidebar } from '@/components/products/filter-sidebar'
 import { FilterChips } from '@/components/search/filter-chips'
 import { SearchResultsGrid } from '@/components/search/search-results-grid'
 import { Button } from '@/components/ui/button'
+import { PageLoader } from '@/components/ui/page-loader'
 
 interface Product {
   id: string
@@ -49,17 +50,23 @@ export default function BrowseProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-  // Build initial filters from URL params
+  // Build initial filters from URL params (parse weeks and modalities as arrays)
   useEffect(() => {
     const initialFilters: Record<string, any> = {}
     searchParams.forEach((value, key) => {
-      initialFilters[key] = value
+      if (key === 'weeks' && value) {
+        initialFilters[key] = value.split(',').map((w) => parseInt(w.trim(), 10)).filter((n) => !Number.isNaN(n) && n >= 1 && n <= 9)
+      } else if (key === 'modalities' && value) {
+        initialFilters[key] = value.split(',').map((m) => m.trim()).filter(Boolean)
+      } else if (key === 'subject_ids' && value) {
+        initialFilters[key] = value.split(',').map((s) => s.trim()).filter(Boolean)
+      } else {
+        initialFilters[key] = value
+      }
     })
-    
     // Only update filters if they've actually changed to prevent infinite loops
     const filtersString = JSON.stringify(initialFilters)
     const currentFiltersString = JSON.stringify(filters)
-    
     if (filtersString !== currentFiltersString) {
       setFilters(initialFilters)
     }
@@ -84,10 +91,13 @@ export default function BrowseProductsPage() {
         setLoading(true)
         setError(null)
 
-        // Build query string
+        // Build query string (serialize arrays as comma-separated for weeks, modalities)
         const queryParams = new URLSearchParams()
         Object.entries(filters).forEach(([key, value]) => {
-          if (value !== null && value !== undefined && value !== '') {
+          if (value === null || value === undefined || value === '') return
+          if (Array.isArray(value)) {
+            if (value.length > 0) queryParams.set(key, value.join(','))
+          } else {
             queryParams.set(key, String(value))
           }
         })
@@ -136,25 +146,30 @@ export default function BrowseProductsPage() {
   }, [filters])
 
   const handleFilterChange = (newFilters: Record<string, any>) => {
-    // Update URL params first, then let the searchParams effect update filters
-    // This prevents double updates and potential loops
+    // Update URL params (serialize arrays as comma-separated for weeks, modalities)
     const params = new URLSearchParams()
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
+      if (value === null || value === undefined || value === '') return
+      if (Array.isArray(value)) {
+        if (value.length > 0) params.set(key, value.join(','))
+      } else {
         params.set(key, String(value))
       }
     })
-    
-    // Use replace instead of push to avoid adding to history for filter changes
     router.replace(`/marketplace/browse?${params.toString()}`, { scroll: false })
-    
-    // Update filters immediately for responsive UI
     setFilters(newFilters)
   }
 
   const handleFilterRemove = (key: string) => {
     const newFilters = { ...filters }
     delete newFilters[key]
+    if (key === 'document_type') delete newFilters.specific_type
+    if (key === 'subject_ids') delete newFilters.subject_id
+    if (key === 'class_type') {
+      delete newFilters.learner_path
+      delete newFilters.strand_id
+      delete newFilters.sped_level_id
+    }
     handleFilterChange(newFilters)
   }
 
@@ -220,12 +235,7 @@ export default function BrowseProductsPage() {
             />
 
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading products...</p>
-                </div>
-              </div>
+              <PageLoader message="Loading products..." />
             ) : error ? (
               <div className="text-center py-12">
                 <svg

@@ -113,9 +113,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Phase B: attach subject_ids from product_subjects for each product
+    const list = products || []
+    const productIds = list.map((p: { id: string }) => p.id)
+    const productSubjectIds: Record<string, string[]> = {}
+    if (productIds.length > 0) {
+      const { data: psRows } = await supabase
+        .from('product_subjects')
+        .select('product_id, subject_id, sort_order')
+        .in('product_id', productIds)
+        .order('sort_order', { ascending: true })
+      for (const row of psRows || []) {
+        if (!productSubjectIds[row.product_id]) productSubjectIds[row.product_id] = []
+        productSubjectIds[row.product_id].push(row.subject_id)
+      }
+    }
+    const productsWithSubjectIds = list.map((p: { id: string; subject_id?: string }) => ({
+      ...p,
+      subject_ids: productSubjectIds[p.id]?.length ? productSubjectIds[p.id] : (p.subject_id ? [p.subject_id] : []),
+    }))
+
     // Return paginated results
     return NextResponse.json({
-      products: products || [],
+      products: productsWithSubjectIds,
       pagination: {
         page,
         limit,
@@ -143,9 +163,12 @@ export async function GET(request: NextRequest) {
  * - grade_id: UUID (required)
  * - subject_id: UUID (required)
  * - quarter: number (optional, 1-4)
- * - weeks: number[] (optional)
+ * - weeks: number[] (optional, 1-9)
  * - product_type: string (required)
  * - specific_type: string (optional)
+ * - curriculum: string (optional, matatag | k_to_12)
+ * - modalities: string[] (optional, face_to_face | online | modular | blended)
+ * - teaching_framework: string (optional, 4as | 5es | inquiry_based | direct_instruction | custom)
  * - theme, size, season, occasion: string (optional, type-specific)
  * - file_urls: string[] (required)
  * - cover_image_url: string (optional)
@@ -210,9 +233,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!body.grade_id || !body.subject_id || !body.product_type) {
+    const isSpedNonGraded = body.class_type === 'sped' && body.learner_path === 'non_graded'
+    // Phase B: accept subject_ids[] or legacy subject_id; at least one subject required
+    const subjectIds = Array.isArray(body.subject_ids) && body.subject_ids.length > 0
+      ? body.subject_ids.filter((s: string) => typeof s === 'string' && s)
+      : body.subject_id
+        ? [body.subject_id]
+        : []
+    if (subjectIds.length === 0 || !body.product_type) {
       return NextResponse.json(
-        { error: 'Missing required fields: grade_id, subject_id, product_type' },
+        { error: 'At least one subject (subject_ids or subject_id) and product_type are required' },
+        { status: 400 }
+      )
+    }
+    if (!isSpedNonGraded && !body.grade_id) {
+      return NextResponse.json(
+        { error: 'Grade level is required when not SPED Non-Graded' },
         { status: 400 }
       )
     }
@@ -265,7 +301,7 @@ export async function POST(request: NextRequest) {
     const publishedCount = publishedProducts?.length || 0
     const initialStatus = publishedCount < 3 ? 'pending_review' : 'published'
 
-    // Insert product
+    // Insert product (grade_id nullable for SPED non_graded). subject_id = first of subject_ids for backward compat.
     const { data: product, error: insertError } = await supabase
       .from('products')
       .insert({
@@ -274,8 +310,8 @@ export async function POST(request: NextRequest) {
         description: body.description,
         slug,
         price: body.price,
-        grade_id: body.grade_id,
-        subject_id: body.subject_id,
+        grade_id: body.grade_id ?? null,
+        subject_id: subjectIds[0],
         quarter: body.quarter || null,
         weeks: body.weeks || null,
         product_type: body.product_type,
@@ -285,6 +321,13 @@ export async function POST(request: NextRequest) {
         season: body.season || null,
         occasion: body.occasion || null,
         language: body.language || 'english',
+        curriculum: body.curriculum || null,
+        modalities: Array.isArray(body.modalities) && body.modalities.length > 0 ? body.modalities : null,
+        teaching_framework: body.teaching_framework || null,
+        class_type: body.class_type || null,
+        learner_path: body.learner_path || null,
+        strand_id: body.strand_id || null,
+        sped_level_id: body.sped_level_id || null,
         file_urls: body.file_urls,
         cover_image_url: body.cover_image_url || null,
         preview_images: body.preview_images || null,
@@ -318,6 +361,19 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create product', details: insertError.message },
         { status: 500 }
       )
+    }
+
+    // Phase B: write product_subjects for multiselect
+    const { error: psError } = await supabase.from('product_subjects').insert(
+      subjectIds.map((sid: string, i: number) => ({
+        product_id: product.id,
+        subject_id: sid,
+        sort_order: i,
+      }))
+    )
+    if (psError) {
+      console.error('Error writing product_subjects:', psError)
+      // Product already created; try to cleanup or leave product_subjects partial
     }
 
     // If product was published immediately, notify followers
