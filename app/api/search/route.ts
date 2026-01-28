@@ -136,6 +136,15 @@ export async function GET(request: NextRequest) {
           id,
           name,
           code
+        ),
+        strand:strands!products_strand_id_fkey(
+          id,
+          name,
+          code
+        ),
+        sped_level:sped_levels!products_sped_level_id_fkey(
+          id,
+          name
         )
       `, { count: 'exact' })
 

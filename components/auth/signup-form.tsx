@@ -151,7 +151,6 @@ export function SignupForm() {
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={loading}
-                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
 
@@ -165,7 +164,6 @@ export function SignupForm() {
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={loading}
-                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
           </div>
@@ -181,7 +179,6 @@ export function SignupForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
 
@@ -196,7 +193,6 @@ export function SignupForm() {
                 required
                 minLength={8}
                 disabled={loading}
-                className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
               />
             </div>
           </div>
@@ -234,7 +230,7 @@ export function SignupForm() {
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link href="/login" className="text-primary hover:underline font-medium">
+          <Link href="/login" className="auth-link-jump text-primary hover:underline font-medium">
             Sign in
           </Link>
         </p>

@@ -13,17 +13,16 @@ interface RecentlyViewedItem {
     cover_image_url?: string
     seller: {
       id: string
-      name: string
+      name?: string
+      first_name?: string
+      last_name?: string
       username: string
     }
-    grade: {
-      id: string
-      name: string
-    }
-    subject: {
-      id: string
-      name: string
-    }
+    grade?: { id: string; name: string } | null
+    subject?: { id: string; name: string } | null
+    class_type?: string | null
+    strand?: { id: string; name: string; code?: string } | null
+    sped_level?: { id: string; name: string } | null
   }
 }
 
@@ -112,8 +111,11 @@ export function RecentlyViewedPageContent() {
                 cover_image_url: item.product.cover_image_url,
                 product_type: '',
                 seller: item.product.seller,
-                grade: item.product.grade,
-                subject: item.product.subject,
+                grade: item.product.grade ?? null,
+                subject: item.product.subject ?? null,
+                class_type: item.product.class_type ?? null,
+                strand: item.product.strand ?? null,
+                sped_level: item.product.sped_level ?? null,
               }}
             />
           ))}

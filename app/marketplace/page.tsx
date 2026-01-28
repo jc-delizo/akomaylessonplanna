@@ -24,9 +24,7 @@ export default async function MarketplacePage() {
   } = await supabase.auth.getUser()
 
   // Fetch featured products
-  const { data: featuredProducts } = await supabase
-    .from('products')
-    .select(`
+  const productSelect = `
       *,
       seller:users!products_seller_id_fkey(
         id,
@@ -44,8 +42,20 @@ export default async function MarketplacePage() {
         id,
         name,
         code
+      ),
+      strand:strands!products_strand_id_fkey(
+        id,
+        name,
+        code
+      ),
+      sped_level:sped_levels!products_sped_level_id_fkey(
+        id,
+        name
       )
-    `)
+    `
+  const { data: featuredProducts } = await supabase
+    .from('products')
+    .select(productSelect)
     .eq('status', 'published')
     .contains('badges', ['featured'])
     .order('created_at', { ascending: false })
@@ -54,26 +64,7 @@ export default async function MarketplacePage() {
   // Fetch new products
   const { data: newProducts } = await supabase
     .from('products')
-    .select(`
-      *,
-      seller:users!products_seller_id_fkey(
-        id,
-        first_name,
-        last_name,
-        username,
-        avatar_url,
-        is_verified_teacher
-      ),
-      grade:grades!products_grade_id_fkey(
-        id,
-        name
-      ),
-      subject:subjects!products_subject_id_fkey(
-        id,
-        name,
-        code
-      )
-    `)
+    .select(productSelect)
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .limit(21)
@@ -81,26 +72,7 @@ export default async function MarketplacePage() {
   // Fetch trending products (by sales)
   const { data: trendingProducts } = await supabase
     .from('products')
-    .select(`
-      *,
-      seller:users!products_seller_id_fkey(
-        id,
-        first_name,
-        last_name,
-        username,
-        avatar_url,
-        is_verified_teacher
-      ),
-      grade:grades!products_grade_id_fkey(
-        id,
-        name
-      ),
-      subject:subjects!products_subject_id_fkey(
-        id,
-        name,
-        code
-      )
-    `)
+    .select(productSelect)
     .eq('status', 'published')
     .order('sales_count', { ascending: false })
     .limit(14)
@@ -108,26 +80,7 @@ export default async function MarketplacePage() {
   // Fetch bestsellers (top rated with sales)
   const { data: bestsellerProducts } = await supabase
     .from('products')
-    .select(`
-      *,
-      seller:users!products_seller_id_fkey(
-        id,
-        first_name,
-        last_name,
-        username,
-        avatar_url,
-        is_verified_teacher
-      ),
-      grade:grades!products_grade_id_fkey(
-        id,
-        name
-      ),
-      subject:subjects!products_subject_id_fkey(
-        id,
-        name,
-        code
-      )
-    `)
+    .select(productSelect)
     .eq('status', 'published')
     .not('avg_rating', 'is', null)
     .gte('sales_count', 5)
@@ -162,26 +115,7 @@ export default async function MarketplacePage() {
       if (gradeIds.length > 0 || subjectIds.length > 0) {
         let query = supabase
           .from('products')
-          .select(`
-            *,
-            seller:users!products_seller_id_fkey(
-              id,
-              first_name,
-              last_name,
-              username,
-              avatar_url,
-              is_verified_teacher
-            ),
-            grade:grades!products_grade_id_fkey(
-              id,
-              name
-            ),
-            subject:subjects!products_subject_id_fkey(
-              id,
-              name,
-              code
-            )
-          `)
+          .select(productSelect)
           .eq('status', 'published')
 
         if (gradeIds.length > 0) {
@@ -223,26 +157,7 @@ export default async function MarketplacePage() {
 
           const { data: sameGradeProducts } = await supabase
             .from('products')
-            .select(`
-              *,
-              seller:users!products_seller_id_fkey(
-                id,
-                first_name,
-                last_name,
-                username,
-                avatar_url,
-                is_verified_teacher
-              ),
-              grade:grades!products_grade_id_fkey(
-                id,
-                name
-              ),
-              subject:subjects!products_subject_id_fkey(
-                id,
-                name,
-                code
-              )
-            `)
+            .select(productSelect)
             .eq('status', 'published')
             .eq('grade_id', gradeId)
             .order('sales_count', { ascending: false })
@@ -258,26 +173,7 @@ export default async function MarketplacePage() {
   if (recommendedProducts.length === 0) {
     const { data: trending } = await supabase
       .from('products')
-      .select(`
-        *,
-        seller:users!products_seller_id_fkey(
-          id,
-          first_name,
-          last_name,
-          username,
-          avatar_url,
-          is_verified_teacher
-        ),
-        grade:grades!products_grade_id_fkey(
-          id,
-          name
-        ),
-        subject:subjects!products_subject_id_fkey(
-          id,
-          name,
-          code
-        )
-      `)
+      .select(productSelect)
       .eq('status', 'published')
       .order('sales_count', { ascending: false })
       .limit(14)

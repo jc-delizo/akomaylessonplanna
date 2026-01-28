@@ -31,15 +31,12 @@ export async function GET(
       )
     }
 
-    // Strategy: 70% same grade/subject, 30% same seller
-    // Get 6 products with same grade/subject (70% = ~6 out of 8)
-    const { data: sameCategoryProducts } = await supabase
-      .from('products')
-      .select(`
+    const productSelect = `
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           is_verified_teacher
@@ -52,12 +49,31 @@ export async function GET(
           id,
           name,
           code
+        ),
+        strand:strands!products_strand_id_fkey(
+          id,
+          name,
+          code
+        ),
+        sped_level:sped_levels!products_sped_level_id_fkey(
+          id,
+          name
         )
-      `)
+      `
+    // Strategy: 70% same grade/subject, 30% same seller
+    // Get 6 products with same grade/subject (70% = ~6 out of 8)
+    let sameCategoryQuery = supabase
+      .from('products')
+      .select(productSelect)
       .eq('status', 'published')
-      .eq('grade_id', currentProduct.grade_id)
       .eq('subject_id', currentProduct.subject_id)
       .neq('id', productId)
+    if (currentProduct.grade_id) {
+      sameCategoryQuery = sameCategoryQuery.eq('grade_id', currentProduct.grade_id)
+    } else {
+      sameCategoryQuery = sameCategoryQuery.is('grade_id', null)
+    }
+    const { data: sameCategoryProducts } = await sameCategoryQuery
       .order('sales_count', { ascending: false })
       .order('avg_rating', { ascending: false, nullsFirst: false })
       .limit(6)
@@ -65,25 +81,7 @@ export async function GET(
     // Get 2 products from same seller (30% = ~2 out of 8)
     const { data: sameSellerProducts } = await supabase
       .from('products')
-      .select(`
-        *,
-        seller:users!products_seller_id_fkey(
-          id,
-          name,
-          username,
-          avatar_url,
-          is_verified_teacher
-        ),
-        grade:grades!products_grade_id_fkey(
-          id,
-          name
-        ),
-        subject:subjects!products_subject_id_fkey(
-          id,
-          name,
-          code
-        )
-      `)
+      .select(productSelect)
       .eq('status', 'published')
       .eq('seller_id', currentProduct.seller_id)
       .neq('id', productId)

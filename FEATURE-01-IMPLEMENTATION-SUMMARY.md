@@ -7,7 +7,7 @@
 
 ## Implementation Overview
 
-Feature 01 (Authentication & User Management) is in progress. This document captures the **Signin/Signup UI redesign** completed in January 2026. Full feature completion (e.g. email verification for sellers, teacher verification, account deletion) remains pending.
+Feature 01 (Authentication & User Management) is in progress. This document captures the **Signin/Signup UI redesign** completed in January 2026, plus related UI polish completed alongside it (standardized input field styling and the “Become a Seller” PRC upload control). Full feature completion (e.g. email verification for sellers, account deletion logic) remains pending.
 
 ---
 
@@ -27,9 +27,11 @@ UI-only changes to the login and signup pages. No database or API changes.
    - **Files:** `components/auth/signup-form.tsx`, `components/auth/login-form.tsx`, `app/(auth)/signup/page.tsx`, `app/(auth)/login/page.tsx`
    - Added `ring-0` to the Card `className` in both forms and both loading skeletons so the auth card has no visible border. Shared Card component unchanged.
 
-3. **Remove borders from name, email, and password fields**
-   - **Files:** `components/auth/signup-form.tsx`, `components/auth/login-form.tsx`
-   - Added `className="border-0"` to all auth Inputs (signup: First Name, Last Name, Email, Password; login: Email, Password). Overrides are at the call site; shared Input component unchanged.
+3. **Standardize input field styling (login-style bottom border)**
+   - **Files:** `components/ui/input.tsx`, `components/auth/signup-form.tsx`, `components/auth/login-form.tsx`
+   - Standardized `Input` to a minimal bottom-border field style by default (no full outline, no rounded corners, focus via border color).
+   - Removed now-redundant per-field `className` overrides from login/signup forms.
+   - **Authoritative doc:** `docs/implementationplan/UI-FIELD-STYLING.md`
 
 4. **“Continue with Gmail” button: black border + Google logo**
    - **Files:** `components/auth/signup-form.tsx`, `components/auth/login-form.tsx`
@@ -42,19 +44,21 @@ UI-only changes to the login and signup pages. No database or API changes.
 | File | Edits |
 |------|--------|
 | `app/(auth)/layout.tsx` | Neutral background (`bg-background`) |
-| `components/auth/signup-form.tsx` | Card `ring-0`; Inputs `border-0`; Gmail button border + logo |
-| `components/auth/login-form.tsx` | Card `ring-0`; Inputs `border-0`; Gmail button border + logo |
+| `components/auth/signup-form.tsx` | Card `ring-0`; inputs use standardized `Input`; Gmail button border + logo |
+| `components/auth/login-form.tsx` | Card `ring-0`; inputs use standardized `Input`; Gmail button border + logo |
 | `app/(auth)/signup/page.tsx` | Card `ring-0` in SignupLoading |
 | `app/(auth)/login/page.tsx` | Card `ring-0` in LoginLoading |
 | `public/google-g.svg` | **New** — Google “G” logo SVG |
+| `components/ui/input.tsx` | **Updated default** input styling to match login-style bottom-border fields |
+| `docs/implementationplan/UI-FIELD-STYLING.md` | **New** — authoritative field styling standard |
+| `README.md` | Linked the field styling doc |
 
 ### Not Modified
 
 - `components/ui/card.tsx`
-- `components/ui/input.tsx`
 - `components/ui/button.tsx`
 
-All overrides are applied at the auth call sites to keep changes local.
+Auth-specific changes remain at the call sites where possible, but the input field styling is now standardized at the shared `Input` component level (see `docs/implementationplan/UI-FIELD-STYLING.md`).
 
 ---
 
@@ -82,6 +86,79 @@ When no user is logged in, show a single highlighted “Sign In” button in the
 
 - **Footer:** `components/layout/footer.tsx` — reduced vertical padding, gaps, and margins (e.g. `py-6` → `py-4`, `gap-6 mb-6` → `gap-4 mb-4`, `space-y-1.5` → `space-y-1`, `pt-4` → `pt-3`, section headings `mb-2` → `mb-1.5`) for a more compact footer.
 - **Browse loader:** `app/marketplace/browse/page.tsx` — inline loading state (when filters change) now uses `PageLoader` with message “Loading products…” so it matches the Marketplace loader (Spinner + message) instead of the previous custom purple spinner.
+
+---
+
+## Navbar Signin/Signup animation (January 2026) ✅
+
+### Scope
+
+UI-only. Transition when navigating to `/login`, `/signup`, `/forgot-password`, or `/reset-password` from anywhere (including navbar "Sign In").
+
+### Approach
+
+Auth layout content wrapper uses tw-animate-css enter animation: fade-in plus light slide-in-from-bottom over 300ms. Reduced-motion handling via Tailwind's `motion-reduce:animate-none motion-reduce:opacity-100` so content appears immediately when the user prefers reduced motion.
+
+### Changes Made
+
+- **File:** `app/(auth)/layout.tsx`
+- Inner content div (`max-w-md w-full space-y-8`) now has: `animate-in fade-in-0 duration-300 slide-in-from-bottom-2 motion-reduce:animate-none motion-reduce:opacity-100`.
+
+### Files Touched
+
+| File | Edits |
+|------|--------|
+| `app/(auth)/layout.tsx` | Animation classes on inner wrapper (animate-in, fade-in-0, duration-300, slide-in-from-bottom-2, motion-reduce overrides) |
+
+### Verification
+
+- From home or marketplace, click "Sign In" in desktop nav → `/login` shows with fade-in and light slide-up.
+- Same from mobile menu.
+- Navigate to `/signup` (e.g. via "Sign up" link on login) → signup content fades in.
+- With OS "Reduce motion" enabled, auth content appears immediately (no animation).
+
+---
+
+## Sign In button spinner and no page-level loader (January 2026) ✅
+
+Loading feedback was moved from the auth pages to the navbar Sign In button for a smoother transition: click Sign In → button shows spinner → sign-in page appears with the layout animation and no page-level spinner.
+
+### Scope
+
+UI-only. When navigating to `/login` (or `/signup` from the login "Sign up" link), the spinner is shown in the Sign In button (navbar) instead of on the auth page.
+
+### Changes Made
+
+- **File:** `components/navigation/main-nav.tsx` — Added `navigatingToLogin` state, `Loader2` import, `handleSignInClick`; desktop and mobile Sign In show spinner when navigating and use `router.push('/login')` on click. Spinner clears when the (auth) layout mounts (nav unmounts).
+- **File:** `app/(auth)/login/page.tsx` — Suspense `fallback` set to `null`; removed `LoginLoading` (spinner + "Loading…") so the auth layout animates in with no page-level loader.
+- **File:** `app/(auth)/signup/page.tsx` — Same: Suspense `fallback` set to `null`; removed `SignupLoading` for consistency.
+
+### Verification
+
+- From `/` or `/marketplace`, click "Sign In" in desktop nav → button shows spinner, then login page appears with layout animation and no spinner on the page.
+- From mobile menu, tap "Sign In" → menu closes, button shows spinner, then login page appears as above.
+- From `/login`, click "Sign up" → signup page appears with layout animation and no page-level spinner.
+
+---
+
+## Become a Seller PRC upload UI polish (January 2026) ✅
+
+### Scope
+
+UI-only changes to the `/become-seller` page to improve the PRC License upload control and align form fields with the app’s standardized input styling.
+
+### Changes Made
+
+- Replaced the native file input (“Choose file”) with a **dropzone-style** control (click or drag-and-drop) that shows the selected filename and supports clearing/replacing.
+- Kept the same validation rules as before (PDF/JPG/PNG; max 10MB).
+- Image uploads still show an inline preview.
+
+### Files Touched
+
+| File | Edits |
+|------|--------|
+| `components/ui/file-dropzone.tsx` | **New** — reusable dropzone-style file picker |
+| `app/become-seller/page.tsx` | Uses `FileDropzone` for PRC upload; preview uses `next/image` |
 
 ---
 

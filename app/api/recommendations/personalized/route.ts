@@ -16,14 +16,13 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      // Anonymous user - return trending products
-      const { data: trending } = await supabase
-        .from('products')
-        .select(`
+      // Anonymous user - return trending products (Phase 2: strand, sped_level)
+      const anonSelect = `
           *,
           seller:users!products_seller_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             username,
             avatar_url,
             is_verified_teacher
@@ -36,8 +35,20 @@ export async function GET(request: NextRequest) {
             id,
             name,
             code
+          ),
+          strand:strands!products_strand_id_fkey(
+            id,
+            name,
+            code
+          ),
+          sped_level:sped_levels!products_sped_level_id_fkey(
+            id,
+            name
           )
-        `)
+        `
+      const { data: trending } = await supabase
+        .from('products')
+        .select(anonSelect)
         .eq('status', 'published')
         .order('sales_count', { ascending: false })
         .order('views_count', { ascending: false })
@@ -78,13 +89,12 @@ export async function GET(request: NextRequest) {
       const subjectIds = userProfile?.subjects_taught || []
 
       if (gradeIds.length > 0 || subjectIds.length > 0) {
-        let query = supabase
-          .from('products')
-          .select(`
+        const productSelect = `
             *,
             seller:users!products_seller_id_fkey(
               id,
-              name,
+              first_name,
+              last_name,
               username,
               avatar_url,
               is_verified_teacher
@@ -97,8 +107,20 @@ export async function GET(request: NextRequest) {
               id,
               name,
               code
+            ),
+            strand:strands!products_strand_id_fkey(
+              id,
+              name,
+              code
+            ),
+            sped_level:sped_levels!products_sped_level_id_fkey(
+              id,
+              name
             )
-          `)
+          `
+        let query = supabase
+          .from('products')
+          .select(productSelect)
           .eq('status', 'published')
           .not('id', 'in', `(${viewedProductIds.join(',') || 'null'})`)
 
@@ -140,13 +162,12 @@ export async function GET(request: NextRequest) {
         if (viewedProducts && viewedProducts.length > 0) {
           const gradeId = viewedProducts[0].grade_id
 
-          const { data: sameGradeProducts } = await supabase
-            .from('products')
-            .select(`
+          const productSelect = `
               *,
               seller:users!products_seller_id_fkey(
                 id,
-                name,
+                first_name,
+                last_name,
                 username,
                 avatar_url,
                 is_verified_teacher
@@ -159,8 +180,20 @@ export async function GET(request: NextRequest) {
                 id,
                 name,
                 code
+              ),
+              strand:strands!products_strand_id_fkey(
+                id,
+                name,
+                code
+              ),
+              sped_level:sped_levels!products_sped_level_id_fkey(
+                id,
+                name
               )
-            `)
+            `
+          const { data: sameGradeProducts } = await supabase
+            .from('products')
+            .select(productSelect)
             .eq('status', 'published')
             .eq('grade_id', gradeId)
             .not('id', 'in', `(${viewedProductIds.join(',') || 'null'})`)
@@ -174,13 +207,12 @@ export async function GET(request: NextRequest) {
 
     // Fallback to trending if no recommendations
     if (recommendedProducts.length === 0) {
-      const { data: trending } = await supabase
-        .from('products')
-        .select(`
+      const productSelect = `
           *,
           seller:users!products_seller_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             username,
             avatar_url,
             is_verified_teacher
@@ -193,8 +225,20 @@ export async function GET(request: NextRequest) {
             id,
             name,
             code
+          ),
+          strand:strands!products_strand_id_fkey(
+            id,
+            name,
+            code
+          ),
+          sped_level:sped_levels!products_sped_level_id_fkey(
+            id,
+            name
           )
-        `)
+        `
+      const { data: trending } = await supabase
+        .from('products')
+        .select(productSelect)
         .eq('status', 'published')
         .order('sales_count', { ascending: false })
         .limit(8)

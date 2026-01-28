@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   Upload,
-  FileText,
   Calendar,
   CheckCircle2,
   AlertCircle,
@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/alert'
 import { Badge } from '@/registry/default/badge/badge'
 import { Skeleton } from '@/registry/default/skeleton/skeleton'
+import { FileDropzone } from '@/components/ui/file-dropzone'
 
 interface VerificationStatus {
   id: string
@@ -68,39 +69,31 @@ export default function BecomeSellerPage() {
     loadVerificationStatus()
   }, [router])
 
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // Keep a preview for image uploads
+  useEffect(() => {
+    let cancelled = false
 
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
-    if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload a PDF, JPG, or PNG file.')
-      return
-    }
-
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      setError('File size must be less than 10MB.')
-      return
-    }
-
-    setDocumentFile(file)
-    setError(null)
-
-    // Create preview for images
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setDocumentPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    } else {
+    if (!documentFile) {
       setDocumentPreview(null)
+      return
     }
-  }
+
+    if (!documentFile.type.startsWith('image/')) {
+      setDocumentPreview(null)
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      if (cancelled) return
+      setDocumentPreview(reader.result as string)
+    }
+    reader.readAsDataURL(documentFile)
+
+    return () => {
+      cancelled = true
+    }
+  }, [documentFile])
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,11 +205,7 @@ export default function BecomeSellerPage() {
   }
 
   // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B'
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-  }
+  // (formatting handled by FileDropzone)
 
   if (loading) {
     return (
@@ -343,51 +332,41 @@ export default function BecomeSellerPage() {
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <AlertTitle className="text-green-800">Success</AlertTitle>
                   <AlertDescription className="text-green-700">
-                    Your verification request has been submitted successfully. We'll review it within 24-48 hours.
+                    Your verification request has been submitted successfully. We&apos;ll review it within 24-48 hours.
                   </AlertDescription>
                 </Alert>
               )}
 
               {/* Document Upload */}
-              <div className="space-y-2.5">
-                <Label htmlFor="document" className="text-base font-medium">PRC License Document *</Label>
-                <div className="space-y-2">
-                  <Input
-                    id="document"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                    className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#ff7200] file:text-white hover:file:bg-[#e66500] file:cursor-pointer"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Accepted formats: PDF, JPG, PNG. Maximum file size: 10MB
-                  </p>
-                  {documentPreview && (
-                    <div className="mt-3 space-y-2">
-                      <img
-                        src={documentPreview}
-                        alt="Document preview"
-                        className="max-w-full h-auto max-h-64 rounded-lg border border-gray-200"
-                      />
-                      {documentFile && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium">{documentFile.name}</span>
-                          <span className="text-gray-500">({formatFileSize(documentFile.size)})</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {documentFile && !documentPreview && (
-                    <div className="mt-3 flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-700">{documentFile.name}</span>
-                        <span className="text-xs text-gray-500 ml-2">({formatFileSize(documentFile.size)})</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="space-y-3">
+                <FileDropzone
+                  id="document"
+                  label="PRC License Document *"
+                  value={documentFile}
+                  onChange={(file) => {
+                    setDocumentFile(file)
+                    setError(null)
+                  }}
+                  onError={(message) => setError(message)}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  allowedMimeTypes={['application/pdf', 'image/jpeg', 'image/png']}
+                  maxSizeBytes={10 * 1024 * 1024}
+                  description="Accepted formats: PDF, JPG, PNG. Maximum file size: 10MB"
+                />
+
+                {documentPreview && (
+                  <div className="mt-1 space-y-2">
+                    <Image
+                      src={documentPreview}
+                      alt="Document preview"
+                      width={1200}
+                      height={900}
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 768px"
+                      className="max-w-full h-auto max-h-64 rounded-lg border border-gray-200"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* PRC License Number and Expiration Date */}
@@ -431,7 +410,7 @@ export default function BecomeSellerPage() {
                 <AlertDescription className="text-blue-800">
                   After submission, our team will review your verification request within 24-48 hours.
                   You can continue browsing the marketplace while waiting for approval. Once approved,
-                  you'll be able to upload and sell your educational resources.
+                  you&apos;ll be able to upload and sell your educational resources.
                 </AlertDescription>
               </Alert>
 

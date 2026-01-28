@@ -45,6 +45,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
         id,
         name,
         code
+      ),
+      strand:strands!products_strand_id_fkey(
+        id,
+        name,
+        code
+      ),
+      sped_level:sped_levels!products_sped_level_id_fkey(
+        id,
+        name
       )
     `)
     .eq('id', id)
@@ -126,6 +135,7 @@ export async function generateMetadata({ params }: PageProps) {
       cover_image_url,
       price,
       slug,
+      class_type,
       avg_rating,
       reviews_count,
       seller:users!products_seller_id_fkey(
@@ -137,6 +147,15 @@ export async function generateMetadata({ params }: PageProps) {
         name
       ),
       subject:subjects!products_subject_id_fkey(
+        name
+      ),
+      strand:strands!products_strand_id_fkey(
+        id,
+        name,
+        code
+      ),
+      sped_level:sped_levels!products_sped_level_id_fkey(
+        id,
         name
       )
     `)
@@ -174,6 +193,9 @@ export async function generateMetadata({ params }: PageProps) {
     },
     subject: {
       name: (Array.isArray(product.subject) ? product.subject[0] : product.subject)?.name || ''
-    }
+    },
+    strand: (Array.isArray(product.strand) ? product.strand[0] : product.strand) ?? null,
+    sped_level: (Array.isArray(product.sped_level) ? product.sped_level[0] : product.sped_level) ?? null,
+    class_type: product.class_type ?? null,
   })
 }

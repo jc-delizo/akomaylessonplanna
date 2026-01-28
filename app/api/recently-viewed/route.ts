@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       dateFilter = new Date(0) // Beginning of time
     }
 
-    // Get recently viewed items with product details
+    // Get recently viewed items with product details (Phase 2: strand, sped_level for ProductCard)
     let query = supabase
       .from('recently_viewed')
       .select(
@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
           cover_image_url,
           seller:users!products_seller_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             username
           ),
           grade:grades!products_grade_id_fkey(
@@ -54,6 +55,15 @@ export async function GET(request: NextRequest) {
             name
           ),
           subject:subjects!products_subject_id_fkey(
+            id,
+            name
+          ),
+          strand:strands!products_strand_id_fkey(
+            id,
+            name,
+            code
+          ),
+          sped_level:sped_levels!products_sped_level_id_fkey(
             id,
             name
           )

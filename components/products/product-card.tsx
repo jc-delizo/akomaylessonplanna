@@ -27,19 +27,18 @@ interface Product {
   badges?: string[]
   seller: {
     id: string
-    name: string
+    name?: string
+    first_name?: string
+    last_name?: string
     username: string
     avatar_url?: string
     is_verified_teacher?: boolean
   }
-  grade: {
-    id: string
-    name: string
-  }
-  subject: {
-    id: string
-    name: string
-  }
+  grade?: { id: string; name: string } | null
+  subject?: { id: string; name: string; code?: string } | null
+  class_type?: string | null
+  strand?: { id: string; name: string; code?: string } | null
+  sped_level?: { id: string; name: string } | null
 }
 
 interface ProductCardProps {
@@ -48,11 +47,28 @@ interface ProductCardProps {
   searchQuery?: string // Optional: if product was shown in search results
 }
 
+function productContextLine(product: Product): string {
+  const subjectName = product.subject?.name ?? ''
+  if (product.class_type === 'sped' && product.sped_level?.name) {
+    return [product.sped_level.name, subjectName].filter(Boolean).join(' • ')
+  }
+  if (product.class_type === 'regular' && product.strand?.name) {
+    const gradeName = product.grade?.name ?? ''
+    return [gradeName, product.strand.name, subjectName].filter(Boolean).join(' • ')
+  }
+  const gradeName = product.grade?.name ?? ''
+  return [gradeName, subjectName].filter(Boolean).join(' • ')
+}
+
 export function ProductCard({ product, showSeller = true, searchQuery }: ProductCardProps) {
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
   const supabase = createClient()
+  const contextLine = productContextLine(product)
+  const sellerName = product.seller?.name ?? (
+    [product.seller?.first_name, product.seller?.last_name].filter(Boolean).join(' ').trim() || ''
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -187,7 +203,7 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
           {product.cover_image_url ? (
             <Image
               src={product.cover_image_url}
-              alt={`${product.title} - ${product.grade.name} ${product.subject.name} lesson plan`}
+              alt={`${product.title} - ${contextLine || 'K-12'} lesson plan`}
               fill
               className="object-cover"
               loading="lazy"
@@ -247,9 +263,9 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
             {product.title}
           </h3>
 
-          {/* Grade and Subject - Secondary Info */}
+          {/* Grade and Subject - Secondary Info (Phase 2: Level • Subject or Grade • Strand • Subject) */}
           <p className="text-xs text-gray-500 mb-1.5">
-            {product.grade.name} • {product.subject.name}
+            {contextLine || '—'}
           </p>
 
           {/* Price - Prominent Display */}

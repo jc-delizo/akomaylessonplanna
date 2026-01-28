@@ -1567,17 +1567,49 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Categorization */}
+            {/* Categorization — Phase 2: Class type, Learner path, Level, Strand, N/A Grade for SPED non-graded */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Categorization</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {formData.class_type && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Class type</Label>
+                      <p className="text-sm font-medium">
+                        {CLASS_TYPES.find((c) => c.value === formData.class_type)?.label ?? formData.class_type}
+                      </p>
+                    </div>
+                  )}
+                  {formData.class_type === 'sped' && formData.learner_path && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Learner path</Label>
+                      <p className="text-sm font-medium">
+                        {LEARNER_PATHS.find((l) => l.value === formData.learner_path)?.label ?? formData.learner_path}
+                      </p>
+                    </div>
+                  )}
+                  {isSpedNonGraded && formData.sped_level_id && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Level</Label>
+                      <p className="text-sm font-medium">
+                        {hierarchy?.sped?.levels.find((l) => l.id === formData.sped_level_id)?.name ?? '—'}
+                      </p>
+                    </div>
+                  )}
+                  {formData.class_type === 'regular' && isGrade11Or12 && formData.strand_id && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Strand</Label>
+                      <p className="text-sm font-medium">
+                        {strands.find((s) => s.id === formData.strand_id)?.name ?? '—'}
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Grade</Label>
                     <p className="text-sm font-medium">
-                      {grades.find((g) => g.id === formData.grade_id)?.name || 'N/A'}
+                      {isSpedNonGraded ? 'N/A' : (grades.find((g) => g.id === formData.grade_id)?.name ?? 'N/A')}
                     </p>
                   </div>
                   <div className="space-y-1">

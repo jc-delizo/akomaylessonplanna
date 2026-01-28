@@ -162,3 +162,22 @@
   animation: glare-sweep 5s ease-in-out infinite;
   pointer-events: none;
 }
+
+/* Auth link jump - subtle bounce every ~2s on "Sign in" / "Sign up" links */
+@keyframes subtle-jump {
+  0%, 92% { transform: translateY(0); }
+  94% { transform: translateY(-6px); }
+  96% { transform: translateY(1px); }
+  98%, 100% { transform: translateY(0); }
+}
+
+.auth-link-jump {
+  display: inline-block;
+  animation: subtle-jump 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-link-jump {
+    animation: none;
+  }
+}

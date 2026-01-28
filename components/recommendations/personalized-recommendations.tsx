@@ -18,20 +18,18 @@ interface Product {
   views_count?: number
   seller: {
     id: string
-    name: string
+    name?: string
+    first_name?: string
+    last_name?: string
     username: string
     avatar_url?: string
-    is_verified_teacher: boolean
+    is_verified_teacher?: boolean
   }
-  grade: {
-    id: string
-    name: string
-  }
-  subject: {
-    id: string
-    name: string
-    code: string
-  }
+  grade?: { id: string; name: string } | null
+  subject?: { id: string; name: string; code?: string } | null
+  class_type?: string | null
+  strand?: { id: string; name: string; code?: string } | null
+  sped_level?: { id: string; name: string } | null
 }
 
 interface PersonalizedRecommendationsProps {

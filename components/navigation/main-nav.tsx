@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SearchBar } from '@/components/search/search-bar'
 import { AnimatedNavText } from '@/components/navigation/animated-nav-text'
-import { MessageSquare, Shield, User, LogOut, ShoppingCart } from 'lucide-react'
+import { MessageSquare, Shield, User, LogOut, ShoppingCart, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { GlareButton } from '@/components/ui/glare-button'
 import { useAdminAuth } from '@/lib/hooks/useAdminAuth'
@@ -83,6 +83,7 @@ export function MainNav({ user }: MainNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [navigatingToLogin, setNavigatingToLogin] = useState(false)
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
   const [cartItemCount, setCartItemCount] = useState(0)
   const [mounted, setMounted] = useState(false)
@@ -307,6 +308,13 @@ export function MainNav({ user }: MainNavProps) {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  const handleSignInClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setNavigatingToLogin(true)
+    setMobileMenuOpen(false)
+    router.push('/login')
   }
 
   const isActive = (path: string) => {
@@ -546,9 +554,15 @@ export function MainNav({ user }: MainNavProps) {
             ) : mounted && !user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
+                onClick={handleSignInClick}
+                className="px-4 py-2 h-9 min-w-[5.5rem] flex items-center justify-center gap-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap disabled:pointer-events-none"
+                aria-busy={navigatingToLogin}
               >
-                Sign In
+                {navigatingToLogin ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  'Sign In'
+                )}
               </Link>
             ) : null}
           </div>
@@ -671,10 +685,15 @@ export function MainNav({ user }: MainNavProps) {
               {mounted && !user && (
                 <Link
                   href="/login"
-                  className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={handleSignInClick}
+                  className="px-4 py-2 min-h-[2.25rem] min-w-[5.5rem] bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2 flex items-center justify-center gap-2"
+                  aria-busy={navigatingToLogin}
                 >
-                  Sign In
+                  {navigatingToLogin ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    'Sign In'
+                  )}
                 </Link>
               )}
               </div>

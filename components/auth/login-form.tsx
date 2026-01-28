@@ -65,8 +65,10 @@ export function LoginForm() {
       const redirectUrl = searchParams.get('redirect') || '/marketplace'
       router.push(redirectUrl)
       router.refresh()
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.')
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.'
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -80,10 +82,10 @@ export function LoginForm() {
       await signInWithOAuth(provider, rememberMe)
       // OAuth redirects to callback, so we don't need to handle navigation here
       // The loading state will be reset when the page redirects
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle OAuth initiation errors (e.g., popup blocked)
       const errorMessage =
-        err.message ||
+        (err instanceof Error ? err.message : null) ||
         `Failed to initiate ${provider} sign in. Please check your browser settings and try again.`
       setError(errorMessage)
       setLoading(false)
@@ -148,7 +150,6 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
             />
           </div>
 
@@ -170,7 +171,6 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="border-0 border-b border-border/50 rounded-none focus-visible:border-primary focus-visible:ring-0"
             />
           </div>
 
@@ -192,8 +192,8 @@ export function LoginForm() {
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-primary hover:underline font-medium">
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="auth-link-jump text-primary hover:underline font-medium">
             Sign up
           </Link>
         </p>

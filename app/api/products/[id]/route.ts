@@ -48,6 +48,15 @@ export async function GET(
           id,
           name,
           code
+        ),
+        strand:strands!products_strand_id_fkey(
+          id,
+          name,
+          code
+        ),
+        sped_level:sped_levels!products_sped_level_id_fkey(
+          id,
+          name
         )
       `)
       .eq('id', id)
@@ -279,7 +288,8 @@ export async function PUT(
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url
         ),
@@ -291,6 +301,15 @@ export async function PUT(
           id,
           name,
           code
+        ),
+        strand:strands!products_strand_id_fkey(
+          id,
+          name,
+          code
+        ),
+        sped_level:sped_levels!products_sped_level_id_fkey(
+          id,
+          name
         )
       `)
       .single()

@@ -1,6 +1,6 @@
 # AKOMAYLESSONPLANNA - Implementation Status
 
-**Last Updated**: January 25, 2026  
+**Last Updated**: January 28, 2026  
 **Overall Progress**: 4 of 11 features complete (36%)
 
 ---
@@ -9,7 +9,7 @@
 
 | Feature # | Feature Name | Status | Documentation | Summary |
 |-----------|--------------|--------|---------------|---------|
-| 01 | Authentication & User Management | 🚧 In Progress | [Design](docs/brainstorming/2-feature-01-authentication-user-management.md) \| [Summary](FEATURE-01-IMPLEMENTATION-SUMMARY.md) | Signin/Signup UI updated (Jan 2026) |
+| 01 | Authentication & User Management | 🚧 In Progress | [Design](docs/brainstorming/2-feature-01-authentication-user-management.md) \| [Summary](FEATURE-01-IMPLEMENTATION-SUMMARY.md) | Auth UI + standardized inputs + seller verification UI polish (Jan 2026) |
 | 02 | User Profiles & Profile Management | 🚧 In Progress | [Design](docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md) | - |
 | 03 | Product Listings & Management | ✅ Complete | [Design](docs/brainstorming/5-feature-03-product-listings-and-management.md) \| [Summary](FEATURE-03-IMPLEMENTATION-SUMMARY.md) | All 7 phases complete |
 | 04 | Shopping Cart & Checkout Flow | ✅ Complete | [Design](docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md) \| [Summary](FEATURE-04-IMPLEMENTATION-SUMMARY.md) | All 11 phases complete |
@@ -37,6 +37,10 @@
 **Implemented:**
 - Signin/Signup UI update (Jan 2026): neutral background, borderless card and inputs, "Continue with Gmail" button with black border and Google logo
 - Recent UI polish (Jan 2026): Sign In highlighted and Sign Up removed in nav when logged out; footer made more compact; Browse page uses Marketplace loader (PageLoader) for loading state
+- Navbar Signin/Signup animation (Jan 2026): soft fade-in (and light slide-up) on auth layout when navigating to login/signup from the navbar; respects reduced motion
+- Sign In button spinner (Jan 2026): Sign In button shows spinner on click; login/signup pages no longer show a page-level loader before the form
+- Field design standard (Jan 2026): `Input` defaults standardized to the login-style bottom-border field; documented in `docs/implementationplan/UI-FIELD-STYLING.md`
+- Become a Seller UI polish (Jan 2026): PRC License upload uses a dropzone-style control (click or drag-and-drop) instead of the native file input
 
 **Summary**: [FEATURE-01-IMPLEMENTATION-SUMMARY.md](FEATURE-01-IMPLEMENTATION-SUMMARY.md)
 
@@ -330,6 +334,23 @@ Phase B adds subject multiselect via `product_subjects` and `subject_ids`. See T
 - [x] Browse: parse `subject_ids` from URL (comma-separated), pass to search; on subject chip remove, clear subject_ids and subject_id.
 - [x] Filter chips: show "Subject(s)" chip when subject_ids/subject_id set; on remove clear both.
 - [x] Config: `SUBJECT_SELECTION === 'multi'` used in filter sidebar and product form labels.
+
+---
+
+## Phase 1/2 Product Display Alignment
+
+Aligns product loading and display with Phase 1/2 hierarchy so Regular and SPED products (including SPED non-graded with null `grade_id`) render correctly everywhere. Plan: Phase 1/2 Product Display Alignment (see PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md).
+
+**Completed (Jan 2026):**
+- [x] **APIs**: Search, product detail page fetch, product GET by ID, marketplace page (all product queries), related recommendations, personalized recommendations, recently-viewed — all include optional `strand` and `sped_level` joins. Products may have `grade === null`.
+- [x] **ProductCard**: `grade`/`subject` optional; `class_type`, `strand`, `sped_level` supported. Display line: "Level • Subject" (SPED), "Grade • Strand • Subject" (Regular G11/12), or "Grade • Subject"; null-safe. Alt text and seller name (first_name + last_name) handled.
+- [x] **ProductDetailLayout**: Breadcrumb and metadata bullets null-safe; SPED non-graded breadcrumb (Marketplace / SPED / Level / Subject / Title); Regular+strand shows Grade / Strand / Subject; metadata shows Learner path, Level, Strand where applicable.
+- [x] **Product detail page + generateMetadata**: `generateProductMetadata` accepts optional `strand`, `sped_level`, `class_type`; description uses "Level • Subject" or "Grade • Strand • Subject" when grade is null.
+- [x] **Step 5 (Review & Confirm)**: Categorization summary shows Class type, Learner path, Level (SPED non-graded), Strand (G11/12), and "N/A" for Grade when SPED non-graded.
+- [x] **Related / personalized / recently-viewed**: Product types relaxed (grade optional, strand/sped_level/class_type, seller first_name/last_name); APIs return strand/sped_level; components pass through to ProductCard.
+- [x] **Profile Teaching tab**: Unchanged (Option A per plan).
+
+**Summary**: [PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md](PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md)
 
 ---
 

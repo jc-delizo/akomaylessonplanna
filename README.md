@@ -187,6 +187,7 @@ akomaylessonplanna/
 
 - **[Master Implementation Plan](docs/implementationplan/MASTER-IMPLEMENTATION-PLAN.md)** - Complete development roadmap
 - **[Database Schema](docs/implementationplan/database-schema-complete.md)** - Full database schema
+- **[UI Field Styling](docs/implementationplan/UI-FIELD-STYLING.md)** - Standard input field design (authoritative)
 - **[Testing Guide](TESTING-GUIDE.md)** - Testing strategies and test cases
 - **[Implementation Status](IMPLEMENTATION-STATUS.md)** - Feature completion tracker
 

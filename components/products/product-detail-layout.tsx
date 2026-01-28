@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -60,14 +60,12 @@ interface Product {
     avg_rating?: number
     reviews_count?: number
   }
-  grade: {
-    id: string
-    name: string
-  }
-  subject: {
-    id: string
-    name: string
-  }
+  grade?: { id: string; name: string } | null
+  subject?: { id: string; name: string; code?: string } | null
+  class_type?: string | null
+  learner_path?: string | null
+  strand?: { id: string; name: string; code?: string } | null
+  sped_level?: { id: string; name: string } | null
   quarter?: number
   weeks?: number[]
 }
@@ -276,19 +274,53 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+      {/* Breadcrumb — Phase 2: null-safe; SPED non-graded or regular+strand */}
       <div className="text-sm text-gray-600 mb-6">
         <Link href="/marketplace" className="hover:text-purple-600">
           Marketplace
         </Link>
-        {' / '}
-        <Link href={`/marketplace?grade=${product.grade.id}`} className="hover:text-purple-600">
-          {product.grade.name}
-        </Link>
-        {' / '}
-        <Link href={`/marketplace?subject=${product.subject.id}`} className="hover:text-purple-600">
-          {product.subject.name}
-        </Link>
+        {product.class_type === 'sped' && !product.grade && product.sped_level ? (
+          <>
+            {' / '}
+            <Link href="/marketplace/browse?class_type=sped" className="hover:text-purple-600">SPED</Link>
+            {' / '}
+            <span className="text-gray-700">{product.sped_level.name}</span>
+            {product.subject?.name && (
+              <>
+                {' / '}
+                <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
+                  {product.subject.name}
+                </Link>
+              </>
+            )}
+          </>
+        ) : product.grade && product.subject ? (
+          <>
+            {' / '}
+            <Link href={`/marketplace/browse?grade_id=${product.grade.id}`} className="hover:text-purple-600">
+              {product.grade.name}
+            </Link>
+            {product.strand?.name && (
+              <>
+                {' / '}
+                <Link href={`/marketplace/browse?strand_id=${product.strand.id}`} className="hover:text-purple-600">
+                  {product.strand.name}
+                </Link>
+              </>
+            )}
+            {' / '}
+            <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
+              {product.subject.name}
+            </Link>
+          </>
+        ) : product.subject?.name ? (
+          <>
+            {' / '}
+            <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
+              {product.subject.name}
+            </Link>
+          </>
+        ) : null}
         {' / '}
         <span className="text-gray-900">{product.title}</span>
       </div>
@@ -369,27 +401,39 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
           {/* 2. Product Name */}
           <h1 className="text-3xl font-bold">{product.title}</h1>
 
-          {/* 3. Metadata as bullets */}
+          {/* 3. Metadata as bullets — Phase 2: class type, learner path, level, strand, null-safe grade/subject */}
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-            <span className="font-medium">{product.grade.name}</span>
-            <span>•</span>
-            <span className="font-medium">{product.subject.name}</span>
-            {product.quarter && (
-              <>
-                <span>•</span>
-                <span className="font-medium">Quarter {product.quarter}</span>
-              </>
-            )}
-            {product.weeks && product.weeks.length > 0 && (
-              <>
-                <span>•</span>
-                <span className="font-medium">
-                  Weeks {product.weeks.join(', ')}
-                </span>
-              </>
-            )}
-            <span>•</span>
-            <span className="font-medium">v{product.current_version}</span>
+            {(() => {
+              const parts: ReactNode[] = []
+              if (product.class_type === 'sped') {
+                if (product.learner_path) {
+                  parts.push(
+                    <span key="path" className="font-medium">
+                      {product.learner_path === 'graded' ? 'Graded (Inclusive)' : 'Non-Graded (Transition)'}
+                    </span>
+                  )
+                }
+                if (product.sped_level?.name) {
+                  parts.push(<span key="level" className="font-medium">Level: {product.sped_level.name}</span>)
+                }
+              } else if (product.class_type === 'regular' && product.strand?.name) {
+                if (product.grade?.name) parts.push(<span key="grade" className="font-medium">{product.grade.name}</span>)
+                parts.push(<span key="strand" className="font-medium">{product.strand.name}</span>)
+              } else if (product.grade?.name) {
+                parts.push(<span key="grade" className="font-medium">{product.grade.name}</span>)
+              }
+              if (product.subject?.name) {
+                parts.push(<span key="subject" className="font-medium">{product.subject.name}</span>)
+              }
+              if (product.quarter) {
+                parts.push(<span key="quarter" className="font-medium">Quarter {product.quarter}</span>)
+              }
+              if (product.weeks && product.weeks.length > 0) {
+                parts.push(<span key="weeks" className="font-medium">Weeks {product.weeks.join(', ')}</span>)
+              }
+              parts.push(<span key="ver" className="font-medium">v{product.current_version}</span>)
+              return parts.reduce<ReactNode[]>((acc, node, i) => (i === 0 ? [node] : [...acc, <span key={`sep-${i}`}>•</span>, node]), [])
+            })()}
           </div>
 
           {/* 4. Ratings */}
