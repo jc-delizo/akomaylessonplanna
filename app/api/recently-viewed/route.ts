@@ -1,6 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+/** Shape of product from the recently_viewed select (FK returns single object, not array) */
+type RecentlyViewedProduct = {
+  id: string
+  title: unknown
+  price: unknown
+  cover_image_url: unknown
+  quarter: unknown
+  weeks: unknown
+  seller: unknown
+  grade: unknown
+  subject: unknown
+  strand: unknown
+  sped_level: unknown
+  subject_id?: string
+}
+
+type RecentlyViewedRow = {
+  id: string
+  viewed_at: string
+  product: RecentlyViewedProduct | null
+}
+
 /**
  * GET /api/recently-viewed
  * Get current user's recently viewed products
@@ -92,8 +114,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Filter out any items where product was deleted or unpublished
-    const validItems = (recentlyViewed || []).filter((item) => item.product !== null)
+    // Filter out any items where product was deleted or unpublished (cast: FK returns single object at runtime)
+    const rows = (recentlyViewed || []) as unknown as RecentlyViewedRow[]
+    const validItems = rows.filter((item): item is RecentlyViewedRow & { product: RecentlyViewedProduct } => item.product !== null)
     const productIds = validItems.map((item) => item.product.id)
 
     // Attach subject_ids from product_subjects for "Multiple Subjects" on cards
