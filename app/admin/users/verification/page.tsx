@@ -1,33 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getVerificationQueueData } from '@/lib/utils/admin-verification-queue'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock } from 'lucide-react'
-import { cookies } from 'next/headers'
 import { VerificationDocumentLink } from '@/components/admin/verification-document-link'
 import { VerificationActions } from '@/components/admin/verification-actions'
 import { PrcVerificationInfo } from '@/components/admin/prc-verification-info'
 import { getFullName, getInitials } from '@/lib/utils/profile'
-
-async function getVerificationQueue() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const fetchUrl = `${baseUrl}/api/admin/users/verification-queue`
-  const cookieStore = await cookies()
-  const allCookies = cookieStore.getAll()
-  const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-  const response = await fetch(fetchUrl, {
-    cache: 'no-store',
-    headers: cookieHeader ? {
-      Cookie: cookieHeader,
-    } : {},
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch verification queue')
-  }
-  const result = await response.json()
-  return result
-}
 
 export default async function VerificationQueuePage() {
   const supabase = await createClient()
@@ -44,7 +25,7 @@ export default async function VerificationQueuePage() {
     redirect('/')
   }
 
-  const { verifications } = await getVerificationQueue()
+  const { verifications } = await getVerificationQueueData(supabase)
 
   const getTimeAgo = (date: string) => {
     const now = new Date()
