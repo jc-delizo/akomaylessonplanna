@@ -85,7 +85,7 @@ export function SearchResultsGrid({
 
       {/* Products Grid/List */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} searchQuery={searchQuery} />
           ))}

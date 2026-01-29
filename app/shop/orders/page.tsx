@@ -495,56 +495,6 @@ export default function SellerOrdersPage() {
           </div>
         </div>
 
-        {/* Status Tabs */}
-        <div className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-full">
-          <div className="grid w-full grid-cols-4 gap-1">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
-                statusFilter === 'all'
-                  ? 'bg-gray-900 dark:bg-gray-800 text-white font-semibold shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-            >
-              All ({filteredOrdersByStatus.all.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('completed')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
-                statusFilter === 'completed'
-                  ? 'bg-gray-900 dark:bg-gray-800 text-white font-semibold shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-            >
-              Completed ({filteredOrdersByStatus.completed.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('pending')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
-                statusFilter === 'pending'
-                  ? 'bg-gray-900 dark:bg-gray-800 text-white font-semibold shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-            >
-              Pending ({filteredOrdersByStatus.pending.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('failed')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
-                statusFilter === 'failed'
-                  ? 'bg-gray-900 dark:bg-gray-800 text-white font-semibold shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
-            >
-              Failed ({filteredOrdersByStatus.failed.length})
-            </button>
-          </div>
-        </div>
-
         {/* Orders List */}
         {orders.length === 0 ? (
           <Card className="p-12 text-center">

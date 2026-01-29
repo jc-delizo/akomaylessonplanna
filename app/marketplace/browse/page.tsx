@@ -180,7 +180,7 @@ export default function BrowseProductsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
           {/* Filter Sidebar */}
           <aside className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
@@ -225,7 +225,7 @@ export default function BrowseProductsPage() {
           </aside>
 
           {/* Products Grid */}
-          <main className="lg:col-span-6">
+          <main className="lg:col-span-5">
             {/* Filter Chips */}
             <FilterChips
               filters={filters}

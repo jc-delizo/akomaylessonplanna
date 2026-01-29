@@ -107,90 +107,118 @@ export default async function MarketplacePage() {
     .order('avg_rating', { ascending: false })
     .limit(14)
 
-  // Fetch recommended products
+  // Fetch recommended products and teaching-completion for empty state
   let recommendedProducts: any[] = []
+  let teachingComplete = true // default when not logged in
   if (user) {
-    // Get user profile to check subscription tier
+    // Get user profile: subscription tier + teaching fields (for recommendations and completion check)
     const { data: userProfile } = await supabase
       .from('users')
-      .select('subscription_tier, grade_levels_taught, subjects_taught')
+      .select(
+        'subscription_tier, grade_levels_taught, subjects_taught, teaching_class_types, teaching_learner_paths, teaching_strand_ids, teaching_sped_level_ids'
+      )
       .eq('id', user.id)
       .single()
 
+    // Teaching complete = same rule as profile edit (at least one teaching preference set)
+    const teachingClassTypes = (userProfile?.teaching_class_types as string[] | null) ?? []
+    const teachingStrandIds = (userProfile?.teaching_strand_ids as string[] | null) ?? []
+    const teachingSpedLevelIds = (userProfile?.teaching_sped_level_ids as string[] | null) ?? []
+    const gradeLevelsTaught = (userProfile?.grade_levels_taught as string[] | null) ?? []
+    const subjectsTaught = (userProfile?.subjects_taught as string[] | null) ?? []
+    teachingComplete =
+      teachingClassTypes.length > 0 ||
+      teachingStrandIds.length > 0 ||
+      teachingSpedLevelIds.length > 0 ||
+      (subjectsTaught.length > 0 && gradeLevelsTaught.length > 0)
+
     const isProOrPioneer = userProfile?.subscription_tier === 'pro' || userProfile?.subscription_tier === 'pioneer'
 
-    if (isProOrPioneer) {
-      // Pro/Pioneer: Advanced recommendations
-      const { data: recentlyViewed } = await supabase
-        .from('recently_viewed')
-        .select('product_id')
-        .eq('user_id', user.id)
-        .order('viewed_at', { ascending: false })
-        .limit(5)
+    // Only fetch recommendations when Teaching tab is complete; otherwise leave empty for profile prompt
+    if (teachingComplete) {
+      if (isProOrPioneer) {
+        // Pro/Pioneer: Advanced recommendations
+        const { data: recentlyViewed } = await supabase
+          .from('recently_viewed')
+          .select('product_id')
+          .eq('user_id', user.id)
+          .order('viewed_at', { ascending: false })
+          .limit(5)
 
-      const viewedProductIds = (recentlyViewed || []).map((rv: any) => rv.product_id)
-      const gradeIds = userProfile?.grade_levels_taught || []
-      const subjectIds = userProfile?.subjects_taught || []
+        const viewedProductIds = (recentlyViewed || []).map((rv: any) => rv.product_id)
+        const gradeIds = userProfile?.grade_levels_taught || []
+        const subjectIds = userProfile?.subjects_taught || []
 
-      if (gradeIds.length > 0 || subjectIds.length > 0) {
-        let query = supabase
-          .from('products')
-          .select(productSelect)
-          .eq('status', 'published')
-
-        if (gradeIds.length > 0) {
-          query = query.in('grade_id', gradeIds)
-        }
-        if (subjectIds.length > 0) {
-          query = query.in('subject_id', subjectIds)
-        }
-
-        const { data: profileBased } = await query
-          .order('sales_count', { ascending: false })
-          .limit(20)
-
-        // Filter out already viewed products
-        recommendedProducts = (profileBased || []).filter(
-          (p: any) => !viewedProductIds.includes(p.id)
-        ).slice(0, 14)
-      }
-    } else {
-      // Free users: Simple recommendations based on recently viewed
-      const { data: recentlyViewed } = await supabase
-        .from('recently_viewed')
-        .select('product_id')
-        .eq('user_id', user.id)
-        .order('viewed_at', { ascending: false })
-        .limit(3)
-
-      const viewedProductIds = (recentlyViewed || []).map((rv: any) => rv.product_id)
-
-      if (viewedProductIds.length > 0) {
-        const { data: viewedProducts } = await supabase
-          .from('products')
-          .select('grade_id')
-          .in('id', viewedProductIds)
-          .limit(1)
-
-        if (viewedProducts && viewedProducts.length > 0) {
-          const gradeId = viewedProducts[0].grade_id
-
-          const { data: sameGradeProducts } = await supabase
+        if (gradeIds.length > 0 || subjectIds.length > 0) {
+          let query = supabase
             .from('products')
             .select(productSelect)
             .eq('status', 'published')
-            .eq('grade_id', gradeId)
-            .order('sales_count', { ascending: false })
-            .limit(14)
 
-          recommendedProducts = sameGradeProducts || []
+          if (gradeIds.length > 0) {
+            query = query.in('grade_id', gradeIds)
+          }
+          if (subjectIds.length > 0) {
+            query = query.in('subject_id', subjectIds)
+          }
+
+          const { data: profileBased } = await query
+            .order('sales_count', { ascending: false })
+            .limit(20)
+
+          // Filter out already viewed products
+          recommendedProducts = (profileBased || []).filter(
+            (p: any) => !viewedProductIds.includes(p.id)
+          ).slice(0, 14)
+        }
+      } else {
+        // Free users: Simple recommendations based on recently viewed
+        const { data: recentlyViewed } = await supabase
+          .from('recently_viewed')
+          .select('product_id')
+          .eq('user_id', user.id)
+          .order('viewed_at', { ascending: false })
+          .limit(3)
+
+        const viewedProductIds = (recentlyViewed || []).map((rv: any) => rv.product_id)
+
+        if (viewedProductIds.length > 0) {
+          const { data: viewedProducts } = await supabase
+            .from('products')
+            .select('grade_id')
+            .in('id', viewedProductIds)
+            .limit(1)
+
+          if (viewedProducts && viewedProducts.length > 0) {
+            const gradeId = viewedProducts[0].grade_id
+
+            const { data: sameGradeProducts } = await supabase
+              .from('products')
+              .select(productSelect)
+              .eq('status', 'published')
+              .eq('grade_id', gradeId)
+              .order('sales_count', { ascending: false })
+              .limit(14)
+
+            recommendedProducts = sameGradeProducts || []
+          }
         }
       }
     }
-  }
 
-  // Fallback to trending if no recommendations
-  if (recommendedProducts.length === 0) {
+    // Only fall back to trending when user is logged in AND teaching is complete (so we can show profile prompt when not)
+    if (recommendedProducts.length === 0 && teachingComplete) {
+      const { data: trending } = await supabase
+        .from('products')
+        .select(productSelect)
+        .eq('status', 'published')
+        .order('sales_count', { ascending: false })
+        .limit(14)
+
+      recommendedProducts = trending || []
+    }
+  } else {
+    // Not logged in: fill recommended with trending so the tab has content
     const { data: trending } = await supabase
       .from('products')
       .select(productSelect)
@@ -227,6 +255,7 @@ export default async function MarketplacePage() {
           trendingProducts={transformedTrendingProducts}
           bestsellerProducts={transformedBestsellerProducts}
           recommendedProducts={transformedRecommendedProducts}
+          teachingComplete={teachingComplete}
         />
 
         {/* Empty state */}

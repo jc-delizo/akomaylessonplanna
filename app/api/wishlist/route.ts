@@ -43,7 +43,8 @@ export async function GET(request: Request) {
           cover_image_url,
           seller:users!products_seller_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             username
           )
         )

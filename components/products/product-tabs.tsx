@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { ProductCard } from './product-card'
 
 interface Product {
@@ -39,6 +40,8 @@ interface ProductTabsProps {
   trendingProducts?: Product[]
   bestsellerProducts?: Product[]
   recommendedProducts?: Product[]
+  /** When false, Recommended empty state shows profile prompt. Default true for backward compatibility. */
+  teachingComplete?: boolean
 }
 
 type TabType = 'featured' | 'new' | 'trending' | 'bestsellers' | 'recommended'
@@ -49,6 +52,7 @@ export function ProductTabs({
   trendingProducts = [],
   bestsellerProducts = [],
   recommendedProducts = [],
+  teachingComplete = true,
 }: ProductTabsProps) {
   const tabs = [
     {
@@ -83,27 +87,25 @@ export function ProductTabs({
     },
   ]
 
+  // Default tab: New Arrivals first, then first tab with content, then Recommended (for empty state)
   const defaultTab: TabType =
-    recommendedProducts.length > 0
-      ? 'recommended'
-      : (tabs.find((t) => t.count > 0)?.id ?? 'featured')
+    newProducts.length > 0
+      ? 'new'
+      : (tabs.find((t) => t.count > 0)?.id ?? 'recommended')
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
 
   const activeTabData = tabs.find((tab) => tab.id === activeTab)
   const activeProducts = activeTabData?.products || []
 
-  // Don't render if no products available
-  if (tabs.every((tab) => tab.count === 0)) {
-    return null
-  }
-
+  // Always render: we show Recommended for You even when empty (for profile prompt or generic empty)
   return (
     <section className="mb-16">
-      {/* Pill Tabs */}
+      {/* Pill Tabs: show tab if it has count > 0, or always show Recommended for You */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
         {tabs.map((tab) => {
-          if (tab.count === 0) return null
-          
+          const isRecommended = tab.id === 'recommended'
+          if (tab.count === 0 && !isRecommended) return null
+
           const isActive = activeTab === tab.id
           return (
             <button
@@ -126,12 +128,24 @@ export function ProductTabs({
         })}
       </div>
 
-      {/* Product Grid */}
+      {/* Product Grid or Empty State */}
       {activeProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6">
           {activeProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
+        </div>
+      ) : activeTab === 'recommended' && recommendedProducts.length === 0 && !teachingComplete ? (
+        <div className="text-center py-12 px-4">
+          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+            We don&apos;t know enough about you yet! Tell us what you teach—grade level and subjects—in your profile so we can recommend the best resources for you.
+          </p>
+          <Link
+            href="/profile/edit"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-[#ff7200] text-white text-sm font-medium hover:bg-[#e66500] transition-colors"
+          >
+            Complete your profile
+          </Link>
         </div>
       ) : (
         <div className="text-center py-12 text-gray-500">

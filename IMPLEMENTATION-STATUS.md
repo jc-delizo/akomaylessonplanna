@@ -1,6 +1,6 @@
 # AKOMAYLESSONPLANNA - Implementation Status
 
-**Last Updated**: January 28, 2026  
+**Last Updated**: January 30, 2026  
 **Overall Progress**: 4 of 11 features complete (36%)
 
 ---
@@ -356,6 +356,19 @@ Aligns product loading and display with Phase 1/2 hierarchy so Regular and SPED 
 
 ---
 
+## Recent UX (Jan 2026)
+
+Incremental UX updates across marketplace, browse, and My Shop (cross-feature; not a discrete feature):
+
+- **Marketplace:** "Recommended for You" tab shows an empty state with a profile prompt when the profile Teaching tab is incomplete; default tab is **New Arrivals**. See [MARKETPLACE-SHOP-UX-UPDATES.md](MARKETPLACE-SHOP-UX-UPDATES.md).
+- **Browse:** 6-column layout (1 filter + 5 product columns); filter sidebar gets one full column for a wider layout.
+- **My Shop (Products):** "Upload Product" button in the nav remains visible on the Products tab (`/shop/products`).
+- **My Shop (Orders):** Status tabs (All / Completed / Pending / Failed) removed; single list of all orders; status filter remains in the Filters sheet.
+
+**Summary**: [MARKETPLACE-SHOP-UX-UPDATES.md](MARKETPLACE-SHOP-UX-UPDATES.md)
+
+---
+
 ## Next Steps
 
 1. ✅ Complete documentation audit and cleanup
@@ -386,6 +399,7 @@ Aligns product loading and display with Phase 1/2 hierarchy so Regular and SPED 
 ### Feature Specifications
 - [All Brainstorming Docs](docs/brainstorming/)
 - [Completed Feature Summaries](.)
+- [Marketplace & Shop UX Updates (Jan 2026)](MARKETPLACE-SHOP-UX-UPDATES.md)
 
 ### Testing
 - [Testing Guide](TESTING-GUIDE.md)
