@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           is_verified_teacher,
@@ -260,6 +261,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Cover image required when publishing (not when saving as draft)
+    if (body.status !== 'draft' && !body.cover_image_url) {
+      return NextResponse.json(
+        { error: 'Cover image is required when publishing' },
+        { status: 400 }
+      )
+    }
+
     // Generate unique slug from title
     const baseSlug = body.title
       .toLowerCase()
@@ -339,7 +348,8 @@ export async function POST(request: NextRequest) {
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url
         ),
@@ -414,7 +424,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error in POST /api/products:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

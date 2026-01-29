@@ -52,6 +52,7 @@ import {
   findRegionByCode,
 } from '@/lib/utils/location'
 import type { Region, City } from '@/lib/data/philippines-locations'
+import { CLASS_TYPES, LEARNER_PATHS } from '@/lib/config/lesson-plan-config'
 
 /**
  * Profile Edit Page
@@ -87,6 +88,15 @@ export default function ProfileEditPage() {
   const [bio, setBio] = useState('')
   const [subjectsTaught, setSubjectsTaught] = useState<string[]>([])
   const [gradeLevelsTaught, setGradeLevelsTaught] = useState<string[]>([])
+  // Phase 2 teaching preferences
+  const [teachingClassTypes, setTeachingClassTypes] = useState<string[]>([])
+  const [teachingLearnerPaths, setTeachingLearnerPaths] = useState<string[]>([])
+  const [teachingStrandIds, setTeachingStrandIds] = useState<string[]>([])
+  const [teachingSpedLevelIds, setTeachingSpedLevelIds] = useState<string[]>([])
+  const [hierarchy, setHierarchy] = useState<{
+    regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
+    sped: { paths: ['graded', 'non_graded']; levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
+  } | null>(null)
   const [locationCity, setLocationCity] = useState('')
   const [locationRegion, setLocationRegion] = useState('')
   const [selectedRegionCode, setSelectedRegionCode] = useState<string>('')
@@ -106,6 +116,41 @@ export default function ProfileEditPage() {
   // Available options (will be fetched from API)
   const [availableSubjects, setAvailableSubjects] = useState<{ id: string; name: string }[]>([])
   const [availableGrades, setAvailableGrades] = useState<{ id: string; name: string }[]>([])
+
+  // Fetch hierarchy for Phase 2
+  useEffect(() => {
+    const fetchHierarchy = async () => {
+      try {
+        const response = await fetch('/api/lesson-plan-config')
+        if (response.ok) {
+          const data = await response.json()
+          setHierarchy(data)
+          // Set available grades from hierarchy
+          if (data.regular?.grades) {
+            setAvailableGrades(data.regular.grades.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })))
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching hierarchy:', err)
+      }
+    }
+    fetchHierarchy()
+  }, [])
+
+  // #region agent log
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const list = document.querySelector('[data-slot="tabs-list"]')
+      const triggers = list ? Array.from(list.querySelectorAll('[role="tab"]')) : []
+      triggers.forEach((el, i) => {
+        const attrs: Record<string, string> = {}
+        for (const a of el.attributes) if (a.name.startsWith('data-')) attrs[a.name] = a.value || '(present)'
+        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'profile/edit:tab-inspect', message: 'Tab DOM', data: { index: i, dataAttributes: attrs, backgroundColor: getComputedStyle(el).backgroundColor }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => {})
+      })
+    }, 500)
+    return () => clearTimeout(t)
+  }, [])
+  // #endregion
 
   // Load profile data
   useEffect(() => {
@@ -128,6 +173,11 @@ export default function ProfileEditPage() {
         setBio(profileData.bio || '')
         setSubjectsTaught(profileData.subjects_taught || [])
         setGradeLevelsTaught(profileData.grade_levels_taught || [])
+        // Phase 2 teaching preferences
+        setTeachingClassTypes(profileData.teaching_class_types || [])
+        setTeachingLearnerPaths(profileData.teaching_learner_paths || [])
+        setTeachingStrandIds(profileData.teaching_strand_ids || [])
+        setTeachingSpedLevelIds(profileData.teaching_sped_level_ids || [])
         // Handle location data - try to match existing free-text data to structured data
         const existingRegion = profileData.location_region || ''
         const existingCity = profileData.location_city || ''
@@ -149,21 +199,6 @@ export default function ProfileEditPage() {
         
         setSocialLinks(profileData.social_links || { facebook: '', instagram: '', youtube: '' })
         setCustomAccentColor(profileData.custom_accent_color || '')
-
-        // Load available subjects and grades
-        // For now, use placeholder data - will be replaced when Feature 02.5 is implemented
-        setAvailableSubjects([
-          { id: '1', name: 'Mathematics' },
-          { id: '2', name: 'Science' },
-          { id: '3', name: 'English' },
-          { id: '4', name: 'Filipino' },
-        ])
-        setAvailableGrades([
-          { id: '1', name: 'Grade 7' },
-          { id: '2', name: 'Grade 8' },
-          { id: '3', name: 'Grade 9' },
-          { id: '4', name: 'Grade 10' },
-        ])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile')
       } finally {
@@ -212,13 +247,17 @@ export default function ProfileEditPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+          body: JSON.stringify({
           first_name: firstName,
           last_name: lastName || '',
           username,
           bio,
           subjects_taught: subjectsTaught,
           grade_levels_taught: gradeLevelsTaught,
+          teaching_class_types: teachingClassTypes,
+          teaching_learner_paths: teachingLearnerPaths,
+          teaching_strand_ids: teachingStrandIds,
+          teaching_sped_level_ids: teachingSpedLevelIds,
           location_city: locationCity,
           location_region: locationRegion,
           social_links: socialLinks,
@@ -331,11 +370,69 @@ export default function ProfileEditPage() {
 
   // Check if Teaching section is complete
   const isTeachingComplete = () => {
+    // At least one teaching preference must be set (Phase 2 OR existing subjects/grades)
     return (
-      subjectsTaught.length > 0 &&
-      gradeLevelsTaught.length > 0
+      teachingClassTypes.length > 0 ||
+      teachingStrandIds.length > 0 ||
+      teachingSpedLevelIds.length > 0 ||
+      (subjectsTaught.length > 0 && gradeLevelsTaught.length > 0)
     )
   }
+
+  // Helper: Check if Regular is selected
+  const isRegularSelected = teachingClassTypes.includes('regular')
+  // Helper: Check if SPED is selected
+  const isSpedSelected = teachingClassTypes.includes('sped')
+  // Helper: Check if SPED Non-Graded is selected
+  const isSpedNonGradedSelected = teachingLearnerPaths.includes('non_graded')
+  // Helper: Check if Grade 11/12 is selected
+  const isGrade11Or12Selected = gradeLevelsTaught.some((g) => g === 'Grade 11' || g === 'Grade 12')
+
+  // Dynamically update available subjects based on selections
+  useEffect(() => {
+    if (!hierarchy) return
+
+    const subjects: { id: string; name: string }[] = []
+
+    // SPED Non-Graded: show SPED subjects
+    if (isSpedNonGradedSelected && hierarchy.sped?.spedSubjects) {
+      subjects.push(...hierarchy.sped.spedSubjects)
+    }
+    // Regular or SPED Graded: show subjects based on selected grades
+    else if (gradeLevelsTaught.length > 0 && hierarchy.regular?.grades) {
+      // Get grade IDs for selected grade names
+      const selectedGradeIds = hierarchy.regular.grades
+        .filter((g) => gradeLevelsTaught.includes(g.name))
+        .map((g) => g.id)
+
+      // Add subjects for each selected grade
+      selectedGradeIds.forEach((gradeId) => {
+        const gradeSubjects = hierarchy.regular?.subjectsByGrade?.[gradeId] || []
+        subjects.push(...gradeSubjects)
+      })
+
+      // If Grade 11/12 + Strand selected: add specialized subjects for those strands
+      if (isGrade11Or12Selected && teachingStrandIds.length > 0) {
+        teachingStrandIds.forEach((strandId) => {
+          const strandSubjects = hierarchy.regular?.subjectsByStrand?.[strandId] || []
+          subjects.push(...strandSubjects)
+        })
+      }
+    }
+
+    // Remove duplicates by id (same subject might appear in multiple grades/strands)
+    const uniqueSubjects = Array.from(
+      new Map(subjects.map((s) => [s.id, s])).values()
+    )
+    
+    setAvailableSubjects(uniqueSubjects)
+  }, [
+    hierarchy,
+    gradeLevelsTaught,
+    teachingStrandIds,
+    isSpedNonGradedSelected,
+    isGrade11Or12Selected,
+  ])
 
   // Check if Location & Social section is complete
   const isLocationComplete = () => {
@@ -411,57 +508,69 @@ export default function ProfileEditPage() {
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="basic" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="relative hidden sm:inline">
-                  Basic Info
-                  {!isBasicInfoComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-                <span className="relative sm:hidden">
-                  Basic
-                  {!isBasicInfoComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="teaching" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span className="relative hidden sm:inline">
-                  Teaching
-                  {!isTeachingComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-                <span className="relative sm:hidden">
-                  Teach
-                  {!isTeachingComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span className="relative hidden sm:inline">
-                  Location & Social
-                  {!isLocationComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-                <span className="relative sm:hidden">
-                  Social
-                  {!isLocationComplete() && (
-                    <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-                  )}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="customization" className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                <span className="hidden sm:inline">Customization</span>
-                <span className="sm:hidden">Custom</span>
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 gap-1 h-10 items-center rounded-md bg-muted p-1 text-muted-foreground w-full mb-6">
+              <TabsTrigger
+                  value="basic"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="relative hidden sm:inline">
+                    Basic Info
+                    {!isBasicInfoComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                  <span className="relative sm:hidden">
+                    Basic
+                    {!isBasicInfoComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="teaching"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span className="relative hidden sm:inline">
+                    Teaching
+                    {!isTeachingComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                  <span className="relative sm:hidden">
+                    Teach
+                    {!isTeachingComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="location"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span className="relative hidden sm:inline">
+                    Location & Social
+                    {!isLocationComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                  <span className="relative sm:hidden">
+                    Social
+                    {!isLocationComplete() && (
+                      <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                    )}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="customization"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Palette className="h-4 w-4" />
+                  <span className="hidden sm:inline">Customization</span>
+                  <span className="sm:hidden">Custom</span>
+                </TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
@@ -621,56 +730,76 @@ export default function ProfileEditPage() {
             </TabsContent>
 
             {/* Teaching Tab */}
-            <TabsContent value="teaching" className="space-y-6">
-              {/* Subjects Taught */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    <CardTitle>Subjects Taught</CardTitle>
-                  </div>
-                  <CardDescription>Select all subjects you teach</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {availableSubjects.map((subject) => (
-                      <div key={subject.id} className="flex items-center gap-3">
-                        <Checkbox
-                          id={`subject-${subject.id}`}
-                          checked={subjectsTaught.includes(subject.name)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSubjectsTaught([...subjectsTaught, subject.name])
-                            } else {
-                              setSubjectsTaught(subjectsTaught.filter((s) => s !== subject.name))
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`subject-${subject.id}`}
-                          className="flex-1 cursor-pointer text-sm font-normal"
-                        >
-                          {subject.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {subjectsTaught.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Selected Subjects</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {subjectsTaught.map((subject) => (
-                            <Badge key={subject} variant="secondary" className="gap-1">
-                              {subject}
+            <TabsContent value="teaching" className="space-y-4">
+              {/* Phase 2 Preferences Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Phase 2 Preferences
+                </h3>
+
+                {/* Phase 2: Class Type */}
+                <Card>
+                  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <CardTitle>Class Type</CardTitle>
+                    </div>
+                    <CardDescription>Select the class types you teach (optional)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {CLASS_TYPES.map((classType) => (
+                        <div key={classType.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <Checkbox
+                            id={`class-type-${classType.value}`}
+                            checked={teachingClassTypes.includes(classType.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setTeachingClassTypes([...teachingClassTypes, classType.value])
+                              } else {
+                                setTeachingClassTypes(teachingClassTypes.filter((c) => c !== classType.value))
+                                // Clear dependent fields when class type is removed
+                                if (classType.value === 'sped') {
+                                  setTeachingLearnerPaths([])
+                                  setTeachingSpedLevelIds([])
+                                }
+                                if (classType.value === 'regular') {
+                                  setTeachingStrandIds([])
+                                }
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`class-type-${classType.value}`}
+                            className={`flex-1 cursor-pointer text-sm ${teachingClassTypes.includes(classType.value) ? 'font-medium' : 'font-normal'}`}
+                          >
+                            {classType.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {teachingClassTypes.length > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Selected Class Types</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {teachingClassTypes.map((classType) => (
+                            <Badge key={classType} variant="secondary" className="gap-1">
+                              {CLASS_TYPES.find((c) => c.value === classType)?.label || classType}
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setSubjectsTaught(subjectsTaught.filter((s) => s !== subject))
-                                }
+                                onClick={() => {
+                                  setTeachingClassTypes(teachingClassTypes.filter((c) => c !== classType))
+                                  if (classType === 'sped') {
+                                    setTeachingLearnerPaths([])
+                                    setTeachingSpedLevelIds([])
+                                  }
+                                  if (classType === 'regular') {
+                                    setTeachingStrandIds([])
+                                  }
+                                }}
                                 className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                aria-label={`Remove ${subject}`}
+                                aria-label={`Remove ${classType}`}
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -678,52 +807,337 @@ export default function ProfileEditPage() {
                           ))}
                         </div>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                    {teachingClassTypes.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
+                    )}
+                  </CardContent>
+                </Card>
 
-              <Separator />
-
-              {/* Grade Levels Taught */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4" />
-                    <CardTitle>Grade Levels Taught</CardTitle>
-                  </div>
-                  <CardDescription>Select all grade levels you teach</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {availableGrades.map((grade) => (
-                      <div key={grade.id} className="flex items-center gap-3">
-                        <Checkbox
-                          id={`grade-${grade.id}`}
-                          checked={gradeLevelsTaught.includes(grade.name)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setGradeLevelsTaught([...gradeLevelsTaught, grade.name])
-                            } else {
-                              setGradeLevelsTaught(gradeLevelsTaught.filter((g) => g !== grade.name))
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`grade-${grade.id}`}
-                          className="flex-1 cursor-pointer text-sm font-normal"
-                        >
-                          {grade.name}
-                        </Label>
+                {/* Phase 2: Learner Path (conditional on SPED) */}
+                {isSpedSelected && (
+                  <Card className="border-l-4 border-purple-200 dark:border-purple-800">
+                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        <CardTitle>SPED Learner Path</CardTitle>
                       </div>
-                    ))}
-                  </div>
-                  {gradeLevelsTaught.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
+                      <CardDescription>Select the SPED learner paths you teach (optional)</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {LEARNER_PATHS.map((path) => (
+                          <div key={path.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <Checkbox
+                              id={`learner-path-${path.value}`}
+                              checked={teachingLearnerPaths.includes(path.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setTeachingLearnerPaths([...teachingLearnerPaths, path.value])
+                                } else {
+                                  setTeachingLearnerPaths(teachingLearnerPaths.filter((p) => p !== path.value))
+                                  // Clear SPED levels if Non-Graded is removed
+                                  if (path.value === 'non_graded') {
+                                    setTeachingSpedLevelIds([])
+                                  }
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`learner-path-${path.value}`}
+                              className={`flex-1 cursor-pointer text-sm ${teachingLearnerPaths.includes(path.value) ? 'font-medium' : 'font-normal'}`}
+                            >
+                              {path.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      {teachingLearnerPaths.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
+                          <Label className="text-xs text-muted-foreground">Selected Learner Paths</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {teachingLearnerPaths.map((path) => (
+                              <Badge key={path} variant="secondary" className="gap-1">
+                                {LEARNER_PATHS.find((p) => p.value === path)?.label || path}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTeachingLearnerPaths(teachingLearnerPaths.filter((p) => p !== path))
+                                    if (path === 'non_graded') {
+                                      setTeachingSpedLevelIds([])
+                                    }
+                                  }}
+                                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                  aria-label={`Remove ${path}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {teachingLearnerPaths.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Phase 2: SPED Levels (conditional on SPED Non-Graded) */}
+                {isSpedNonGradedSelected && hierarchy?.sped?.levels && (
+                  <Card className="border-l-4 border-purple-200 dark:border-purple-800">
+                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        <CardTitle>SPED Levels</CardTitle>
+                      </div>
+                      <CardDescription>Select the SPED levels you teach (optional)</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {hierarchy.sped.levels.map((level) => (
+                          <div key={level.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <Checkbox
+                              id={`sped-level-${level.id}`}
+                              checked={teachingSpedLevelIds.includes(level.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setTeachingSpedLevelIds([...teachingSpedLevelIds, level.id])
+                                } else {
+                                  setTeachingSpedLevelIds(teachingSpedLevelIds.filter((id) => id !== level.id))
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`sped-level-${level.id}`}
+                              className={`flex-1 cursor-pointer text-sm ${teachingSpedLevelIds.includes(level.id) ? 'font-medium' : 'font-normal'}`}
+                            >
+                              {level.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      {teachingSpedLevelIds.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
+                          <Label className="text-xs text-muted-foreground">Selected SPED Levels</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {teachingSpedLevelIds.map((levelId) => {
+                              const level = hierarchy?.sped?.levels.find((l) => l.id === levelId)
+                              return (
+                                <Badge key={levelId} variant="secondary" className="gap-1">
+                                  {level?.name || levelId}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setTeachingSpedLevelIds(teachingSpedLevelIds.filter((id) => id !== levelId))
+                                    }
+                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                    aria-label={`Remove ${level?.name || levelId}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {teachingSpedLevelIds.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Phase 2: Strand (conditional on Regular + G11/12) */}
+                {isRegularSelected && isGrade11Or12Selected && hierarchy?.regular?.strands && (
+                  <Card className="border-l-4 border-purple-200 dark:border-purple-800">
+                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        <CardTitle>Strands</CardTitle>
+                      </div>
+                      <CardDescription>Select the strands you teach for Grade 11/12 (optional)</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {hierarchy.regular.strands.map((strand) => (
+                          <div key={strand.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <Checkbox
+                              id={`strand-${strand.id}`}
+                              checked={teachingStrandIds.includes(strand.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setTeachingStrandIds([...teachingStrandIds, strand.id])
+                                } else {
+                                  setTeachingStrandIds(teachingStrandIds.filter((id) => id !== strand.id))
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`strand-${strand.id}`}
+                              className={`flex-1 cursor-pointer text-sm ${teachingStrandIds.includes(strand.id) ? 'font-medium' : 'font-normal'}`}
+                            >
+                              {strand.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      {teachingStrandIds.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
+                          <Label className="text-xs text-muted-foreground">Selected Strands</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {teachingStrandIds.map((strandId) => {
+                              const strand = hierarchy?.regular?.strands.find((s) => s.id === strandId)
+                              return (
+                                <Badge key={strandId} variant="secondary" className="gap-1">
+                                  {strand?.name || strandId}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setTeachingStrandIds(teachingStrandIds.filter((id) => id !== strandId))
+                                    }
+                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                    aria-label={`Remove ${strand?.name || strandId}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {teachingStrandIds.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              <Separator className="my-6" />
+
+              {/* Teaching Assignments Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Teaching Assignments
+                </h3>
+
+                {/* Subjects Taught */}
+                <Card>
+                  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <CardTitle>Subjects Taught</CardTitle>
+                    </div>
+                    <CardDescription>Select all subjects you teach</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    {availableSubjects.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {availableSubjects.map((subject) => (
+                            <div key={subject.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                              <Checkbox
+                                id={`subject-${subject.id}`}
+                                checked={subjectsTaught.includes(subject.name)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSubjectsTaught([...subjectsTaught, subject.name])
+                                  } else {
+                                    setSubjectsTaught(subjectsTaught.filter((s) => s !== subject.name))
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={`subject-${subject.id}`}
+                                className={`flex-1 cursor-pointer text-sm ${subjectsTaught.includes(subject.name) ? 'font-medium' : 'font-normal'}`}
+                              >
+                                {subject.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        {subjectsTaught.length > 0 && (
+                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
+                            <Label className="text-xs text-muted-foreground">Selected Subjects</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {subjectsTaught.map((subject) => (
+                                <Badge key={subject} variant="secondary" className="gap-1">
+                                  {subject}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSubjectsTaught(subjectsTaught.filter((s) => s !== subject))
+                                    }
+                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                                    aria-label={`Remove ${subject}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {subjectsTaught.length === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Select at least one subject to get started</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Select grade levels first to see available subjects</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Grade Levels Taught */}
+                <Card>
+                  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      <CardTitle>Grade Levels Taught</CardTitle>
+                    </div>
+                    <CardDescription>Select all grade levels you teach</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {availableGrades.map((grade) => (
+                        <div key={grade.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <Checkbox
+                            id={`grade-${grade.id}`}
+                            checked={gradeLevelsTaught.includes(grade.name)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setGradeLevelsTaught([...gradeLevelsTaught, grade.name])
+                              } else {
+                                const newGrades = gradeLevelsTaught.filter((g) => g !== grade.name)
+                                setGradeLevelsTaught(newGrades)
+                                // Clear strands if Grade 11/12 is removed
+                                if (grade.name === 'Grade 11' || grade.name === 'Grade 12') {
+                                  const stillHasG11Or12 = newGrades.some((g) => g === 'Grade 11' || g === 'Grade 12')
+                                  if (!stillHasG11Or12) {
+                                    setTeachingStrandIds([])
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`grade-${grade.id}`}
+                            className={`flex-1 cursor-pointer text-sm ${gradeLevelsTaught.includes(grade.name) ? 'font-medium' : 'font-normal'}`}
+                          >
+                            {grade.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {gradeLevelsTaught.length > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
                         <Label className="text-xs text-muted-foreground">Selected Grade Levels</Label>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {gradeLevelsTaught.map((grade) => (
                             <Badge key={grade} variant="secondary" className="gap-1">
                               {grade}
@@ -741,10 +1155,13 @@ export default function ProfileEditPage() {
                           ))}
                         </div>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                    {gradeLevelsTaught.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">Select at least one grade level to get started</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Location & Social Tab */}

@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     // Check if seller exists and can sell
     const { data: seller, error: sellerError } = await supabase
       .from('users')
-      .select('id, name, can_sell')
+      .select('id, first_name, last_name, can_sell')
       .eq('id', seller_id)
       .single()
 
@@ -252,8 +252,8 @@ export async function POST(request: NextRequest) {
         .select(
           `
           *,
-          buyer:buyer_id(id, name, username, avatar_url),
-          seller:seller_id(id, name, username, avatar_url),
+          buyer:buyer_id(id, first_name, last_name, username, avatar_url),
+          seller:seller_id(id, first_name, last_name, username, avatar_url),
           product:product_id(id, title, price, cover_image_url)
         `
         )
@@ -276,8 +276,8 @@ export async function POST(request: NextRequest) {
       .select(
         `
         *,
-        buyer:buyer_id(id, name, username, avatar_url),
-        seller:seller_id(id, name, username, avatar_url),
+        buyer:buyer_id(id, first_name, last_name, username, avatar_url),
+        seller:seller_id(id, first_name, last_name, username, avatar_url),
         product:product_id(id, title, price, cover_image_url)
       `
       )

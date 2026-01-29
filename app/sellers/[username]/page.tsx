@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toPromise } from '@/lib/utils/supabase-promise'
 import { Button } from '@/components/ui/button'
-import { BadgeDisplay } from '@/components/profiles/badge-display'
 import { FollowButton } from '@/components/profiles/follow-button'
-import { getUserBadges, formatProfileUrl, getInitials, getFullName } from '@/lib/utils/profile'
+import { formatProfileUrl, getInitials, getFullName } from '@/lib/utils/profile'
+import { SellerProfileNameBlock } from '@/components/sellers/seller-profile-name-block'
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
 import Link from 'next/link'
 import { SellerReviewsSection } from '@/components/sellers/seller-reviews-section'
@@ -37,7 +37,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
     data: { user: authUser },
   } = await supabase.auth.getUser()
 
-  // Fetch seller profile directly from database
+  // Fetch seller profile. Requires migration 025_add_display_name.sql (display_name column).
   const { data: user, error: userError } = await supabase
     .from('users')
     .select(
@@ -45,6 +45,7 @@ export default async function SellerProfilePage({ params }: PageProps) {
       id,
       first_name,
       last_name,
+      display_name,
       username,
       avatar_url,
       bio,
@@ -119,7 +120,6 @@ export default async function SellerProfilePage({ params }: PageProps) {
     notFound()
   }
 
-  const badges = getUserBadges(profile)
   const isOwnProfile = authUser?.id === profile.id
 
   // Get full name and initials
@@ -205,16 +205,10 @@ export default async function SellerProfilePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Profile Info Section */}
+      {/* Profile Info Section - Option A: display_name (if set) above full name, then @username */}
       <div className="mt-16 md:mt-20 mb-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{fullName}</h1>
-            {profile.username && (
-              <p className="text-muted-foreground">@{profile.username}</p>
-            )}
-            {badges.length > 0 && <BadgeDisplay badges={badges} className="mt-2" />}
-          </div>
+          <SellerProfileNameBlock profile={profile} />
         </div>
       </div>
 

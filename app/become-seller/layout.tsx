@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { MainNav } from '@/components/navigation/main-nav'
 import { Footer } from '@/components/layout/footer'
+import { ParticlesBackground } from '@/components/ui/particles-background'
 
 export default async function BecomeSellerLayout({
   children,
@@ -25,17 +26,31 @@ export default async function BecomeSellerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative">
+      {/* Particles Background */}
+      <ParticlesBackground
+        particleCount={70}
+        particleColor="rgba(255, 255, 255, 0.4)"
+        lineColor="rgba(255, 255, 255, 0.15)"
+        lineDistance={120}
+        speed={0.4}
+        className="z-0"
+      />
+
       {/* Main Navigation */}
-      <MainNav user={mainNavUser} />
+      <div className="relative z-10">
+        <MainNav user={mainNavUser} />
+      </div>
 
       {/* Page Content */}
-      <main className="flex-1">
+      <main className="flex-1 relative z-10">
         {children}
       </main>
 
       {/* Footer */}
-      <Footer />
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   )
 }

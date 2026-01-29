@@ -394,12 +394,6 @@ export default function MyProductsPage() {
               </p>
             </div>
           </div>
-          <Link href="/shop/products/new">
-            <Button className="hidden sm:flex">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Product
-            </Button>
-          </Link>
         </div>
 
         {error && (
@@ -554,16 +548,6 @@ export default function MyProductsPage() {
                       : `You don't have any products with status "${STATUS_LABELS[filterStatus]}"`}
                   </CardDescription>
                 </div>
-                {filterStatus === 'all' && (
-                  <div className="pt-4">
-                    <Link href="/shop/products/new">
-                      <Button size="lg" className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Create Your First Product
-                      </Button>
-                    </Link>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -1030,16 +1014,6 @@ export default function MyProductsPage() {
                         : `You don't have any products with status "${STATUS_LABELS[filterStatus]}"`}
                     </CardDescription>
                   </div>
-                  {filterStatus === 'all' && (
-                    <div className="pt-4">
-                      <Link href="/shop/products/new">
-                        <Button size="lg" className="gap-2">
-                          <Plus className="h-4 w-4" />
-                          Create Your First Product
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>

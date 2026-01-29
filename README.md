@@ -137,6 +137,43 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 👤 Creating the First Super Admin
+
+After setting up your environment, you need to create the first super admin account to access the admin panel.
+
+### Production (Recommended)
+
+1. **Set the environment secret** in your production environment (Vercel):
+   - Go to your Vercel project → Settings → Environment Variables
+   - Add `CREATE_SUPER_ADMIN_SECRET` with a secure random value
+   - Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+2. **Deploy your code** (if not already deployed)
+
+3. **Create super admin**:
+   - Visit `https://yourdomain.com/setup/create-super-admin`
+   - Enter the `CREATE_SUPER_ADMIN_SECRET` value
+   - Fill in email, first name, last name, and password (optional)
+   - Submit the form
+   - Save the temporary password if one was generated
+
+4. **Log in** at `/login` with the created credentials
+
+### Local Development / CLI Script
+
+For local development or if you have direct database access:
+
+```bash
+# Make sure SUPABASE_SERVICE_ROLE_KEY is set in .env.local
+npx tsx scripts/create-admin.ts admin@example.com "Admin Name" "secure-password"
+```
+
+This creates a super admin account directly using the Supabase service role key.
+
+**Note**: The CLI script bypasses the secret protection and is intended for development use only.
+
+---
+
 ## 📁 Project Structure
 
 ```

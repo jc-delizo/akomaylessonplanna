@@ -37,6 +37,7 @@ flowchart TD
 | **RESEND_FROM_EMAIL** | Same for all | Same for all | Same for all |
 | **FACEBOOK_APP_SECRET** | Optional | Required | Required |
 | **CRON_SECRET** | Optional | Recommended | Required |
+| **CREATE_SUPER_ADMIN_SECRET** | Optional | Recommended | Required |
 | **NEXT_PUBLIC_SENTRY_DSN** | Optional (skip) | Optional | Recommended |
 
 ## Variable-by-Variable Guide
@@ -269,7 +270,45 @@ CRON_SECRET=your_random_secret_here
 
 ---
 
-### 9. NEXT_PUBLIC_SENTRY_DSN (Optional)
+### 9. CREATE_SUPER_ADMIN_SECRET (Required for Production)
+
+**What it is**: Secret for protecting the super admin creation endpoint (`/api/admin/create-admin-account`) and setup page (`/setup/create-super-admin`)
+
+**How to generate**:
+```bash
+# In terminal:
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Local Development**:
+```env
+# Optional - leave unset to allow creation without secret
+# CREATE_SUPER_ADMIN_SECRET=your_random_secret_here
+```
+
+**Dev Environment**:
+```env
+# Recommended for security
+CREATE_SUPER_ADMIN_SECRET=your_random_secret_here
+```
+
+**Production**:
+```env
+# REQUIRED for security - protects admin creation endpoint
+CREATE_SUPER_ADMIN_SECRET=your_random_secret_here
+```
+
+**Usage**:
+- When set, the `/api/admin/create-admin-account` endpoint requires the secret in the `X-Create-Super-Admin-Secret` header
+- The `/setup/create-super-admin` page will only work when this secret is configured
+- Leave unset in local development to allow easy admin creation during development
+- **CRITICAL**: Keep this secret secure and never commit it to version control
+
+**Note**: You can use the same secret for all environments, or generate different ones for each.
+
+---
+
+### 10. NEXT_PUBLIC_SENTRY_DSN (Optional)
 
 **What it is**: Data Source Name for Sentry error tracking
 
@@ -327,6 +366,9 @@ FACEBOOK_APP_SECRET=your_facebook_app_secret
 # Cron (Optional for local)
 CRON_SECRET=your_random_cron_secret
 
+# Super Admin Creation (Optional for local - leave unset to allow creation without secret)
+# CREATE_SUPER_ADMIN_SECRET=your_random_super_admin_secret
+
 # Sentry (Skip for local)
 # NEXT_PUBLIC_SENTRY_DSN=https://xxx@sentry.io/xxx
 ```
@@ -383,6 +425,10 @@ Name: CRON_SECRET
 Value: [Your generated secret]
 Environment: Production
 
+Name: CREATE_SUPER_ADMIN_SECRET
+Value: [Your generated secret]
+Environment: Production
+
 Name: NEXT_PUBLIC_SENTRY_DSN
 Value: [Your Sentry DSN] (Optional)
 Environment: Production
@@ -431,6 +477,10 @@ Name: CRON_SECRET
 Value: [Your generated secret]
 Environment: Production
 
+Name: CREATE_SUPER_ADMIN_SECRET
+Value: [Your generated secret]
+Environment: Production
+
 Name: NEXT_PUBLIC_SENTRY_DSN
 Value: [Your Sentry DSN]
 Environment: Production
@@ -455,6 +505,7 @@ Environment: Production
 - 🟡 `RESEND_FROM_EMAIL` - Usually same for all
 - 🟡 `FACEBOOK_APP_SECRET` - Same Facebook app for all
 - 🟡 `CRON_SECRET` - Can be same or different
+- 🟡 `CREATE_SUPER_ADMIN_SECRET` - Can be same or different
 - 🟡 `NEXT_PUBLIC_SENTRY_DSN` - Can be same or separate projects
 
 ### Critical Matching Rules
@@ -735,6 +786,7 @@ Ctrl+Shift+R
 | `RESEND_FROM_EMAIL` | Your choice | noreply@yourdomain.com |
 | `FACEBOOK_APP_SECRET` | Facebook | App → Settings → Basic → App Secret |
 | `CRON_SECRET` | Generate | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `CREATE_SUPER_ADMIN_SECRET` | Generate | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry | Project → Settings → Client Keys (DSN) |
 
 ---

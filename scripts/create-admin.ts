@@ -6,29 +6,53 @@ import { createAdminClient } from '../lib/supabase/admin'
 config({ path: resolve(process.cwd(), '.env.local') })
 
 /**
- * Script to create a system admin account
+ * Script to create a super admin account
  * Usage: npx tsx scripts/create-admin.ts <email> [name] [password]
+ * 
+ * Requires SUPABASE_SERVICE_ROLE_KEY in .env.local
+ * Creates a user with role='admin' and admin_role='super_admin'
  * 
  * If password is not provided, a temporary password will be generated
  * and the user will need to reset it on first login.
  */
 
+function splitName(fullName: string): { first_name: string; last_name: string } {
+  const trimmed = fullName.trim()
+  const spaceIndex = trimmed.indexOf(' ')
+  
+  if (spaceIndex === -1) {
+    return { first_name: trimmed || 'User', last_name: '' }
+  }
+  
+  return {
+    first_name: trimmed.substring(0, spaceIndex),
+    last_name: trimmed.substring(spaceIndex + 1).trim(),
+  }
+}
+
 async function createAdminAccount(email: string, name?: string, password?: string) {
   const supabase = createAdminClient()
 
-  console.log(`Creating admin account for: ${email}`)
+  console.log(`Creating super admin account for: ${email}`)
 
   // Generate a secure random password if not provided
   const tempPassword = password || generateTempPassword()
 
+  // Derive first_name and last_name from name
+  const fullName = name || email.split('@')[0]
+  const { first_name, last_name } = splitName(fullName)
+
   try {
     // Step 1: Create user in Supabase Auth
+    // Pass name in metadata for trigger, and also first_name/last_name for consistency
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password: tempPassword,
       email_confirm: true, // Auto-confirm email for admin
       user_metadata: {
-        name: name || email.split('@')[0],
+        name: fullName,
+        first_name,
+        last_name,
         role: 'admin',
       },
     })
@@ -49,17 +73,17 @@ async function createAdminAccount(email: string, name?: string, password?: strin
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Step 3: Update the user profile with admin details
-    const username = name 
-      ? name.toLowerCase().replace(/\s+/g, '_').substring(0, 20)
-      : email.split('@')[0].substring(0, 20)
+    const username = fullName
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .substring(0, 20)
 
     const { error: profileError } = await supabase
       .from('users')
       .update({
-        email: email,
-        name: name || email.split('@')[0],
         username: username,
         role: 'admin',
+        admin_role: 'super_admin',
         is_verified_teacher: false,
         can_sell: false,
         email_verified: true,
@@ -82,9 +106,11 @@ async function createAdminAccount(email: string, name?: string, password?: strin
           .insert({
             id: authData.user.id,
             email: email,
-            name: name || email.split('@')[0],
+            first_name,
+            last_name,
             username: username,
             role: 'admin',
+            admin_role: 'super_admin',
             is_verified_teacher: false,
             can_sell: false,
             email_verified: true,
@@ -105,13 +131,14 @@ async function createAdminAccount(email: string, name?: string, password?: strin
 
     console.log(`✓ User profile created in database`)
 
-    // Step 3: Output success message
-    console.log('\n✅ Admin account created successfully!')
+    // Step 4: Output success message
+    console.log('\n✅ Super admin account created successfully!')
     console.log('\nAccount Details:')
     console.log(`  Email: ${email}`)
-    console.log(`  Name: ${name || email.split('@')[0]}`)
+    console.log(`  Name: ${fullName}`)
     console.log(`  Username: ${username}`)
     console.log(`  Role: admin`)
+    console.log(`  Admin Role: super_admin`)
     console.log(`  Email Verified: true`)
     
     if (!password) {
@@ -121,7 +148,7 @@ async function createAdminAccount(email: string, name?: string, password?: strin
       console.log(`\n✓ Password set (as provided)`)
     }
 
-    console.log('\nThe admin can now log in at the login page.')
+    console.log('\nThe super admin can now log in at the login page.')
 
   } catch (error) {
     console.error('\n❌ Failed to create admin account:', error)

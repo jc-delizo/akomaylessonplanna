@@ -58,6 +58,16 @@ Feature 03 has been successfully implemented according to the master plan. All 7
 
 ---
 
+## Product detail badges (Jan 2026)
+
+Product view page (`/products/[id]`) was updated so all product attributes appear as badges directly below the product name, before ratings, price, description, and Buy Now / Add to Cart:
+
+- **Badges shown (when present):** Product Type, Specific Type, Class Type, Grade Level, Subjects (primary + multiselect from `product_subjects`), Quarter, Weeks, Language, Curriculum, Modality (one per value), Teaching Framework. Social-proof badges (New/Trending/Bestseller, FEATURED) remain in the same row.
+- **Removed:** The previous badge row above the title and the metadata bullet row below the title.
+- **Data:** Product detail page fetch now includes `product_subjects(subject_id, subject:subjects(id, name, code))` for multiselect subject names. Label resolution uses `lib/config/lesson-plan-config.ts` helpers: `getLanguageLabel`, `getCurriculumLabel`, `getModalityLabel`, `getTeachingFrameworkLabel`, `getClassTypeLabel`, `getLearnerPathLabel`, `getDocumentTypeLabel`.
+
+---
+
 ## Phase 2: Core API Routes ✅
 
 ### Files Created:
@@ -529,6 +539,34 @@ draft → pending_review → published
 - Database: Can drop tables (data loss)
 - Application: Revert to previous deployment
 - Migration: Keep migration file for future reference
+
+---
+
+## Product Upload UX Improvements (Jan 2026)
+
+### Overview
+Enhancements to the Files & Media stage of the product upload wizard for better user feedback during uploads and clearer cover image requirements.
+
+### Upload Progress
+- **Product files:** Per-file progress bars during upload (XHR-based, fetch does not support upload progress)
+- **Multiple files:** Each file shows progress (0-100%) while uploading; "Ready" badge when complete
+- **Cover image:** Progress bar and percentage during upload
+- **Implementation:** `uploadWithProgress()` utility using `XMLHttpRequest.upload.onprogress`
+
+### Cover Image Field
+- **Required:** Cover image is now required to proceed from Step 3; validation blocks Next Step
+- **Label:** Changed from "Cover Image (Optional)" to "Cover Image *"
+- **Recommended size:** 1200x1200px (1:1 square, matches product cards)
+- **Preview:** 1:1 square preview (`aspect-square`) instead of rectangular
+- **API validation:** Cover image required when publishing (not when saving as draft)
+
+### ProductCard
+- **Aspect ratio:** Changed from 4:3 to 1:1 (`aspect-square`) to match cover image recommendation
+
+### Files Modified
+- `app/shop/products/new/page.tsx` - Upload progress, Cover Image UX, validation
+- `components/products/product-card.tsx` - aspect-square
+- `app/api/products/route.ts` - Cover image validation when publishing
 
 ---
 

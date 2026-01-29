@@ -72,7 +72,7 @@ export async function getAdminUser(userId: string): Promise<AdminUser | null> {
   // First check if user has admin role
   const { data: roleData, error: roleError } = await supabase
     .from('users')
-    .select('id, email, name, role')
+    .select('id, email, first_name, last_name, role')
     .eq('id', userId)
     .eq('role', 'admin')
     .single()
@@ -89,10 +89,16 @@ export async function getAdminUser(userId: string): Promise<AdminUser | null> {
   // Default to super_admin if admin_role column doesn't exist
   const adminRole = adminRoleData?.admin_role || 'super_admin'
   
+  // Build display name from first_name and last_name
+  const name = [roleData.first_name, roleData.last_name]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || roleData.email
+  
   return {
     id: roleData.id,
     email: roleData.email,
-    name: roleData.name,
+    name,
     role: 'admin',
     admin_role: adminRole as AdminRole,
   }

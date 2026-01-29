@@ -13,7 +13,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()
 
-  // Fetch product with related data
+  // Fetch product with related data (incl. product_subjects for multiselect subject badges)
   const { data: product, error } = await supabase
     .from('products')
     .select(`
@@ -54,6 +54,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
       sped_level:sped_levels!products_sped_level_id_fkey(
         id,
         name
+      ),
+      product_subjects(
+        subject_id,
+        subject:subjects(id, name, code)
       )
     `)
     .eq('id', id)

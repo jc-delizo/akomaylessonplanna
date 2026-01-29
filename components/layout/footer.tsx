@@ -98,19 +98,17 @@ export function Footer() {
             <h3 className="font-semibold text-base mb-1.5">Payment Methods</h3>
             <div className="flex flex-col items-start gap-2">
               {/* GCash Logo */}
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/gcashlogo.png"
                 alt="GCash"
-                width={64}
-                height={32}
                 className="h-8 w-auto object-contain"
               />
               {/* Maya Logo */}
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/Maya_logo.png"
                 alt="Maya"
-                width={64}
-                height={32}
                 className="h-8 w-auto object-contain"
               />
             </div>

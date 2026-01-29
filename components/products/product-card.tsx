@@ -196,10 +196,10 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
   }
 
   return (
-    <Link href={`/products/${product.id}`} onClick={handleProductClick}>
+    <Link href={`/products/${product.id}`} prefetch={false} onClick={handleProductClick}>
       <Card className="overflow-hidden h-full flex flex-col group bg-white hover:shadow-lg transition-shadow duration-200 rounded-lg p-0">
         {/* Image Section - Clean and Simple */}
-        <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+        <div className="relative aspect-square bg-gray-50 overflow-hidden">
           {product.cover_image_url ? (
             <Image
               src={product.cover_image_url}

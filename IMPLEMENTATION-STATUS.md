@@ -58,6 +58,8 @@
 - Product status workflow (6 states)
 - Version management system
 - Manual cover image upload
+- Product upload UX (Jan 2026): Upload progress bars for Files & Media; Cover Image required with 1:1 preview and recommended size (1200x1200px); ProductCard uses 1:1 aspect ratio
+- Product detail badges (Jan 2026): Product Type, Specific Type, Class Type, Grade Level, Subjects, Quarter, Weeks, Language, Curriculum, Modality, and Teaching Framework shown as badges directly below the product name; details above and below the title were removed in favor of this single badge block
 
 **Database Tables:**
 - `products` - Product listings

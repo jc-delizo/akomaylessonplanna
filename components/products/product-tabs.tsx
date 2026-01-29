@@ -50,8 +50,6 @@ export function ProductTabs({
   bestsellerProducts = [],
   recommendedProducts = [],
 }: ProductTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('featured')
-
   const tabs = [
     {
       id: 'featured' as TabType,
@@ -84,6 +82,12 @@ export function ProductTabs({
       count: recommendedProducts.length,
     },
   ]
+
+  const defaultTab: TabType =
+    recommendedProducts.length > 0
+      ? 'recommended'
+      : (tabs.find((t) => t.count > 0)?.id ?? 'featured')
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
 
   const activeTabData = tabs.find((tab) => tab.id === activeTab)
   const activeProducts = activeTabData?.products || []

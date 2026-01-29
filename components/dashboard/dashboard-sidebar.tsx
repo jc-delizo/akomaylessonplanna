@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import {
   Home,
   Package,
+  Palette,
   ShoppingBag,
   DollarSign,
   BarChart3,
@@ -31,6 +32,7 @@ interface DashboardSidebarProps {
 const navigationItems = [
   { href: '/shop', label: 'Overview', icon: Home },
   { href: '/shop/products', label: 'Products', icon: Package },
+  { href: '/shop/customize', label: 'Customize Shop', icon: Palette },
   { href: '/shop/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/shop/earnings', label: 'Earnings', icon: DollarSign },
   {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Upload,
-  Calendar,
+  CalendarIcon,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -20,6 +20,10 @@ import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/al
 import { Badge } from '@/registry/default/badge/badge'
 import { Skeleton } from '@/registry/default/skeleton/skeleton'
 import { FileDropzone } from '@/components/ui/file-dropzone'
+import { Calendar } from '@/registry/default/calendar/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/registry/default/popover/popover'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
 
 interface VerificationStatus {
   id: string
@@ -43,7 +47,9 @@ export default function BecomeSellerPage() {
   const [documentFile, setDocumentFile] = useState<File | null>(null)
   const [documentPreview, setDocumentPreview] = useState<string | null>(null)
   const [prcLicenseNumber, setPrcLicenseNumber] = useState('')
-  const [prcLicenseExpiry, setPrcLicenseExpiry] = useState('')
+  const [prcLicenseExpiry, setPrcLicenseExpiry] = useState<Date | undefined>(undefined)
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
+
 
   // Load verification status
   useEffect(() => {
@@ -118,9 +124,11 @@ export default function BecomeSellerPage() {
     }
 
     // Validate expiration date is in the future
-    const expiryDate = new Date(prcLicenseExpiry)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const expiryDate = new Date(prcLicenseExpiry)
+    expiryDate.setHours(0, 0, 0, 0)
+    
     if (expiryDate <= today) {
       setError('License expiration date must be in the future.')
       return
@@ -132,7 +140,8 @@ export default function BecomeSellerPage() {
       const formData = new FormData()
       formData.append('document', documentFile)
       formData.append('prc_license_number', prcLicenseNumber.trim())
-      formData.append('prc_license_expiry', prcLicenseExpiry)
+      // Convert Date to ISO string (YYYY-MM-DD format)
+      formData.append('prc_license_expiry', prcLicenseExpiry.toISOString().split('T')[0])
 
       const response = await fetch('/api/me/verify-teacher', {
         method: 'POST',
@@ -158,7 +167,7 @@ export default function BecomeSellerPage() {
       setDocumentFile(null)
       setDocumentPreview(null)
       setPrcLicenseNumber('')
-      setPrcLicenseExpiry('')
+      setPrcLicenseExpiry(undefined)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit verification')
     } finally {
@@ -210,8 +219,8 @@ export default function BecomeSellerPage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <Skeleton className="h-10 w-64 mb-6" />
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-10 w-64 mb-6 bg-white/10" />
+        <Skeleton className="h-96 w-full bg-white/10" />
       </div>
     )
   }
@@ -257,8 +266,8 @@ export default function BecomeSellerPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-3">Become a Seller</h1>
-        <p className="text-gray-600 text-base">
+        <h1 className="text-3xl font-bold mb-3 text-white">Become a Seller! Earn more!</h1>
+        <p className="text-white/90 text-base">
           Verify your teacher credentials to start selling educational resources on Ako may lesson plan na!
         </p>
       </div>
@@ -383,20 +392,49 @@ export default function BecomeSellerPage() {
                     maxLength={50}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2" style={{ minHeight: '48px', maxHeight: '48px' }}>
                   <Label htmlFor="prc_license_expiry">License Expiration Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="prc_license_expiry"
-                      type="date"
-                      value={prcLicenseExpiry}
-                      onChange={(e) => setPrcLicenseExpiry(e.target.value)}
-                      required
-                      className="pl-9"
-                      min={new Date().toISOString().split('T')[0]}
+                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <PopoverTrigger
+                      render={(triggerProps) => {
+                        return (
+                        <Button
+                          {...triggerProps}
+                          id="prc_license_expiry"
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !prcLicenseExpiry && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {prcLicenseExpiry ? format(prcLicenseExpiry, "PPP") : "Pick a date"}
+                        </Button>
+                      )}}
                     />
-                  </div>
+                    <PopoverContent 
+                      className="!w-auto p-0 !z-[100]" 
+                      align="start"
+                      side="bottom"
+                      style={{ minWidth: '280px' }}
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={prcLicenseExpiry}
+                        onSelect={(date) => {
+                          setPrcLicenseExpiry(date)
+                          setError(null)
+                          setDatePickerOpen(false)
+                        }}
+                        disabled={(date) => {
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+                          return date <= today
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <p className="text-xs text-gray-500 -mt-2">

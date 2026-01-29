@@ -113,3 +113,47 @@ export type LearnerPathValue = (typeof LEARNER_PATHS)[number]['value']
 export const SPED_SUBJECT_CODES = [
   'SPED_FA', 'SPED_DLS', 'SPED_SOCEM', 'SPED_MOTOR', 'SPED_COMM', 'SPED_VOC', 'SPED_ORIENT', 'SPED_REC',
 ] as const
+
+/** Resolve value to label for product detail badges */
+export function getLanguageLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const code = LANGUAGE_VALUE_TO_CODE[value] ?? value
+  const found = LANGUAGES.find((l) => l.value === code)
+  return found ? found.label : value.replace(/_/g, ' ')
+}
+
+export function getCurriculumLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = CURRICULA.find((c) => c.value === value)
+  return found ? found.label : value.replace(/_/g, ' ')
+}
+
+export function getModalityLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = MODALITIES.find((m) => m.value === value)
+  return found ? found.label : value.replace(/_/g, ' ')
+}
+
+export function getTeachingFrameworkLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = TEACHING_FRAMEWORKS.find((t) => t.value === value)
+  return found ? found.label : value.replace(/_/g, ' ')
+}
+
+export function getClassTypeLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = CLASS_TYPES.find((c) => c.value === value)
+  return found ? found.label : value
+}
+
+export function getLearnerPathLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = LEARNER_PATHS.find((l) => l.value === value)
+  return found ? found.label : value.replace(/_/g, ' ')
+}
+
+export function getDocumentTypeLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  const found = DOCUMENT_TYPES.find((d) => d.value === value)
+  return found ? found.label : value.replace(/_/g, ' ').toUpperCase()
+}

@@ -63,7 +63,7 @@ export function FollowButton({
         .select('id')
         .eq('follower_id', user.id)
         .eq('following_id', seller.id)
-        .single()
+        .maybeSingle()
 
       setIsFollowing(!!follow)
     }

@@ -408,31 +408,33 @@ export function MainNav({ user }: MainNavProps) {
             {/* Only render user-dependent content after mount to prevent hydration mismatch */}
             {mounted && user ? (
               <>
-                <GlareButton>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                          ? '/become-seller'
-                          : '/shop/products/new'}
-                        className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
-                      >
-                        {userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                          ? 'Be a Seller'
-                          : 'Upload Product'}
-                      </Link>
-                    </TooltipTrigger>
-                    {userProfile?.role === 'buyer' || userProfile?.can_sell === false ? (
-                      <TooltipContent>
-                        <p>Earn more by selling your files!</p>
-                      </TooltipContent>
-                    ) : (
-                      <TooltipContent>
-                        <p>Upload Product</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </GlareButton>
+                {pathname !== '/shop/products' && (
+                  <GlareButton>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                            ? '/become-seller'
+                            : '/shop/products/new'}
+                          className="px-4 py-2 h-9 flex items-center bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] transition-colors text-sm font-medium whitespace-nowrap"
+                        >
+                          {userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                            ? 'Be a Seller'
+                            : 'Upload Product'}
+                        </Link>
+                      </TooltipTrigger>
+                      {userProfile?.role === 'buyer' || userProfile?.can_sell === false ? (
+                        <TooltipContent>
+                          <p>Earn more by selling your files!</p>
+                        </TooltipContent>
+                      ) : (
+                        <TooltipContent>
+                          <p>Upload Product</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </GlareButton>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
@@ -667,19 +669,21 @@ export function MainNav({ user }: MainNavProps) {
                   >
                     Profile
                   </Link>
-                  <GlareButton>
-                    <Link
-                      href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                        ? '/become-seller'
-                        : '/shop/products/new'}
-                      className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {userProfile?.role === 'buyer' || userProfile?.can_sell === false
-                        ? 'Be a Seller'
-                        : 'Upload Product'}
-                    </Link>
-                  </GlareButton>
+                  {pathname !== '/shop/products' && (
+                    <GlareButton>
+                      <Link
+                        href={userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                          ? '/become-seller'
+                          : '/shop/products/new'}
+                        className="px-4 py-2 bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {userProfile?.role === 'buyer' || userProfile?.can_sell === false
+                          ? 'Be a Seller'
+                          : 'Upload Product'}
+                      </Link>
+                    </GlareButton>
+                  )}
                 </>
               )}
               {mounted && !user && (

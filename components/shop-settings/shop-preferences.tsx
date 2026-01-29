@@ -13,16 +13,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
-import { Store, FileText, Zap, Sparkles } from 'lucide-react'
+import { Store, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ShopPreferencesProps {
   initialData?: {
     shop_name?: string | null
     shop_description?: string | null
-    auto_publish?: boolean
   }
 }
 
@@ -31,14 +28,12 @@ export function ShopPreferences({ initialData }: ShopPreferencesProps) {
   const [shopDescription, setShopDescription] = useState(
     initialData?.shop_description || ''
   )
-  const [autoPublish, setAutoPublish] = useState(initialData?.auto_publish || false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (initialData) {
       setShopName(initialData.shop_name || '')
       setShopDescription(initialData.shop_description || '')
-      setAutoPublish(initialData.auto_publish || false)
     }
   }, [initialData])
 
@@ -61,7 +56,6 @@ export function ShopPreferences({ initialData }: ShopPreferencesProps) {
         body: JSON.stringify({
           shop_name: shopName.trim() || null,
           shop_description: shopDescription.trim() || null,
-          auto_publish: autoPublish,
         }),
       })
 
@@ -138,31 +132,6 @@ export function ShopPreferences({ initialData }: ShopPreferencesProps) {
                 {shopDescription.length}/2000
               </p>
             </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Auto-Publish Toggle */}
-        <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-3 flex-1">
-              <Zap className="size-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <Label htmlFor="auto-publish" className="text-base font-medium cursor-pointer">
-                  Auto-Publish Products
-                </Label>
-                <p className="text-sm text-gray-600 mt-1">
-                  When enabled, new products will be published immediately without admin review.
-                  When disabled, products require admin approval before being published.
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="auto-publish"
-              checked={autoPublish}
-              onCheckedChange={setAutoPublish}
-            />
           </div>
         </div>
       </CardContent>

@@ -6,12 +6,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewsSection } from '@/components/reviews/reviews-section'
 import { ShareDropdown } from '@/components/social/share-dropdown'
 import { RecentlyViewedSidebar } from '@/components/recently-viewed/recently-viewed-sidebar'
-import { ProductStats } from '@/components/social-proof/product-stats'
 import { ProductBadge } from '@/components/social-proof/product-badge'
 import { calculateProductBadgeClient } from '@/lib/social-proof/calculate-badges-client'
 import { useGuestCart } from '@/lib/hooks/useGuestCart'
@@ -19,8 +17,50 @@ import { BadgeDisplay } from '@/components/profiles/badge-display'
 import { getUserBadges, getFullName, getInitials } from '@/lib/utils/profile'
 import { FollowButton } from '@/components/profiles/follow-button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
-import { MessageSquare, Heart, Star, ShoppingBag, CheckCircle2 } from 'lucide-react'
+import { MessageSquare, Heart, Star, ShoppingBag, CheckCircle2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  getLanguageLabel,
+  getCurriculumLabel,
+  getModalityLabel,
+  getTeachingFrameworkLabel,
+  getClassTypeLabel,
+  getLearnerPathLabel,
+  getDocumentTypeLabel,
+} from '@/lib/config/lesson-plan-config'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/registry/default/dialog/dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+
+/** Derive display name from file URL (last path segment decoded), strip leading numeric code (digits-), or fallback to File N */
+function getFileNameFromUrl(url: string, index: number): string {
+  try {
+    const segment = url.split('/').filter(Boolean).pop()
+    if (segment) {
+      let decoded = decodeURIComponent(segment)
+      // Remove leading numeric code (e.g. 1769658807736-) used for uniqueness
+      decoded = decoded.replace(/^\d+-/, '').trim()
+      if (decoded) return decoded
+    }
+  } catch {
+    // ignore decode errors
+  }
+  return `File ${index + 1}`
+}
+
+interface ProductSubjectRow {
+  subject_id: string
+  subject?: { id: string; name: string; code?: string } | null
+  subjects?: { id: string; name: string; code?: string } | null
+}
 
 interface Product {
   id: string
@@ -39,6 +79,9 @@ interface Product {
   views_count?: number
   badges?: string[]
   language?: string
+  curriculum?: string | null
+  modalities?: string[] | null
+  teaching_framework?: string | null
   watermark_enabled: boolean
   created_at: string
   published_at?: string
@@ -46,7 +89,7 @@ interface Product {
     id: string
     first_name: string
     last_name: string
-    name?: string // For backward compatibility
+    name?: string
     username: string
     avatar_url?: string
     bio?: string
@@ -68,6 +111,8 @@ interface Product {
   sped_level?: { id: string; name: string } | null
   quarter?: number
   weeks?: number[]
+  product_subjects?: ProductSubjectRow[] | null
+  file_urls?: string[]
 }
 
 interface ProductDetailLayoutProps {
@@ -84,6 +129,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
   const [isBuyingNow, setIsBuyingNow] = useState(false)
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
+  const [filesModalOpen, setFilesModalOpen] = useState(false)
 
   const images = [
     product.cover_image_url,
@@ -382,70 +428,158 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
 
         {/* Right Column: Product Info */}
         <div className="space-y-4">
-          {/* 1. Badges */}
-          <div className="flex flex-wrap gap-2">
+          {/* Product Name + social-proof badges beside title */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-3xl font-bold">{product.title}</h1>
             {badge && <ProductBadge badge={badge} />}
             {product.badges && product.badges.includes('featured') && (
               <Badge className="bg-purple-600 text-white">FEATURED</Badge>
             )}
-            <Badge variant="outline">
-              {formatProductType(product.product_type)}
-            </Badge>
-            {product.specific_type && (
-              <Badge variant="outline">
-                {product.specific_type.replace('_', ' ').toUpperCase()}
-              </Badge>
-            )}
           </div>
 
-          {/* 2. Product Name */}
-          <h1 className="text-3xl font-bold">{product.title}</h1>
-
-          {/* 3. Metadata as bullets — Phase 2: class type, learner path, level, strand, null-safe grade/subject */}
-          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          {/* Grouped attribute badges: one row per group */}
+          <div className="space-y-3">
             {(() => {
-              const parts: ReactNode[] = []
-              if (product.class_type === 'sped') {
-                if (product.learner_path) {
-                  parts.push(
-                    <span key="path" className="font-medium">
-                      {product.learner_path === 'graded' ? 'Graded (Inclusive)' : 'Non-Graded (Transition)'}
-                    </span>
-                  )
-                }
-                if (product.sped_level?.name) {
-                  parts.push(<span key="level" className="font-medium">Level: {product.sped_level.name}</span>)
-                }
-              } else if (product.class_type === 'regular' && product.strand?.name) {
-                if (product.grade?.name) parts.push(<span key="grade" className="font-medium">{product.grade.name}</span>)
-                parts.push(<span key="strand" className="font-medium">{product.strand.name}</span>)
-              } else if (product.grade?.name) {
-                parts.push(<span key="grade" className="font-medium">{product.grade.name}</span>)
+              const subjectNames = new Set<string>()
+              if (product.subject?.name) subjectNames.add(product.subject.name)
+              product.product_subjects?.forEach((ps) => {
+                const sub = ps.subject ?? ps.subjects
+                if (sub?.name) subjectNames.add(sub.name)
+              })
+              const subjectsList = Array.from(subjectNames)
+              const hasGradeOrSubjects = !!product.grade?.name || subjectsList.length > 0
+              const hasPeriod = product.quarter != null || (product.weeks && product.weeks.length > 0)
+              const hasModality = product.modalities && product.modalities.length > 0
+              const groups: { label: string; content: ReactNode }[] = []
+              // Product: Product Type, Specific Type
+              groups.push({
+                label: 'Product',
+                content: (
+                  <>
+                    <Badge variant="outline">{formatProductType(product.product_type)}</Badge>
+                    {product.specific_type && (
+                      <Badge variant="outline">
+                        {getDocumentTypeLabel(product.specific_type) ?? product.specific_type.replace(/_/g, ' ').toUpperCase()}
+                      </Badge>
+                    )}
+                  </>
+                ),
+              })
+              // Class: Class Type
+              if (product.class_type) {
+                groups.push({
+                  label: 'Class',
+                  content: (
+                    <Badge variant="outline">
+                      {getClassTypeLabel(product.class_type)}
+                      {product.class_type === 'sped' && product.learner_path
+                        ? ` (${getLearnerPathLabel(product.learner_path) ?? product.learner_path})`
+                        : ''}
+                    </Badge>
+                  ),
+                })
               }
-              if (product.subject?.name) {
-                parts.push(<span key="subject" className="font-medium">{product.subject.name}</span>)
+              // Grade & Subjects
+              if (hasGradeOrSubjects) {
+                groups.push({
+                  label: 'Grade & Subjects',
+                  content: (
+                    <>
+                      {product.grade?.name && (
+                        <Badge variant="outline">{product.grade.name}</Badge>
+                      )}
+                      {subjectsList.map((name) => (
+                        <Badge key={name} variant="outline">
+                          {name}
+                        </Badge>
+                      ))}
+                    </>
+                  ),
+                })
               }
-              if (product.quarter) {
-                parts.push(<span key="quarter" className="font-medium">Quarter {product.quarter}</span>)
+              // Period: Quarter, Weeks
+              if (hasPeriod) {
+                groups.push({
+                  label: 'Period',
+                  content: (
+                    <>
+                      {product.quarter != null && (
+                        <Badge variant="outline">Quarter {product.quarter}</Badge>
+                      )}
+                      {product.weeks && product.weeks.length > 0 && (
+                        <Badge variant="outline">
+                          Weeks {[...product.weeks].sort((a, b) => a - b).join(', ')}
+                        </Badge>
+                      )}
+                    </>
+                  ),
+                })
               }
-              if (product.weeks && product.weeks.length > 0) {
-                parts.push(<span key="weeks" className="font-medium">Weeks {product.weeks.join(', ')}</span>)
+              // Language
+              if (product.language) {
+                groups.push({
+                  label: 'Language',
+                  content: (
+                    <Badge variant="outline">
+                      {getLanguageLabel(product.language) ?? product.language}
+                    </Badge>
+                  ),
+                })
               }
-              parts.push(<span key="ver" className="font-medium">v{product.current_version}</span>)
-              return parts.reduce<ReactNode[]>((acc, node, i) => (i === 0 ? [node] : [...acc, <span key={`sep-${i}`}>•</span>, node]), [])
+              // Curriculum
+              if (product.curriculum) {
+                groups.push({
+                  label: 'Curriculum',
+                  content: (
+                    <Badge variant="outline">
+                      {getCurriculumLabel(product.curriculum) ?? product.curriculum}
+                    </Badge>
+                  ),
+                })
+              }
+              // Modality
+              if (hasModality) {
+                groups.push({
+                  label: 'Modality',
+                  content: (
+                    <>
+                      {product.modalities?.map((m) => (
+                        <Badge key={m} variant="outline">
+                          {getModalityLabel(m) ?? m}
+                        </Badge>
+                      ))}
+                    </>
+                  ),
+                })
+              }
+              // Teaching Framework
+              if (product.teaching_framework) {
+                groups.push({
+                  label: 'Teaching Framework',
+                  content: (
+                    <Badge variant="outline">
+                      {getTeachingFrameworkLabel(product.teaching_framework) ?? product.teaching_framework}
+                    </Badge>
+                  ),
+                })
+              }
+              return groups.map((g) => (
+                <div key={g.label} className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground font-medium shrink-0 w-32">{g.label}</span>
+                  <span className="flex items-center gap-1.5 flex-wrap">{g.content}</span>
+                </div>
+              ))
             })()}
           </div>
 
-          {/* 4. Ratings */}
-          {product.avg_rating ? (
+          {/* Ratings — only show when there are reviews */}
+          {(product.reviews_count ?? 0) > 0 && product.avg_rating != null && (
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
               <span className="font-semibold">
                 {product.avg_rating.toFixed(1)}
               </span>
             </div>
-          ) : (
-            <span className="text-gray-600">No reviews yet</span>
           )}
 
           {/* 5. Price */}
@@ -453,8 +587,8 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
             ₱{product.price.toFixed(2)}
           </p>
 
-          {/* 6. Sales */}
-          {product.sales_count && product.sales_count > 0 && (
+          {/* 6. Sales — only show when there are sales */}
+          {(product.sales_count ?? 0) > 0 && (
             <div className="flex items-center gap-1 text-sm text-gray-600">
               <ShoppingBag className="h-4 w-4" />
               <span>
@@ -467,6 +601,40 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
           <div className="prose max-w-none">
             <p className="whitespace-pre-wrap text-gray-700">{product.description}</p>
           </div>
+
+          {/* See files button */}
+          {product.file_urls && product.file_urls.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilesModalOpen(true)}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              See files
+            </Button>
+          )}
+
+          {/* Files modal */}
+          <Dialog open={filesModalOpen} onOpenChange={setFilesModalOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Product files</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {product.file_urls?.map((url, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
+                  >
+                    <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <span className="font-medium">{getFileNameFromUrl(url, index)}</span>
+                    <span className="ml-auto text-muted-foreground">{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* 8. Line Separator */}
           <hr className="border-gray-300" />
@@ -492,17 +660,24 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
               productId={product.id}
               productTitle={product.title}
             />
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleToggleWishlist}
-              disabled={isTogglingWishlist}
-              className="h-10 w-10"
-            >
-              <Heart
-                className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`}
-              />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleToggleWishlist}
+                  disabled={isTogglingWishlist}
+                  className="h-10 w-10"
+                >
+                  <Heart
+                    className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add to Wishlist</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Seller Card */}
@@ -583,14 +758,21 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
 
               {/* Right Side: Action Buttons */}
               <div className="flex items-center gap-2 shrink-0">
-                <Link 
-                  href={`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`}
-                >
-                  <Button variant="outline" className="h-10">
-                    <MessageSquare className="size-4 mr-2" />
-                    Chat
-                  </Button>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link 
+                      href={`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`}
+                    >
+                      <Button variant="outline" className="h-10">
+                        <MessageSquare className="size-4 mr-2" />
+                        Chat
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ask the seller about this product</p>
+                  </TooltipContent>
+                </Tooltip>
                 <FollowButton
                   username={product.seller.username}
                   initialFollowersCount={product.seller.followers_count || 0}

@@ -4,17 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AccountSettings } from '@/components/shop-settings/account-settings'
 import { PaymentMethods } from '@/components/shop-settings/payment-methods'
 import { MessagingSettings } from '@/components/shop-settings/messaging-settings'
-import { ShopPreferences } from '@/components/shop-settings/shop-preferences'
 import { SecuritySettings } from '@/components/shop-settings/security-settings'
 import { EmailPreferencesContent } from '@/components/settings/email-preferences-content'
 import {
-  User,
   CreditCard,
   MessageSquare,
-  Store,
   Lock,
   Mail,
   Settings as SettingsIcon,
@@ -57,12 +53,12 @@ export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth()
   const [settings, setSettings] = useState<SellerSettings | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('account')
+  const [activeTab, setActiveTab] = useState('payment')
 
   // Load active tab from localStorage
   useEffect(() => {
     const savedTab = localStorage.getItem('shop-settings-active-tab')
-    if (savedTab) {
+    if (savedTab && savedTab !== 'account' && savedTab !== 'shop') {
       setActiveTab(savedTab)
     }
   }, [])
@@ -116,10 +112,8 @@ export default function SettingsPage() {
   }, [user])
 
   const settingsTabs = [
-    { id: 'account', label: 'Account', icon: User },
     { id: 'payment', label: 'Payment', icon: CreditCard },
     { id: 'messaging', label: 'Messaging', icon: MessageSquare },
-    { id: 'shop', label: 'Shop', icon: Store },
     { id: 'notifications', label: 'Notifications', icon: Mail },
     { id: 'security', label: 'Security', icon: Lock },
   ]
@@ -195,9 +189,6 @@ export default function SettingsPage() {
 
         {/* Content Area */}
         <div className="flex-1 min-w-0">
-          {activeTab === 'account' && (
-            <AccountSettings initialData={settings.account} />
-          )}
           {activeTab === 'payment' && (
             <PaymentMethods initialData={settings.payment_methods} />
           )}
@@ -206,9 +197,6 @@ export default function SettingsPage() {
               initialData={settings.messaging}
               subscriptionTier={settings.subscription_tier}
             />
-          )}
-          {activeTab === 'shop' && (
-            <ShopPreferences initialData={settings.shop} />
           )}
           {activeTab === 'notifications' && (
             <EmailPreferencesContent
@@ -245,10 +233,6 @@ export default function SettingsPage() {
             })}
           </TabsList>
 
-          <TabsContent value="account" className="mt-0">
-            <AccountSettings initialData={settings.account} />
-          </TabsContent>
-
           <TabsContent value="payment" className="mt-0">
             <PaymentMethods initialData={settings.payment_methods} />
           </TabsContent>
@@ -258,10 +242,6 @@ export default function SettingsPage() {
               initialData={settings.messaging}
               subscriptionTier={settings.subscription_tier}
             />
-          </TabsContent>
-
-          <TabsContent value="shop" className="mt-0">
-            <ShopPreferences initialData={settings.shop} />
           </TabsContent>
 
           <TabsContent value="notifications" className="mt-0">

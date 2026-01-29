@@ -1,14 +1,47 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
-import { Card } from '@/components/ui/card'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/registry/default/alert/alert'
+import { Progress } from '@/registry/default/progress/progress'
+import { toast } from 'sonner'
+import {
+  FileText,
+  Image as ImageIcon,
+  Upload,
+  CheckCircle2,
+  ChevronRight,
+  X,
+  File,
+  FileSpreadsheet,
+  Presentation,
+  DollarSign,
+  Info,
+  Loader2,
+  BookOpen,
+  Calendar,
+  FileCheck,
+} from 'lucide-react'
 import {
   WEEKS_OPTIONS,
   MODALITIES,
@@ -47,6 +80,81 @@ const QUARTERS = [
 
 const WEEKS = [...WEEKS_OPTIONS]
 
+/** Derive display filename from storage URL (path last segment, optional timestamp stripped) */
+function getFileNameFromUrl(url: string): string {
+  try {
+    const path = new URL(url).pathname
+    const segment = path.split('/').filter(Boolean).pop() || ''
+    const withoutTimestamp = segment.replace(/^\d+-/, '')
+    return decodeURIComponent(withoutTimestamp || segment) || url
+  } catch {
+    return url
+  }
+}
+
+/** Icon component for file type (url or filename) */
+function getFileIcon(nameOrUrl: string): typeof File {
+  const name = nameOrUrl.startsWith('http') ? getFileNameFromUrl(nameOrUrl) : nameOrUrl
+  const lower = name.toLowerCase()
+  if (lower.endsWith('.pdf') || lower.endsWith('.doc') || lower.endsWith('.docx')) return FileText
+  if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return FileSpreadsheet
+  if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return Presentation
+  return File
+}
+
+/** Format bytes to human-readable size (e.g. 1536 -> "1.5 KB") */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+/** Upload file with progress via XHR (fetch does not support upload progress) */
+function uploadWithProgress(
+  url: string,
+  formData: InstanceType<typeof globalThis.FormData>,
+  onProgress: (loaded: number, total: number, percent: number) => void
+): Promise<{ url: string; fileSize?: number }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100)
+        onProgress(e.loaded, e.total, percent)
+      } else {
+        onProgress(e.loaded, 0, 0)
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          resolve({ url: data.url, fileSize: data.fileSize })
+        } catch {
+          reject(new Error('Invalid response'))
+        }
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText)
+          reject(new Error(err.error || 'Upload failed'))
+        } catch {
+          reject(new Error(`Upload failed (${xhr.status})`))
+        }
+      }
+    })
+
+    xhr.addEventListener('error', () => reject(new Error('Network error')))
+    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')))
+
+    xhr.open('POST', url)
+    xhr.send(formData as unknown as XMLHttpRequestBodyInit)
+  })
+}
+
 interface FormData {
   title: string
   product_type: string
@@ -65,6 +173,10 @@ interface FormData {
   curriculum?: string
   modalities?: string[]
   teaching_framework?: string
+  theme?: string
+  size?: string
+  season?: string
+  occasion?: string
   file_urls: string[]
   cover_image_url?: string
   price: number
@@ -78,6 +190,7 @@ interface PageProps {
 
 export default function EditProductPage({ params }: PageProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [productId, setProductId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -87,6 +200,11 @@ export default function EditProductPage({ params }: PageProps) {
     sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
   } | null>(null)
   const [originalProduct, setOriginalProduct] = useState<any>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [coverImageProgress, setCoverImageProgress] = useState<{ loaded: number; total: number; percent: number } | null>(null)
+  const [uploadingFiles, setUploadingFiles] = useState<Array<{ id: string; fileName: string; progress: number; size?: number }>>([])
+  const [fileSizesByUrl, setFileSizesByUrl] = useState<Record<string, number>>({})
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -121,7 +239,7 @@ export default function EditProductPage({ params }: PageProps) {
     async function fetchProduct() {
       try {
         const response = await fetch(`/api/products/${productId}`)
-        
+
         if (response.status === 404) {
           setError('Product not found')
           return
@@ -134,7 +252,7 @@ export default function EditProductPage({ params }: PageProps) {
         const { product } = await response.json()
         setOriginalProduct(product)
 
-        // Populate form (include Phase 2 hierarchy fields)
+        // Populate form (include Phase 2 hierarchy fields and type-specific fields)
         setFormData({
           title: product.title,
           product_type: product.product_type,
@@ -153,6 +271,10 @@ export default function EditProductPage({ params }: PageProps) {
           curriculum: product.curriculum || '',
           modalities: product.modalities || [],
           teaching_framework: product.teaching_framework || '',
+          theme: product.theme || undefined,
+          size: product.size || undefined,
+          season: product.season || undefined,
+          occasion: product.occasion || undefined,
           file_urls: product.file_urls || [],
           cover_image_url: product.cover_image_url || '',
           price: product.price,
@@ -268,21 +390,37 @@ export default function EditProductPage({ params }: PageProps) {
     setError(null)
 
     try {
+      const payload = {
+        ...formData,
+        curriculum: formData.curriculum === '__none__' ? '' : (formData.curriculum ?? ''),
+        teaching_framework: formData.teaching_framework === '__none__' ? '' : (formData.teaching_framework ?? ''),
+      }
       const response = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
-        alert('Product updated successfully!')
+        toast.success('Product Updated Successfully!', {
+          description: 'Your changes have been saved.',
+          duration: 4000,
+        })
         router.push('/shop/products')
       } else {
         const { error: apiError } = await response.json()
+        toast.error('Failed to Update Product', {
+          description: apiError || 'Please check your connection and try again.',
+          duration: 5000,
+        })
         setError(apiError || 'Failed to update product')
       }
     } catch (err) {
       console.error('Error updating product:', err)
+      toast.error('Failed to Update Product', {
+        description: 'An unexpected error occurred. Please try again.',
+        duration: 5000,
+      })
       setError('Failed to update product')
     } finally {
       setSaving(false)
@@ -298,10 +436,105 @@ export default function EditProductPage({ params }: PageProps) {
     }))
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingFile(true)
+    setError(null)
+
+    const fileList = Array.from(files)
+    const batchId = crypto.randomUUID()
+    const items = fileList.map((f, i) => ({
+      id: `${batchId}-${i}`,
+      fileName: f.name,
+      progress: 0,
+      size: f.size,
+    }))
+    setUploadingFiles(items)
+
+    try {
+      const uploadedUrls: string[] = []
+      const newSizes: Record<string, number> = {}
+
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i]
+        const itemId = items[i].id
+
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
+        uploadFormData.append('type', 'file')
+        uploadFormData.append('productId', productId || 'draft')
+
+        const { url, fileSize } = await uploadWithProgress(
+          '/api/products/upload',
+          uploadFormData,
+          (loaded, total, percent) => {
+            setUploadingFiles((prev) =>
+              prev.map((item) =>
+                item.id === itemId ? { ...item, progress: percent } : item
+              )
+            )
+          }
+        )
+
+        uploadedUrls.push(url)
+        if (fileSize != null) newSizes[url] = fileSize
+      }
+
+      setFileSizesByUrl((prev) => ({ ...prev, ...newSizes }))
+      updateField('file_urls', [...formData.file_urls, ...uploadedUrls])
+      setUploadingFiles([])
+      e.target.value = ''
+    } catch (err) {
+      console.error('Error uploading files:', err)
+      setError(err instanceof Error ? err.message : 'Failed to upload files')
+      setUploadingFiles([])
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImage(true)
+    setError(null)
+    setCoverImageProgress({ loaded: 0, total: file.size, percent: 0 })
+
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+      uploadFormData.append('type', 'image')
+      uploadFormData.append('productId', productId || 'draft')
+
+      const { url } = await uploadWithProgress(
+        '/api/products/upload',
+        uploadFormData,
+        (loaded, total, percent) => {
+          setCoverImageProgress({ loaded, total, percent })
+        }
+      )
+
+      updateField('cover_image_url', url)
+      e.target.value = ''
+    } catch (err) {
+      console.error('Error uploading image:', err)
+      setError(err instanceof Error ? err.message : 'Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+      setCoverImageProgress(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Loading product...</p>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading product...</p>
+        </div>
       </div>
     )
   }
@@ -322,210 +555,569 @@ export default function EditProductPage({ params }: PageProps) {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Edit Product</h1>
-        <Button variant="outline" onClick={() => router.push('/shop/products')}>
-          Cancel
-        </Button>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/shop/products')}>
+            Products
+          </Button>
+          <ChevronRight className="h-4 w-4" />
+          <span>Edit Product</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Edit Product</h1>
+            <p className="text-muted-foreground mt-1">
+              Update your product details and republish
+            </p>
+          </div>
+          {originalProduct?.status && (
+            <Badge variant={originalProduct.status === 'published' ? 'default' : 'secondary'}>
+              {originalProduct.status}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-600">
-          {error}
-        </div>
+        <Alert className="mb-6 border-destructive bg-destructive/10">
+          <Info className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive">
+            {error}
+          </AlertDescription>
+        </Alert>
       )}
 
       {originalProduct?.status === 'published' && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-sm text-blue-800">
-            <strong>Note:</strong> This product is published. If you update files or content,
-            you must provide a changelog explaining what changed. A new version will be created.
-          </p>
-        </div>
+        <Alert className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            <strong>Published Product:</strong> If you update files or content, you must provide a changelog explaining what changed. A new version will be created.
+          </AlertDescription>
+        </Alert>
       )}
 
-      <Card className="p-6 space-y-6">
-        {/* Basic Information */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+      <div className="space-y-6">
+        {/* Cover Image */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Cover Image
+            </CardTitle>
+            <CardDescription>
+              Upload a cover image for your product (JPG, PNG, WEBP - Max 10MB). Recommended: 1200x1200px (1:1 square)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              {formData.cover_image_url ? (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="relative group">
+                      <img
+                        src={formData.cover_image_url}
+                        alt="Cover preview"
+                        className="w-48 aspect-square object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => updateField('cover_image_url', '')}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <label htmlFor="cover_image">
+                  <Card
+                    className={`border-2 border-dashed transition-colors cursor-pointer ${
+                      uploadingImage
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex flex-col items-center justify-center gap-4 relative">
+                        <div
+                          className={`rounded-full p-4 ${
+                            uploadingImage ? 'bg-primary/10' : 'bg-muted'
+                          }`}
+                        >
+                          {uploadingImage && coverImageProgress ? (
+                            <span className="text-lg font-semibold text-primary">
+                              {coverImageProgress.percent}%
+                            </span>
+                          ) : uploadingImage ? (
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="text-center w-full">
+                          <p className="text-sm font-medium">
+                            {uploadingImage && coverImageProgress
+                              ? `Uploading... ${coverImageProgress.percent}%`
+                              : uploadingImage
+                                ? 'Uploading image...'
+                                : 'Click to upload cover image'}
+                          </p>
+                          {uploadingImage && coverImageProgress && (
+                            <div className="mt-2 w-full max-w-xs mx-auto">
+                              <Progress
+                                value={coverImageProgress.percent}
+                                className="h-2"
+                              />
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Recommended: 1200x1200px (1:1 square)
+                          </p>
+                        </div>
+                        <Input
+                          id="cover_image"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={handleImageUpload}
+                          disabled={uploadingImage}
+                          className="sr-only"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </label>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Product Title *</Label>
+        {/* Files */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <File className="h-5 w-5" />
+              Product Files
+            </CardTitle>
+            <CardDescription>
+              Manage your product files (PDF, DOCX, PPTX, XLSX - Max 50MB per file)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              {formData.file_urls.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Current Files ({formData.file_urls.length})</p>
+                  <div className="space-y-2">
+                    {formData.file_urls.map((url, index) => {
+                      const FileIcon = getFileIcon(url)
+                      return (
+                      <Card key={index} className="p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="rounded-lg bg-primary/10 p-2">
+                              <FileIcon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" title={url}>
+                                {getFileNameFromUrl(url)}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Uploaded
+                            </Badge>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const removedUrl = formData.file_urls[index]
+                              updateField(
+                                'file_urls',
+                                formData.file_urls.filter((_, i) => i !== index)
+                              )
+                              if (removedUrl) setFileSizesByUrl((prev) => { const next = { ...prev }; delete next[removedUrl]; return next })
+                            }}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </Card>
+                    )})}
+                  </div>
+                </div>
+              )}
+
+              {uploadingFiles.map((item) => {
+                const FileIcon = getFileIcon(item.fileName)
+                return (
+                <Card key={item.id} className="p-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="rounded-lg bg-primary/10 p-2">
+                      <FileIcon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {item.fileName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Uploading... {item.progress}%
+                      </p>
+                      <Progress
+                        value={item.progress}
+                        className="h-1.5 mt-1.5"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              )})}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                onChange={handleFileUpload}
+                className="sr-only"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingFile}
+                className="w-full"
+              >
+                {uploadingFile ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload New File
+                  </>
+                )}
+              </Button>
+              {validation.file_urls && (
+                <p className="text-sm text-destructive">{validation.file_urls}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pricing */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Pricing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="price" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Price (₱) *
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  ₱
+                </span>
+                <Input
+                  id="price"
+                  type="number"
+                  min="50"
+                  max="50000"
+                  value={formData.price}
+                  onChange={(e) => updateField('price', parseFloat(e.target.value) || 0)}
+                  className={`pl-8 ${validation.price ? 'border-destructive' : ''}`}
+                />
+              </div>
+              {validation.price && (
+                <p className="text-sm text-destructive">{validation.price}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Basic Information
+            </CardTitle>
+            <CardDescription>
+              Update your product&apos;s title, type, and description
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Product Title *
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => updateField('title', e.target.value)}
                 maxLength={255}
+                className={validation.title ? 'border-destructive' : ''}
               />
               {validation.title && (
-                <p className="text-sm text-red-600 mt-1">{validation.title}</p>
+                <p className="text-sm text-destructive">{validation.title}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="product_type">Product Type *</Label>
-              <Select
-                value={formData.product_type}
-                onValueChange={(value) => updateField('product_type', value)}
-              >
-                <option value="">Select product type</option>
-                {PRODUCT_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            {formData.product_type && SPECIFIC_TYPES[formData.product_type] && (
-              <div>
-                <Label htmlFor="specific_type">Specific Type</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="product_type" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Product Type *
+                </Label>
                 <Select
-                  value={formData.specific_type}
-                  onValueChange={(value) => updateField('specific_type', value)}
+                  value={formData.product_type}
+                  onValueChange={(value) => updateField('product_type', value)}
                 >
-                  <option value="">Select specific type</option>
-                  {SPECIFIC_TYPES[formData.product_type].map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
+                  <SelectTrigger id="product_type" className="w-full">
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
-            )}
 
-            <div>
-              <Label htmlFor="description">Description *</Label>
+              {formData.product_type && SPECIFIC_TYPES[formData.product_type] && (
+                <div className="space-y-2">
+                  <Label htmlFor="specific_type" className="flex items-center gap-2">
+                    <FileCheck className="h-4 w-4" />
+                    Specific Type
+                  </Label>
+                  <Select
+                    value={formData.specific_type}
+                    onValueChange={(value) => updateField('specific_type', value)}
+                  >
+                    <SelectTrigger id="specific_type" className="w-full">
+                      <SelectValue placeholder="Select specific type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPECIFIC_TYPES[formData.product_type].map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Description *
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 rows={6}
                 maxLength={2000}
+                className={validation.description ? 'border-destructive' : ''}
               />
               {validation.description && (
-                <p className="text-sm text-red-600 mt-1">{validation.description}</p>
+                <p className="text-sm text-destructive">{validation.description}</p>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Categorization */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Categorization</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Categorization
+            </CardTitle>
+            <CardDescription>
+              Help buyers find your product by updating categories
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="class_type" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Class type
+                </Label>
+                <Select
+                  value={formData.class_type || ''}
+                  onValueChange={(v) => {
+                    updateField('class_type', v || undefined)
+                    updateField('learner_path', undefined)
+                    updateField('strand_id', undefined)
+                    updateField('sped_level_id', undefined)
+                    updateField('grade_id', '')
+                    updateField('subject_ids', [])
+                    updateField('subject_id', '')
+                  }}
+                >
+                  <SelectTrigger id="class_type" className="w-full">
+                    <SelectValue placeholder="Select class type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CLASS_TYPES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="class_type">Class type</Label>
-              <Select
-                value={formData.class_type || ''}
-                onValueChange={(v) => {
-                  updateField('class_type', v || undefined)
-                  updateField('learner_path', undefined)
-                  updateField('strand_id', undefined)
-                  updateField('sped_level_id', undefined)
-                  updateField('grade_id', '')
-                  updateField('subject_ids', []); updateField('subject_id', '')
-                }}
-              >
-                <option value="">Select class type</option>
-                {CLASS_TYPES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </Select>
+              {!isSpedNonGraded && (
+                <div className="space-y-2">
+                  <Label htmlFor="grade_id" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Grade Level *
+                  </Label>
+                  <Select
+                    value={formData.grade_id}
+                    onValueChange={(value) => {
+                      updateField('grade_id', value)
+                      updateField('subject_ids', [])
+                      updateField('subject_id', '')
+                      const g = grades.find((gr) => gr.id === value)
+                      if (!g || (g.name !== 'Grade 11' && g.name !== 'Grade 12')) {
+                        updateField('strand_id', undefined)
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="grade_id" className={`w-full ${validation.grade_id ? 'border-destructive' : ''}`}>
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {grades.map((grade) => (
+                        <SelectItem key={grade.id} value={grade.id}>
+                          {grade.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validation.grade_id && (
+                    <p className="text-sm text-destructive">{validation.grade_id}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {formData.class_type === 'sped' && (
-              <div>
-                <Label htmlFor="learner_path">Learner path</Label>
+              <div className="space-y-2">
+                <Label htmlFor="learner_path" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Learner path
+                </Label>
                 <Select
                   value={formData.learner_path || ''}
                   onValueChange={(v) => {
                     updateField('learner_path', v || undefined)
                     updateField('sped_level_id', undefined)
                     updateField('grade_id', '')
-                    updateField('subject_ids', []); updateField('subject_id', '')
+                    updateField('subject_ids', [])
+                    updateField('subject_id', '')
                     if (v === 'graded') updateField('strand_id', undefined)
                   }}
                 >
-                  <option value="">Select path</option>
-                  {LEARNER_PATHS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
+                  <SelectTrigger id="learner_path" className="w-full">
+                    <SelectValue placeholder="Select path" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEARNER_PATHS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             )}
 
             {isSpedNonGraded && (
-              <div>
-                <Label htmlFor="sped_level_id">Level *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="sped_level_id" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Level *
+                </Label>
                 <Select
                   value={formData.sped_level_id || ''}
                   onValueChange={(v) => updateField('sped_level_id', v || undefined)}
                 >
-                  <option value="">Select level</option>
-                  {(hierarchy?.sped?.levels ?? []).map((l) => (
-                    <option key={l.id} value={l.id}>{l.name}</option>
-                  ))}
+                  <SelectTrigger id="sped_level_id" className={`w-full ${validation.sped_level_id ? 'border-destructive' : ''}`}>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(hierarchy?.sped?.levels ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
                 {validation.sped_level_id && (
-                  <p className="text-sm text-red-600 mt-1">{validation.sped_level_id}</p>
-                )}
-              </div>
-            )}
-
-            {!isSpedNonGraded && (
-              <div>
-                <Label htmlFor="grade_id">Grade Level *</Label>
-                <Select
-                  value={formData.grade_id}
-                  onValueChange={(value) => {
-                    updateField('grade_id', value)
-                    updateField('subject_ids', []); updateField('subject_id', '')
-                    const g = grades.find((gr) => gr.id === value)
-                    if (!g || (g.name !== 'Grade 11' && g.name !== 'Grade 12')) {
-                      updateField('strand_id', undefined)
-                    }
-                  }}
-                >
-                  <option value="">Select grade level</option>
-                  {grades.map((grade) => (
-                    <option key={grade.id} value={grade.id}>
-                      {grade.name}
-                    </option>
-                  ))}
-                </Select>
-                {validation.grade_id && (
-                  <p className="text-sm text-red-600 mt-1">{validation.grade_id}</p>
+                  <p className="text-sm text-destructive">{validation.sped_level_id}</p>
                 )}
               </div>
             )}
 
             {formData.class_type === 'regular' && isGrade11Or12 && (
-              <div>
-                <Label htmlFor="strand_id">Strand *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="strand_id" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Strand *
+                </Label>
                 <Select
                   value={formData.strand_id || ''}
                   onValueChange={(v) => {
                     updateField('strand_id', v || undefined)
-                    updateField('subject_ids', []); updateField('subject_id', '')
+                    updateField('subject_ids', [])
+                    updateField('subject_id', '')
                   }}
                 >
-                  <option value="">Select strand</option>
-                  {strands.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
+                  <SelectTrigger id="strand_id" className={`w-full ${validation.strand_id ? 'border-destructive' : ''}`}>
+                    <SelectValue placeholder="Select strand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {strands.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
                 {validation.strand_id && (
-                  <p className="text-sm text-red-600 mt-1">{validation.strand_id}</p>
+                  <p className="text-sm text-destructive">{validation.strand_id}</p>
                 )}
               </div>
             )}
 
-            <div>
-              <Label htmlFor="subject_ids">Subjects * (at least one; select multiple for integrated teaching)</Label>
-              <div id="subject_ids" className={`max-h-48 overflow-y-auto rounded-md border p-3 space-y-2 mt-1 ${validation.subject_ids ? 'border-red-500' : ''}`}>
+            <div className="space-y-2">
+              <Label htmlFor="subject_ids" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Subjects * (at least one; select multiple for integrated teaching)
+              </Label>
+              <div id="subject_ids" className={`max-h-48 overflow-y-auto rounded-md border p-3 space-y-2 ${validation.subject_ids ? 'border-destructive' : ''}`}>
                 {subjects.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}
@@ -557,86 +1149,126 @@ export default function EditProductPage({ params }: PageProps) {
                 )}
               </div>
               {validation.subject_ids && (
-                <p className="text-sm text-red-600 mt-1">{validation.subject_ids}</p>
+                <p className="text-sm text-destructive">{validation.subject_ids}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="quarter">Quarter</Label>
+            <div className="space-y-2">
+              <Label htmlFor="quarter" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Quarter
+              </Label>
               <Select
                 value={formData.quarter}
                 onValueChange={(value) => updateField('quarter', value)}
               >
-                <option value="">Select quarter</option>
-                {QUARTERS.map((q) => (
-                  <option key={q.value} value={q.value}>
-                    {q.label}
-                  </option>
-                ))}
+                <SelectTrigger id="quarter" className="w-full">
+                  <SelectValue placeholder="Select quarter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {QUARTERS.map((q) => (
+                    <SelectItem key={q.value} value={q.value}>
+                      {q.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label>Weeks</Label>
-              <div className="grid grid-cols-5 gap-2 mt-2">
-                {WEEKS.map((week) => (
-                  <button
-                    key={week}
-                    type="button"
-                    onClick={() => toggleWeek(week)}
-                    className={`px-4 py-2 rounded border ${
-                      formData.weeks.includes(week)
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-gray-700 border-gray-300'
-                    }`}
-                  >
-                    Week {week}
-                  </button>
-                ))}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Weeks * (Select at least one)
+              </Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {WEEKS.map((week) => {
+                  const isSelected = formData.weeks.includes(week)
+                  return (
+                    <label
+                      key={week}
+                      className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleWeek(week)}
+                      />
+                      <span className="text-sm font-medium">Week {week}</span>
+                    </label>
+                  )
+                })}
               </div>
+              {formData.weeks.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.weeks.map((week) => (
+                    <Badge key={week} variant="secondary" className="gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Week {week}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div>
-              <Label htmlFor="language">Language of instruction</Label>
+            <div className="space-y-2">
+              <Label htmlFor="language" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Language of instruction
+              </Label>
               <Select
                 value={formData.language || ''}
                 onValueChange={(value) => updateField('language', value)}
               >
-                <option value="">Select language</option>
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </option>
-                ))}
+                <SelectTrigger id="language" className="w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="curriculum">Curriculum</Label>
+            <div className="space-y-2">
+              <Label htmlFor="curriculum" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Curriculum
+              </Label>
               <Select
                 value={formData.curriculum || ''}
                 onValueChange={(value) => updateField('curriculum', value)}
               >
-                <option value="">None</option>
-                {CURRICULA.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
+                <SelectTrigger id="curriculum" className="w-full">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {CURRICULA.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label>Modality (optional)</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">Modality (optional)</Label>
+              <div className="flex flex-wrap gap-2">
                 {MODALITIES.map((mod) => {
                   const selected = formData.modalities ?? []
                   const isSelected = selected.includes(mod.value)
                   return (
                     <label
                       key={mod.value}
-                      className={`flex items-center gap-2 px-3 py-2 rounded border cursor-pointer text-sm ${
-                        isSelected ? 'border-purple-600 bg-purple-50' : 'border-gray-300'
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition-all text-sm ${
+                        isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                       }`}
                     >
                       <Checkbox
@@ -656,138 +1288,160 @@ export default function EditProductPage({ params }: PageProps) {
             </div>
 
             {formData.product_type === 'lesson_plans' && (
-              <div>
-                <Label htmlFor="teaching_framework">Teaching framework</Label>
+              <div className="space-y-2">
+                <Label htmlFor="teaching_framework" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Teaching framework
+                </Label>
                 <Select
                   value={formData.teaching_framework || ''}
                   onValueChange={(value) => updateField('teaching_framework', value)}
                 >
-                  <option value="">None</option>
-                  {TEACHING_FRAMEWORKS.map((f) => (
-                    <option key={f.value} value={f.value}>
-                      {f.label}
-                    </option>
-                  ))}
+                  <SelectTrigger id="teaching_framework" className="w-full">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {TEACHING_FRAMEWORKS.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Files & Media */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Files & Media</h2>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Product Files *</Label>
-              <div className="mt-2 space-y-1">
-                {formData.file_urls.map((url, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <span className="text-sm truncate">{url}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateField(
-                          'file_urls',
-                          formData.file_urls.filter((_, i) => i !== index)
-                        )
-                      }}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+            {/* Type-specific fields */}
+            {(formData.product_type === 'rpms' || formData.product_type === 'posters') && (
+              <div className="space-y-2">
+                <Label htmlFor="theme">Theme</Label>
+                <Input
+                  id="theme"
+                  value={formData.theme || ''}
+                  onChange={(e) => updateField('theme', e.target.value)}
+                  placeholder="e.g., Safari, Abstract, Floral"
+                />
               </div>
-              {validation.file_urls && (
-                <p className="text-sm text-red-600 mt-1">{validation.file_urls}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="cover_image_url">Cover Image URL</Label>
-              <Input
-                id="cover_image_url"
-                type="text"
-                value={formData.cover_image_url || ''}
-                onChange={(e) => updateField('cover_image_url', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Pricing</h2>
-
-          <div>
-            <Label htmlFor="price">Price (₱) *</Label>
-            <Input
-              id="price"
-              type="number"
-              min="50"
-              max="50000"
-              value={formData.price}
-              onChange={(e) => updateField('price', parseFloat(e.target.value))}
-            />
-            {validation.price && (
-              <p className="text-sm text-red-600 mt-1">{validation.price}</p>
             )}
-          </div>
-        </div>
 
-        {/* Changelog (if published) */}
+            {(formData.product_type === 'posters' || formData.product_type === 'tarpaulins') && (
+              <div className="space-y-2">
+                <Label htmlFor="size">Size</Label>
+                <Input
+                  id="size"
+                  value={formData.size || ''}
+                  onChange={(e) => updateField('size', e.target.value)}
+                  placeholder="e.g., A4, 8x10, 3x5 feet"
+                />
+              </div>
+            )}
+
+            {formData.product_type === 'tarpaulins' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="season">Season</Label>
+                  <Input
+                    id="season"
+                    value={formData.season || ''}
+                    onChange={(e) => updateField('season', e.target.value)}
+                    placeholder="e.g., Christmas, Summer"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="occasion">Occasion</Label>
+                  <Input
+                    id="occasion"
+                    value={formData.occasion || ''}
+                    onChange={(e) => updateField('occasion', e.target.value)}
+                    placeholder="e.g., Birthday, Graduation"
+                  />
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Version Update - conditional */}
         {originalProduct?.status === 'published' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Version Update</h2>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="changelog">Changelog *</Label>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5" />
+                Version Update
+              </CardTitle>
+              <CardDescription>
+                Describe what changed in this version
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="changelog" className="flex items-center gap-2">
+                  <FileCheck className="h-4 w-4" />
+                  Changelog *
+                </Label>
                 <Textarea
                   id="changelog"
                   value={formData.changelog}
                   onChange={(e) => updateField('changelog', e.target.value)}
                   placeholder="What's new in this version? (min 20 characters)"
                   rows={4}
+                  className={validation.changelog ? 'border-destructive' : ''}
                 />
                 {validation.changelog && (
-                  <p className="text-sm text-red-600 mt-1">{validation.changelog}</p>
+                  <p className="text-sm text-destructive">{validation.changelog}</p>
                 )}
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2">
+                <Checkbox
                   id="is_major_update"
                   checked={formData.is_major_update || false}
-                  onChange={(e) => updateField('is_major_update', e.target.checked)}
-                  className="mr-2"
+                  onCheckedChange={(checked) => updateField('is_major_update', !!checked)}
                 />
-                <Label htmlFor="is_major_update">This is a major update</Label>
+                <Label htmlFor="is_major_update" className="cursor-pointer">
+                  This is a major update
+                </Label>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Actions */}
-        <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={() => router.push('/shop/products')}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={saveChanges}
-            disabled={saving}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+        {/* Footer Actions */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-6 border-t">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Ready to save your changes?</p>
+            <p className="text-xs text-muted-foreground">
+              Your updates will be saved immediately
+            </p>
+          </div>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/shop/products')}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveChanges}
+              disabled={saving}
+              className="gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

@@ -70,6 +70,8 @@ export function RecentlyViewedSidebar() {
                     src={item.product.cover_image_url}
                     alt={item.product.title}
                     fill
+                    sizes="(min-width: 768px) 224px, 192px"
+                    loading="eager"
                     className="object-cover"
                   />
                 </div>

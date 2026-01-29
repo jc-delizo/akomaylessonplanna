@@ -25,6 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/registry/default/alert/alert'
+import { Progress } from '@/registry/default/progress/progress'
+import { toast } from 'sonner'
 import {
   FileText,
   Image as ImageIcon,
@@ -34,6 +36,8 @@ import {
   ChevronRight,
   X,
   File,
+  FileSpreadsheet,
+  Presentation,
   DollarSign,
   Info,
   Loader2,
@@ -89,6 +93,81 @@ const STEPS = [
   { number: 4, label: 'Pricing', icon: DollarSign },
   { number: 5, label: 'Confirmation', icon: CheckCircle2 },
 ]
+
+/** Derive display filename from storage URL (path last segment, optional timestamp stripped) */
+function getFileNameFromUrl(url: string): string {
+  try {
+    const path = new URL(url).pathname
+    const segment = path.split('/').filter(Boolean).pop() || ''
+    const withoutTimestamp = segment.replace(/^\d+-/, '')
+    return decodeURIComponent(withoutTimestamp || segment) || url
+  } catch {
+    return url
+  }
+}
+
+/** Icon component for file type (url or filename) */
+function getFileIcon(nameOrUrl: string): typeof File {
+  const name = nameOrUrl.startsWith('http') ? getFileNameFromUrl(nameOrUrl) : nameOrUrl
+  const lower = name.toLowerCase()
+  if (lower.endsWith('.pdf') || lower.endsWith('.doc') || lower.endsWith('.docx')) return FileText
+  if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return FileSpreadsheet
+  if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return Presentation
+  return File
+}
+
+/** Format bytes to human-readable size (e.g. 1536 -> "1.5 KB") */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+/** Upload file with progress via XHR (fetch does not support upload progress) */
+function uploadWithProgress(
+  url: string,
+  formData: InstanceType<typeof globalThis.FormData>,
+  onProgress: (loaded: number, total: number, percent: number) => void
+): Promise<{ url: string; fileSize?: number }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100)
+        onProgress(e.loaded, e.total, percent)
+      } else {
+        onProgress(e.loaded, 0, 0)
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          resolve({ url: data.url, fileSize: data.fileSize })
+        } catch {
+          reject(new Error('Invalid response'))
+        }
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText)
+          reject(new Error(err.error || 'Upload failed'))
+        } catch {
+          reject(new Error(`Upload failed (${xhr.status})`))
+        }
+      }
+    })
+
+    xhr.addEventListener('error', () => reject(new Error('Network error')))
+    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')))
+
+    xhr.open('POST', url)
+    xhr.send(formData as unknown as XMLHttpRequestBodyInit)
+  })
+}
 
 interface FormData {
   // Step 1: Basic Info
@@ -157,6 +236,9 @@ export default function NewProductPage() {
   const [validation, setValidation] = useState<Record<string, string>>({})
   const [uploadingFile, setUploadingFile] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingFiles, setUploadingFiles] = useState<Array<{ id: string; fileName: string; progress: number; size?: number }>>([])
+  const [coverImageProgress, setCoverImageProgress] = useState<{ loaded: number; total: number; percent: number } | null>(null)
+  const [fileSizesByUrl, setFileSizesByUrl] = useState<Record<string, number>>({})
 
   // Check if user can sell
   useEffect(() => {
@@ -276,6 +358,9 @@ export default function NewProductPage() {
       if (formData.file_urls.length === 0) {
         errors.file_urls = 'At least one file is required'
       }
+      if (!formData.cover_image_url) {
+        errors.cover_image_url = 'Cover image is required'
+      }
     }
 
     if (step === 4) {
@@ -306,24 +391,39 @@ export default function NewProductPage() {
     setError(null)
 
     try {
+      const payload = {
+        ...formData,
+        curriculum: formData.curriculum === '__none__' ? '' : (formData.curriculum ?? ''),
+        teaching_framework: formData.teaching_framework === '__none__' ? '' : (formData.teaching_framework ?? ''),
+        status: 'draft',
+      }
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          status: 'draft',
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
         const { product } = await response.json()
+        toast.success('Draft Saved', {
+          description: 'Your product has been saved as a draft. You can continue editing later.',
+          duration: 4000,
+        })
         router.push(`/shop/products`)
       } else {
         const { error: apiError } = await response.json()
+        toast.error('Failed to Save Draft', {
+          description: apiError || 'Please check your connection and try again.',
+          duration: 5000,
+        })
         setError(apiError || 'Failed to save draft')
       }
     } catch (err) {
       console.error('Error saving draft:', err)
+      toast.error('Failed to Save Draft', {
+        description: 'An unexpected error occurred. Please try again.',
+        duration: 5000,
+      })
       setError('Failed to save draft')
     } finally {
       setLoading(false)
@@ -340,23 +440,48 @@ export default function NewProductPage() {
     setError(null)
 
     try {
+      const payload = {
+        ...formData,
+        curriculum: formData.curriculum === '__none__' ? '' : (formData.curriculum ?? ''),
+        teaching_framework: formData.teaching_framework === '__none__' ? '' : (formData.teaching_framework ?? ''),
+      }
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
         const { product, message } = await response.json()
-        // Show success and redirect
-        alert(message || 'Product published successfully!')
-        router.push(`/shop/products`)
+        
+        // Show success toast
+        toast.success('Product Published Successfully!', {
+          description: message || 'Your product is now live and ready for teachers to discover.',
+          duration: 5000,
+          action: {
+            label: 'View Product',
+            onClick: () => router.push(`/products/${product.id}`),
+          },
+        })
+        
+        // Redirect after a short delay to let user see the toast
+        setTimeout(() => {
+          router.push(`/shop/products`)
+        }, 1500)
       } else {
         const { error: apiError } = await response.json()
+        toast.error('Failed to Publish Product', {
+          description: apiError || 'Please check your connection and try again.',
+          duration: 5000,
+        })
         setError(apiError || 'Failed to publish product')
       }
     } catch (err) {
       console.error('Error publishing product:', err)
+      toast.error('Failed to Publish Product', {
+        description: 'An unexpected error occurred. Please check your connection and try again.',
+        duration: 5000,
+      })
       setError('Failed to publish product')
     } finally {
       setLoading(false)
@@ -379,34 +504,53 @@ export default function NewProductPage() {
     setUploadingFile(true)
     setError(null)
 
+    const fileList = Array.from(files)
+    const batchId = crypto.randomUUID()
+    const items = fileList.map((f, i) => ({
+      id: `${batchId}-${i}`,
+      fileName: f.name,
+      progress: 0,
+      size: f.size,
+    }))
+    setUploadingFiles(items)
+
     try {
       const uploadedUrls: string[] = []
+      const newSizes: Record<string, number> = {}
 
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i]
+        const itemId = items[i].id
+
         const uploadFormData = new FormData()
         uploadFormData.append('file', file)
         uploadFormData.append('type', 'file')
         uploadFormData.append('productId', 'draft')
 
-        const response = await fetch('/api/products/upload', {
-          method: 'POST',
-          body: uploadFormData,
-        })
+        const { url, fileSize } = await uploadWithProgress(
+          '/api/products/upload',
+          uploadFormData,
+          (loaded, total, percent) => {
+            setUploadingFiles((prev) =>
+              prev.map((item) =>
+                item.id === itemId ? { ...item, progress: percent } : item
+              )
+            )
+          }
+        )
 
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to upload file')
-        }
-
-        const { url } = await response.json()
         uploadedUrls.push(url)
+        if (fileSize != null) newSizes[url] = fileSize
       }
 
+      setFileSizesByUrl((prev) => ({ ...prev, ...newSizes }))
       updateField('file_urls', [...formData.file_urls, ...uploadedUrls])
-      e.target.value = '' // Reset input
+      setUploadingFiles([])
+      e.target.value = ''
     } catch (err) {
       console.error('Error uploading files:', err)
       setError(err instanceof Error ? err.message : 'Failed to upload files')
+      setUploadingFiles([])
     } finally {
       setUploadingFile(false)
     }
@@ -418,6 +562,7 @@ export default function NewProductPage() {
 
     setUploadingImage(true)
     setError(null)
+    setCoverImageProgress({ loaded: 0, total: file.size, percent: 0 })
 
     try {
       const uploadFormData = new FormData()
@@ -425,24 +570,22 @@ export default function NewProductPage() {
       uploadFormData.append('type', 'image')
       uploadFormData.append('productId', 'draft')
 
-      const response = await fetch('/api/products/upload', {
-        method: 'POST',
-        body: uploadFormData,
-      })
+      const { url } = await uploadWithProgress(
+        '/api/products/upload',
+        uploadFormData,
+        (loaded, total, percent) => {
+          setCoverImageProgress({ loaded, total, percent })
+        }
+      )
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to upload image')
-      }
-
-      const { url } = await response.json()
       updateField('cover_image_url', url)
-      e.target.value = '' // Reset input
+      e.target.value = ''
     } catch (err) {
       console.error('Error uploading image:', err)
       setError(err instanceof Error ? err.message : 'Failed to upload image')
     } finally {
       setUploadingImage(false)
+      setCoverImageProgress(null)
     }
   }
 
@@ -1081,7 +1224,7 @@ export default function NewProductPage() {
                   <SelectValue placeholder="Select curriculum" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="__none__">None</SelectItem>
                   {CURRICULA.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
                       {c.label}
@@ -1137,7 +1280,7 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Select framework" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {TEACHING_FRAMEWORKS.map((f) => (
                         <SelectItem key={f.value} value={f.value}>
                           {f.label}
@@ -1209,23 +1352,38 @@ export default function NewProductPage() {
                     <div className="flex flex-col items-center justify-center gap-4 relative">
                       <div
                         className={`rounded-full p-4 ${
-                          uploadingFile
-                            ? 'bg-primary/10'
-                            : 'bg-muted'
+                          uploadingFile ? 'bg-primary/10' : 'bg-muted'
                         }`}
                       >
-                        {uploadingFile ? (
+                        {uploadingFile && uploadingFiles.length > 0 ? (
+                          <Upload className="h-8 w-8 text-primary" />
+                        ) : uploadingFile ? (
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         ) : (
                           <Upload className="h-8 w-8 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="text-center">
+                      <div className="text-center w-full">
                         <p className="text-sm font-medium">
-                          {uploadingFile
-                            ? 'Uploading files...'
-                            : 'Click to upload or drag and drop'}
+                          {uploadingFile && uploadingFiles.length > 0
+                            ? `Uploading ${uploadingFiles.length} file(s)...`
+                            : uploadingFile
+                              ? 'Uploading files...'
+                              : 'Click to upload or drag and drop'}
                         </p>
+                        {uploadingFile && uploadingFiles.length > 0 && (
+                          <div className="mt-2 w-full max-w-xs mx-auto">
+                            <Progress
+                              value={
+                                uploadingFiles.length > 0
+                                  ? uploadingFiles.reduce((a, f) => a + f.progress, 0) /
+                                    uploadingFiles.length
+                                  : 0
+                              }
+                              className="h-2"
+                            />
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           Multiple files supported
                         </p>
@@ -1253,25 +1411,28 @@ export default function NewProductPage() {
                 </Alert>
               )}
 
-              {formData.file_urls.length > 0 && (
+              {(formData.file_urls.length > 0 || uploadingFiles.length > 0) && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">
-                    Uploaded Files ({formData.file_urls.length})
+                    Uploaded Files (
+                    {formData.file_urls.length + uploadingFiles.length})
                   </p>
                   <div className="space-y-2">
-                    {formData.file_urls.map((url, index) => (
-                      <Card key={index} className="p-3">
+                    {formData.file_urls.map((url, index) => {
+                      const FileIcon = getFileIcon(url)
+                      return (
+                      <Card key={`done-${index}`} className="p-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="rounded-lg bg-primary/10 p-2">
-                              <File className="h-5 w-5 text-primary" />
+                              <FileIcon className="h-5 w-5 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                File {index + 1}
+                              <p className="text-sm font-medium truncate" title={url}>
+                                {getFileNameFromUrl(url)}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Uploaded successfully
+                                {fileSizesByUrl[url] != null ? formatFileSize(fileSizesByUrl[url]) : '—'} · Uploaded successfully
                               </p>
                             </div>
                             <Badge variant="outline" className="gap-1">
@@ -1284,10 +1445,12 @@ export default function NewProductPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              const removedUrl = formData.file_urls[index]
                               updateField(
                                 'file_urls',
                                 formData.file_urls.filter((_, i) => i !== index)
                               )
+                              if (removedUrl) setFileSizesByUrl((prev) => { const next = { ...prev }; delete next[removedUrl]; return next })
                             }}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
@@ -1295,7 +1458,30 @@ export default function NewProductPage() {
                           </Button>
                         </div>
                       </Card>
-                    ))}
+                    )})}
+                    {uploadingFiles.map((item) => {
+                      const FileIcon = getFileIcon(item.fileName)
+                      return (
+                      <Card key={item.id} className="p-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="rounded-lg bg-primary/10 p-2">
+                            <FileIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {item.fileName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.size != null ? formatFileSize(item.size) : ''}{item.size != null ? ' · ' : ''}Uploading... {item.progress}%
+                            </p>
+                            <Progress
+                              value={item.progress}
+                              className="h-1.5 mt-1.5"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    )})}
                   </div>
                 </div>
               )}
@@ -1306,12 +1492,22 @@ export default function NewProductPage() {
             <div className="space-y-3">
               <Label htmlFor="cover_image" className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
-                Cover Image (Optional)
+                Cover Image *
               </Label>
               <p className="text-sm text-muted-foreground">
                 Upload a cover image for your product (JPG, PNG, WEBP - Max
-                10MB)
+                10MB). Recommended: 1200x1200px (1:1 square, matches product
+                cards)
               </p>
+
+              {validation.cover_image_url && (
+                <Alert className="border-destructive bg-destructive/10">
+                  <X className="h-4 w-4 text-destructive" />
+                  <AlertDescription className="text-destructive">
+                    {validation.cover_image_url}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {formData.cover_image_url ? (
                 <Card>
@@ -1320,7 +1516,7 @@ export default function NewProductPage() {
                       <img
                         src={formData.cover_image_url}
                         alt="Cover preview"
-                        className="w-full h-48 object-cover rounded-lg border"
+                        className="w-48 aspect-square object-cover rounded-lg border"
                       />
                       <Button
                         type="button"
@@ -1347,25 +1543,37 @@ export default function NewProductPage() {
                       <div className="flex flex-col items-center justify-center gap-4 relative">
                         <div
                           className={`rounded-full p-4 ${
-                            uploadingImage
-                              ? 'bg-primary/10'
-                              : 'bg-muted'
+                            uploadingImage ? 'bg-primary/10' : 'bg-muted'
                           }`}
                         >
-                          {uploadingImage ? (
+                          {uploadingImage && coverImageProgress ? (
+                            <span className="text-lg font-semibold text-primary">
+                              {coverImageProgress.percent}%
+                            </span>
+                          ) : uploadingImage ? (
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                           ) : (
                             <ImageIcon className="h-8 w-8 text-muted-foreground" />
                           )}
                         </div>
-                        <div className="text-center">
+                        <div className="text-center w-full">
                           <p className="text-sm font-medium">
-                            {uploadingImage
-                              ? 'Uploading image...'
-                              : 'Click to upload cover image'}
+                            {uploadingImage && coverImageProgress
+                              ? `Uploading... ${coverImageProgress.percent}%`
+                              : uploadingImage
+                                ? 'Uploading image...'
+                                : 'Click to upload cover image'}
                           </p>
+                          {uploadingImage && coverImageProgress && (
+                            <div className="mt-2 w-full max-w-xs mx-auto">
+                              <Progress
+                                value={coverImageProgress.percent}
+                                className="h-2"
+                              />
+                            </div>
+                          )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Recommended size: 1200x800px
+                            Recommended: 1200x1200px (1:1 square)
                           </p>
                         </div>
                         <Input
@@ -1502,28 +1710,38 @@ export default function NewProductPage() {
       {/* Step 5: Confirmation */}
       {currentStep === 5 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5" />
-              Review & Confirm
-            </CardTitle>
-            <CardDescription>
-              Review your product details before publishing
-            </CardDescription>
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-primary/20 p-2">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Almost There! Review & Confirm</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Your product looks great! Review the details below and publish when ready.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Product Overview */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Product Overview</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Product Overview</CardTitle>
+                  <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Ready to Publish
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {formData.cover_image_url && (
-                  <div className="w-full max-w-xs">
+                  <div className="w-64 aspect-square mx-auto md:mx-0">
                     <img
                       src={formData.cover_image_url}
                       alt="Product cover"
-                      className="w-full h-48 object-cover rounded-lg border"
+                      className="w-full h-full object-cover rounded-lg border shadow-md"
                     />
                   </div>
                 )}
@@ -1640,6 +1858,66 @@ export default function NewProductPage() {
                       ))}
                     </div>
                   </div>
+                  {formData.language && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Language</Label>
+                      <p className="text-sm font-medium">
+                        {LANGUAGES.find((l) => l.value === formData.language)?.label || formData.language}
+                      </p>
+                    </div>
+                  )}
+                  {formData.curriculum && formData.curriculum !== '__none__' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Curriculum</Label>
+                      <p className="text-sm font-medium">
+                        {CURRICULA.find((c) => c.value === formData.curriculum)?.label || formData.curriculum}
+                      </p>
+                    </div>
+                  )}
+                  {formData.modalities && formData.modalities.length > 0 && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Modality</Label>
+                      <div className="flex flex-wrap gap-1">
+                        {formData.modalities.map((mod) => (
+                          <Badge key={mod} variant="secondary">
+                            {MODALITIES.find((m) => m.value === mod)?.label || mod}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {formData.product_type === 'lesson_plans' && formData.teaching_framework && formData.teaching_framework !== '__none__' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Teaching Framework</Label>
+                      <p className="text-sm font-medium">
+                        {TEACHING_FRAMEWORKS.find((f) => f.value === formData.teaching_framework)?.label || formData.teaching_framework}
+                      </p>
+                    </div>
+                  )}
+                  {(formData.product_type === 'rpms' || formData.product_type === 'posters') && formData.theme && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Theme</Label>
+                      <p className="text-sm font-medium">{formData.theme}</p>
+                    </div>
+                  )}
+                  {(formData.product_type === 'posters' || formData.product_type === 'tarpaulins') && formData.size && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Size</Label>
+                      <p className="text-sm font-medium">{formData.size}</p>
+                    </div>
+                  )}
+                  {formData.product_type === 'tarpaulins' && formData.season && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Season</Label>
+                      <p className="text-sm font-medium">{formData.season}</p>
+                    </div>
+                  )}
+                  {formData.product_type === 'tarpaulins' && formData.occasion && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Occasion</Label>
+                      <p className="text-sm font-medium">{formData.occasion}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1647,44 +1925,57 @@ export default function NewProductPage() {
             {/* Description */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Description</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Description</CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    {formData.description.length} characters
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                   {formData.description}
                 </p>
               </CardContent>
             </Card>
           </CardContent>
-          <CardFooter className="flex justify-between border-t pt-4">
-            <Button variant="outline" onClick={prevStep} className="gap-2">
-              <ChevronRight className="h-4 w-4 rotate-180" />
-              Edit
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={saveDraft} disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Draft'
-                )}
-              </Button>
-              <Button onClick={publish} disabled={loading} className="gap-2">
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Publishing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Publish Product
-                  </>
-                )}
-              </Button>
+          <CardFooter className="bg-muted/30 border-t-2 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between w-full gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Ready to share your work?</p>
+                <p className="text-xs text-muted-foreground">
+                  Once published, teachers can discover and purchase your product
+                </p>
+              </div>
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button variant="outline" onClick={prevStep} className="gap-2">
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                  Edit Details
+                </Button>
+                <Button variant="outline" onClick={saveDraft} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Draft'
+                  )}
+                </Button>
+                <Button onClick={publish} disabled={loading} className="gap-2 bg-primary hover:bg-primary/90">
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Publish Product
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardFooter>
         </Card>
