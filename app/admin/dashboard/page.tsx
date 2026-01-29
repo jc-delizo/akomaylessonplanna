@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getQuickActionsCounts } from '@/lib/utils/admin-quick-actions'
+import { getDashboardMetricsData } from '@/lib/utils/admin-dashboard-metrics'
 import { MetricCards } from '@/components/admin/dashboard/metric-cards'
 import { QuickActions } from '@/components/admin/dashboard/quick-actions'
 import { AdminCharts } from '@/components/admin/dashboard/charts'
@@ -10,25 +11,6 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
 import { getFullName } from '@/lib/utils/profile'
-import { cookies } from 'next/headers'
-
-async function getDashboardMetrics(timeRange: string = 'last_30_days') {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const cookieStore = await cookies()
-  const allCookies = cookieStore.getAll()
-  const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-  
-  const response = await fetch(`${baseUrl}/api/admin/dashboard?timeRange=${timeRange}`, {
-    cache: 'no-store',
-    headers: cookieHeader ? {
-      Cookie: cookieHeader,
-    } : {},
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch dashboard metrics')
-  }
-  return response.json()
-}
 
 async function getRecentActivity() {
   const supabase = await createClient()
@@ -86,9 +68,9 @@ export default async function AdminDashboardPage({
   const params = await searchParams
   const timeRange = params.timeRange || 'last_30_days'
 
-  // Fetch data (quick actions from same server context — no self-fetch, avoids prod failures)
+  // Fetch data in same server context — no self-fetch, avoids prod failures
   const [metrics, quickActions, activities] = await Promise.all([
-    getDashboardMetrics(timeRange),
+    getDashboardMetricsData(supabase, timeRange),
     getQuickActionsCounts(supabase),
     getRecentActivity(),
   ])
