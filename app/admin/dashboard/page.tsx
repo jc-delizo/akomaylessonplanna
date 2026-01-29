@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getQuickActionsCounts } from '@/lib/utils/admin-quick-actions'
 import { MetricCards } from '@/components/admin/dashboard/metric-cards'
 import { QuickActions } from '@/components/admin/dashboard/quick-actions'
 import { AdminCharts } from '@/components/admin/dashboard/charts'
@@ -25,24 +26,6 @@ async function getDashboardMetrics(timeRange: string = 'last_30_days') {
   })
   if (!response.ok) {
     throw new Error('Failed to fetch dashboard metrics')
-  }
-  return response.json()
-}
-
-async function getQuickActions() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const cookieStore = await cookies()
-  const allCookies = cookieStore.getAll()
-  const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-  
-  const response = await fetch(`${baseUrl}/api/admin/dashboard/quick-actions`, {
-    cache: 'no-store',
-    headers: cookieHeader ? {
-      Cookie: cookieHeader,
-    } : {},
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch quick actions')
   }
   return response.json()
 }
@@ -103,10 +86,10 @@ export default async function AdminDashboardPage({
   const params = await searchParams
   const timeRange = params.timeRange || 'last_30_days'
 
-  // Fetch data
+  // Fetch data (quick actions from same server context — no self-fetch, avoids prod failures)
   const [metrics, quickActions, activities] = await Promise.all([
     getDashboardMetrics(timeRange),
-    getQuickActions(),
+    getQuickActionsCounts(supabase),
     getRecentActivity(),
   ])
 
