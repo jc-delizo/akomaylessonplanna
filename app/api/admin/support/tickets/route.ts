@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { getSupportTicketsData } from '@/lib/utils/admin-support-tickets'
 
 /**
  * GET /api/admin/support/tickets
@@ -24,57 +25,16 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
 
-    const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
-    const category = searchParams.get('category')
-    const assignedTo = searchParams.get('assigned_to')
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
-    const offset = (page - 1) * limit
-
-    // Build query
-    let query = supabase
-      .from('support_tickets')
-      .select(`
-        *,
-        user:users!support_tickets_user_id_fkey(id, name, email, avatar_url),
-        assigned_admin:users!support_tickets_assigned_to_fkey(id, name, email)
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    if (priority) {
-      query = query.eq('priority', priority)
-    }
-
-    if (category) {
-      query = query.eq('category', category)
-    }
-
-    if (assignedTo) {
-      query = query.eq('assigned_to', assignedTo)
-    }
-
-    const { data: tickets, error, count } = await query
-
-    if (error) {
-      console.error('Error fetching tickets:', error)
-      return NextResponse.json({ error: 'Failed to fetch tickets' }, { status: 500 })
-    }
-
-    return NextResponse.json({
-      tickets: tickets || [],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-      },
+    const sp = request.nextUrl.searchParams
+    const result = await getSupportTicketsData(supabase, {
+      status: sp.get('status') || undefined,
+      priority: sp.get('priority') || undefined,
+      category: sp.get('category') || undefined,
+      assigned_to: sp.get('assigned_to') || undefined,
+      page: parseInt(sp.get('page') || '1', 10),
+      limit: parseInt(sp.get('limit') || '50', 10),
     })
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error in GET /api/admin/support/tickets:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -1,22 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getWithdrawalsData } from '@/lib/utils/admin-withdrawals'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Check, X, Clock } from 'lucide-react'
 import { getFullName, getInitials } from '@/lib/utils/profile'
-
-async function getWithdrawals() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/financials/withdrawals?status=pending`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch withdrawals')
-  }
-  return response.json()
-}
 
 export default async function WithdrawalsPage() {
   const supabase = await createClient()
@@ -33,7 +23,7 @@ export default async function WithdrawalsPage() {
     redirect('/admin')
   }
 
-  const { withdrawals } = await getWithdrawals()
+  const { withdrawals } = await getWithdrawalsData(supabase, { status: 'pending' })
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-PH', {

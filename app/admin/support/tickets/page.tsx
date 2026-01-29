@@ -1,21 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getSupportTicketsData } from '@/lib/utils/admin-support-tickets'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, MessageSquare, Clock, CheckCircle } from 'lucide-react'
-
-async function getSupportTickets() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/support/tickets?status=open`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch support tickets')
-  }
-  return response.json()
-}
+import { getFullName } from '@/lib/utils/profile'
 
 export default async function SupportTicketsPage() {
   const supabase = await createClient()
@@ -32,7 +23,7 @@ export default async function SupportTicketsPage() {
     redirect('/')
   }
 
-  const { tickets } = await getSupportTickets()
+  const { tickets } = await getSupportTicketsData(supabase, { status: 'open' })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -96,9 +87,9 @@ export default async function SupportTicketsPage() {
                   <h3 className="font-semibold text-lg mb-1">{ticket.subject}</h3>
                   <p className="text-sm text-gray-600 line-clamp-2 mb-2">{ticket.description}</p>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>From: {ticket.user?.name || ticket.user?.email || 'Unknown'}</span>
+                    <span>From: {ticket.user ? getFullName(ticket.user as any) || ticket.user?.email : 'Unknown'}</span>
                     {ticket.assigned_admin && (
-                      <span>Assigned to: {ticket.assigned_admin.name}</span>
+                      <span>Assigned to: {getFullName(ticket.assigned_admin as any)}</span>
                     )}
                     <span>Created: {new Date(ticket.created_at).toLocaleDateString()}</span>
                     {ticket.response_count > 0 && (

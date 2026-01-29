@@ -1,21 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getAdminsData } from '@/lib/utils/admin-admins'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, User, Shield } from 'lucide-react'
-
-async function getAdmins() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/admins`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch admins')
-  }
-  return response.json()
-}
 
 export default async function AdminManagementPage() {
   const supabase = await createClient()
@@ -32,7 +22,7 @@ export default async function AdminManagementPage() {
     redirect('/admin')
   }
 
-  const { admins } = await getAdmins()
+  const { admins } = await getAdminsData(supabase)
 
   const getRoleBadge = (role: string) => {
     const roleColors: Record<string, string> = {

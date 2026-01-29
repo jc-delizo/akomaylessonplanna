@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { getAdminsData } from '@/lib/utils/admin-admins'
 
 /**
  * GET /api/admin/admins
@@ -14,38 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient()
-
-    const { data: admins, error } = await supabase
-      .from('users')
-      .select('id, name, email, avatar_url, admin_role, created_at, updated_at')
-      .eq('role', 'admin')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching admins:', error)
-      return NextResponse.json({ error: 'Failed to fetch admins' }, { status: 500 })
-    }
-
-    // Get last active time (from audit_log)
-    const adminsWithActivity = await Promise.all(
-      (admins || []).map(async (admin) => {
-        const { data: lastActivity } = await supabase
-          .from('audit_log')
-          .select('created_at')
-          .eq('admin_id', admin.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
-
-        return {
-          ...admin,
-          lastActive: lastActivity?.created_at || null,
-          status: 'active', // TODO: Implement inactive status tracking
-        }
-      })
-    )
-
-    return NextResponse.json({ admins: adminsWithActivity })
+    const result = await getAdminsData(supabase)
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error in GET /api/admin/admins:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

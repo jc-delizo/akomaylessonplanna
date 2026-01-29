@@ -1,39 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getPioneersData } from '@/lib/utils/admin-pioneers'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Award, Plus, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
-import { headers } from 'next/headers'
 import { getFullName, getInitials } from '@/lib/utils/profile'
-
-async function getPioneers() {
-  const headersList = await headers()
-  const cookieHeader = headersList.get('cookie')
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const apiUrl = `${baseUrl}/api/admin/pioneers`
-  
-  const response = await fetch(apiUrl, {
-    cache: 'no-store',
-    headers: {
-      ...(cookieHeader && { cookie: cookieHeader }),
-    },
-  })
-  
-  if (!response.ok) {
-    let errorBody: any = null
-    try {
-      errorBody = await response.clone().json()
-    } catch {
-      errorBody = await response.clone().text()
-    }
-    throw new Error(`Failed to fetch pioneers: ${response.status} ${response.statusText} - ${JSON.stringify(errorBody)}`)
-  }
-  
-  return response.json()
-}
 
 export default async function PioneersPage() {
   const supabase = await createClient()
@@ -50,7 +24,7 @@ export default async function PioneersPage() {
     redirect('/')
   }
 
-  const { pioneers, total, maxSlots, availableSlots } = await getPioneers()
+  const { pioneers, total, maxSlots, availableSlots } = await getPioneersData(supabase)
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-PH', {

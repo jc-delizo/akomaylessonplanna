@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSystemAnnouncement } from '@/lib/notifications/notification-triggers'
+import { getAnnouncementsData } from '@/lib/utils/admin-announcements'
 
 /**
  * POST /api/admin/announcements
@@ -81,7 +82,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify user is admin
     const { data: userData } = await supabase
       .from('users')
       .select('role')
@@ -95,22 +95,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all system announcements
-    const { data: announcements, error } = await supabase
-      .from('announcements')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (error) {
-      console.error('Error fetching announcements:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch announcements' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ announcements: announcements || [] })
+    const result = await getAnnouncementsData(supabase)
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error in GET /api/admin/announcements:', error)
     return NextResponse.json(

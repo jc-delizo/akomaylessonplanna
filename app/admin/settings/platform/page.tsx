@@ -1,28 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getPlatformSettingsData } from '@/lib/utils/admin-platform-settings'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { headers } from 'next/headers'
-
-async function getPlatformSettings() {
-  const headersList = await headers()
-  const cookieHeader = headersList.get('cookie')
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const fetchUrl = `${baseUrl}/api/admin/settings/platform`
-  const response = await fetch(fetchUrl, {
-    cache: 'no-store',
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch platform settings')
-  }
-  const result = await response.json()
-  return result
-}
 
 export default async function PlatformSettingsPage() {
   const supabase = await createClient()
@@ -39,7 +23,7 @@ export default async function PlatformSettingsPage() {
     redirect('/admin')
   }
 
-  const settings = await getPlatformSettings()
+  const settings = getPlatformSettingsData()
 
   return (
     <div className="space-y-6">

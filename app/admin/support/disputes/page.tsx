@@ -1,21 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getDisputesData } from '@/lib/utils/admin-disputes'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Scale, AlertTriangle, Clock } from 'lucide-react'
-
-async function getDisputes() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/disputes?status=open`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch disputes')
-  }
-  return response.json()
-}
 
 export default async function DisputesPage() {
   const supabase = await createClient()
@@ -32,7 +22,7 @@ export default async function DisputesPage() {
     redirect('/')
   }
 
-  const { disputes } = await getDisputes()
+  const { disputes } = await getDisputesData(supabase, { status: 'open' })
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {

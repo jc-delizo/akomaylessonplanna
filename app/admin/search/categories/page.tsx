@@ -1,22 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getCategoriesData } from '@/lib/utils/admin-categories'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Eye } from 'lucide-react'
 import Link from 'next/link'
-
-async function getCategories() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/categories`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch categories')
-  }
-  return response.json()
-}
 
 export default async function CategoryManagementPage() {
   const supabase = await createClient()
@@ -33,7 +23,7 @@ export default async function CategoryManagementPage() {
     redirect('/')
   }
 
-  const { categories } = await getCategories()
+  const { categories } = await getCategoriesData(supabase)
 
   return (
     <div className="space-y-6">

@@ -1,21 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getSearchAnalyticsData } from '@/lib/utils/admin-search-analytics'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/admin/dashboard/metric-cards'
 import { Search, TrendingUp, AlertTriangle } from 'lucide-react'
-
-async function getSearchAnalytics() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/search/analytics`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch search analytics')
-  }
-  return response.json()
-}
 
 export default async function SearchAnalyticsPage() {
   const supabase = await createClient()
@@ -32,7 +22,7 @@ export default async function SearchAnalyticsPage() {
     redirect('/')
   }
 
-  const { metrics, topSearchTerms, zeroResultsReport } = await getSearchAnalytics()
+  const { metrics, topSearchTerms, zeroResultsReport } = await getSearchAnalyticsData(supabase)
 
   return (
     <div className="space-y-6">

@@ -1,28 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getReportsData } from '@/lib/utils/admin-reports'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, User, Package, MessageSquare } from 'lucide-react'
 import { getFullName } from '@/lib/utils/profile'
-import { headers } from 'next/headers'
-
-async function getUserReports() {
-  const headersList = await headers()
-  const cookieHeader = headersList.get('cookie')
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const fetchUrl = `${baseUrl}/api/admin/reports?status=pending`
-  const response = await fetch(fetchUrl, {
-    cache: 'no-store',
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch reports')
-  }
-  const result = await response.json()
-  return result
-}
 
 export default async function UserReportsPage() {
   const supabase = await createClient()
@@ -39,7 +23,7 @@ export default async function UserReportsPage() {
     redirect('/')
   }
 
-  const { reports } = await getUserReports()
+  const { reports } = await getReportsData(supabase, { status: 'pending' })
 
   const getTypeIcon = (type: string) => {
     switch (type) {

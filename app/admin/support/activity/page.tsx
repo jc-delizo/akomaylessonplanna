@@ -1,28 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getAuditLogData } from '@/lib/utils/admin-audit-log'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Search, Download, Filter } from 'lucide-react'
-
-async function getAuditLog(searchParams: Record<string, string>) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const queryString = new URLSearchParams(searchParams).toString()
-  const response = await fetch(`${baseUrl}/api/admin/audit-log?${queryString}`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch audit log')
-  }
-  return response.json()
-}
+import { getFullName } from '@/lib/utils/profile'
 
 export default async function ActivityLogPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined }
 }) {
   const supabase = await createClient()
   const {
@@ -38,14 +28,24 @@ export default async function ActivityLogPage({
     redirect('/')
   }
 
+  const rawParams = searchParams instanceof Promise ? await searchParams : searchParams
   const params: Record<string, string> = {}
-  Object.entries(searchParams).forEach(([key, value]) => {
+  Object.entries(rawParams).forEach(([key, value]) => {
     if (value) {
       params[key] = Array.isArray(value) ? value[0] : value
     }
   })
 
-  const { logs, pagination } = await getAuditLog(params)
+  const filterByAdminId = adminUser.admin_role !== 'super_admin' ? authUser.id : undefined
+  const { logs, pagination } = await getAuditLogData(supabase, {
+    admin_id: params.admin_id,
+    action: params.action,
+    entity_type: params.entity_type,
+    startDate: params.startDate,
+    endDate: params.endDate,
+    page: params.page ? parseInt(params.page, 10) : undefined,
+    limit: params.limit ? parseInt(params.limit, 10) : undefined,
+  }, { filterByAdminId })
 
   const getActionColor = (action: string) => {
     if (action.includes('ban') || action.includes('delete') || action.includes('suspend')) {
@@ -116,7 +116,7 @@ export default async function ActivityLogPage({
                       {new Date(log.created_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {log.admin?.name || 'System'}
+                      {log.admin ? getFullName(log.admin as any) : 'System'}
                     </td>
                     <td className="px-4 py-3">
                       <Badge className={getActionColor(log.action)}>

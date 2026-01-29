@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { getCategoriesData } from '@/lib/utils/admin-categories'
 
 /**
  * GET /api/admin/categories
@@ -14,29 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient()
-
-    const { data: categories, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching categories:', error)
-      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
-    }
-
-    // Get product counts for each category
-    const categoriesWithCounts = await Promise.all(
-      (categories || []).map(async (category) => {
-        // TODO: Count products in this category (need category relationship in products table)
-        return {
-          ...category,
-          productCount: 0, // Placeholder
-        }
-      })
-    )
-
-    return NextResponse.json({ categories: categoriesWithCounts })
+    const result = await getCategoriesData(supabase)
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error in GET /api/admin/categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

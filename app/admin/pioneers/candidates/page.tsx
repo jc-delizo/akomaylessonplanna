@@ -1,33 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getPioneersCandidatesData, getPioneersData } from '@/lib/utils/admin-pioneers'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Award, TrendingUp } from 'lucide-react'
-
-async function getCandidates() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/pioneers/candidates`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch candidates')
-  }
-  return response.json()
-}
-
-async function getAvailableSlots() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/pioneers`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    return { availableSlots: 0 }
-  }
-  const data = await response.json()
-  return { availableSlots: data.availableSlots || 0 }
-}
 
 export default async function PioneerCandidatesPage() {
   const supabase = await createClient()
@@ -44,8 +22,10 @@ export default async function PioneerCandidatesPage() {
     redirect('/')
   }
 
-  const { candidates } = await getCandidates()
-  const { availableSlots } = await getAvailableSlots()
+  const [{ candidates }, { availableSlots }] = await Promise.all([
+    getPioneersCandidatesData(supabase),
+    getPioneersData(supabase),
+  ])
 
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'bg-green-100 text-green-700'

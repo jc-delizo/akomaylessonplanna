@@ -1,25 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
+import { getGrowthAnalyticsData } from '@/lib/utils/admin-analytics-growth'
 import { Card } from '@/components/ui/card'
 import { MetricCards } from '@/components/admin/dashboard/metric-cards'
 import { AdminCharts } from '@/components/admin/dashboard/charts'
 
-async function getGrowthAnalytics(timeRange: string = 'last_30_days') {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/admin/analytics/growth?timeRange=${timeRange}`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch growth analytics')
-  }
-  return response.json()
-}
-
 export default async function GrowthAnalyticsPage({
   searchParams,
 }: {
-  searchParams: { timeRange?: string }
+  searchParams: Promise<{ timeRange?: string }> | { timeRange?: string }
 }) {
   const supabase = await createClient()
   const {
@@ -35,8 +25,19 @@ export default async function GrowthAnalyticsPage({
     redirect('/')
   }
 
-  const timeRange = searchParams.timeRange || 'last_30_days'
-  const { metrics, charts } = await getGrowthAnalytics(timeRange)
+  const params = searchParams instanceof Promise ? await searchParams : searchParams
+  const timeRange = params.timeRange || 'last_30_days'
+  const { metrics, charts } = await getGrowthAnalyticsData(supabase, timeRange)
+
+  // Aggregate userGrowthOverTime (created_at[]) into { date, users }[] for AdminCharts
+  const byDate: Record<string, number> = {}
+  for (const row of charts.userGrowthOverTime) {
+    const date = row.created_at.slice(0, 10)
+    byDate[date] = (byDate[date] || 0) + 1
+  }
+  const userGrowthData = Object.entries(byDate)
+    .map(([date, users]) => ({ date, users }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   return (
     <div className="space-y-6">
@@ -60,7 +61,7 @@ export default async function GrowthAnalyticsPage({
       />
 
       {/* Charts */}
-      <AdminCharts userGrowthData={charts.userGrowthOverTime} />
+      <AdminCharts userGrowthData={userGrowthData} />
     </div>
   )
 }
