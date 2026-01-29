@@ -4,6 +4,26 @@ import { ProductTabs } from '@/components/products/product-tabs'
 import { CurvedLoopHero } from '@/components/curved-loop-hero'
 import Link from 'next/link'
 
+// Helper: attach subject_ids from product_subjects for each product (for "Multiple Subjects" on cards)
+async function attachSubjectIds(supabase: Awaited<ReturnType<typeof createClient>>, products: any[]): Promise<any[]> {
+  if (!products || products.length === 0) return products || []
+  const productIds = products.map((p: any) => p.id)
+  const productSubjectIds: Record<string, string[]> = {}
+  const { data: psRows } = await supabase
+    .from('product_subjects')
+    .select('product_id, subject_id, sort_order')
+    .in('product_id', productIds)
+    .order('sort_order', { ascending: true })
+  for (const row of psRows || []) {
+    if (!productSubjectIds[row.product_id]) productSubjectIds[row.product_id] = []
+    productSubjectIds[row.product_id].push(row.subject_id)
+  }
+  return products.map((p: any) => ({
+    ...p,
+    subject_ids: productSubjectIds[p.id]?.length ? productSubjectIds[p.id] : (p.subject_id ? [p.subject_id] : []),
+  }))
+}
+
 // Helper function to transform products to add 'name' field for backward compatibility
 function transformProducts(products: any[]): any[] {
   if (!products) return []
@@ -181,12 +201,18 @@ export default async function MarketplacePage() {
     recommendedProducts = trending || []
   }
 
-  // Transform all products to add 'name' field for backward compatibility
-  const transformedFeaturedProducts = transformProducts(featuredProducts || [])
-  const transformedNewProducts = transformProducts(newProducts || [])
-  const transformedTrendingProducts = transformProducts(trendingProducts || [])
-  const transformedBestsellerProducts = transformProducts(bestsellerProducts || [])
-  const transformedRecommendedProducts = transformProducts(recommendedProducts || [])
+  // Attach subject_ids for "Multiple Subjects" on cards, then transform (seller name)
+  const withSubjectIdsFeatured = await attachSubjectIds(supabase, featuredProducts || [])
+  const withSubjectIdsNew = await attachSubjectIds(supabase, newProducts || [])
+  const withSubjectIdsTrending = await attachSubjectIds(supabase, trendingProducts || [])
+  const withSubjectIdsBestseller = await attachSubjectIds(supabase, bestsellerProducts || [])
+  const withSubjectIdsRecommended = await attachSubjectIds(supabase, recommendedProducts || [])
+
+  const transformedFeaturedProducts = transformProducts(withSubjectIdsFeatured)
+  const transformedNewProducts = transformProducts(withSubjectIdsNew)
+  const transformedTrendingProducts = transformProducts(withSubjectIdsTrending)
+  const transformedBestsellerProducts = transformProducts(withSubjectIdsBestseller)
+  const transformedRecommendedProducts = transformProducts(withSubjectIdsRecommended)
 
   return (
     <>

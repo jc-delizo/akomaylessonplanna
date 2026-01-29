@@ -320,57 +320,6 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb — Phase 2: null-safe; SPED non-graded or regular+strand */}
-      <div className="text-sm text-gray-600 mb-6">
-        <Link href="/marketplace" className="hover:text-purple-600">
-          Marketplace
-        </Link>
-        {product.class_type === 'sped' && !product.grade && product.sped_level ? (
-          <>
-            {' / '}
-            <Link href="/marketplace/browse?class_type=sped" className="hover:text-purple-600">SPED</Link>
-            {' / '}
-            <span className="text-gray-700">{product.sped_level.name}</span>
-            {product.subject?.name && (
-              <>
-                {' / '}
-                <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
-                  {product.subject.name}
-                </Link>
-              </>
-            )}
-          </>
-        ) : product.grade && product.subject ? (
-          <>
-            {' / '}
-            <Link href={`/marketplace/browse?grade_id=${product.grade.id}`} className="hover:text-purple-600">
-              {product.grade.name}
-            </Link>
-            {product.strand?.name && (
-              <>
-                {' / '}
-                <Link href={`/marketplace/browse?strand_id=${product.strand.id}`} className="hover:text-purple-600">
-                  {product.strand.name}
-                </Link>
-              </>
-            )}
-            {' / '}
-            <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
-              {product.subject.name}
-            </Link>
-          </>
-        ) : product.subject?.name ? (
-          <>
-            {' / '}
-            <Link href={`/marketplace/browse?subject_id=${product.subject.id}`} className="hover:text-purple-600">
-              {product.subject.name}
-            </Link>
-          </>
-        ) : null}
-        {' / '}
-        <span className="text-gray-900">{product.title}</span>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column: Image Gallery */}
         <div className="space-y-4">
@@ -465,14 +414,14 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
                   </>
                 ),
               })
-              // Class: Class Type
-              if (product.class_type) {
+              // Class: Class Type — only show when SPED (hide when Regular)
+              if (product.class_type === 'sped') {
                 groups.push({
                   label: 'Class',
                   content: (
                     <Badge variant="outline">
                       {getClassTypeLabel(product.class_type)}
-                      {product.class_type === 'sped' && product.learner_path
+                      {product.learner_path
                         ? ` (${getLearnerPathLabel(product.learner_path) ?? product.learner_path})`
                         : ''}
                     </Badge>

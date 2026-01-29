@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Heart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ProductBadge } from '@/components/social-proof/product-badge'
-import { ProductStats } from '@/components/social-proof/product-stats'
 import { calculateProductBadgeClient } from '@/lib/social-proof/calculate-badges-client'
 
 interface Product {
@@ -39,6 +38,9 @@ interface Product {
   class_type?: string | null
   strand?: { id: string; name: string; code?: string } | null
   sped_level?: { id: string; name: string } | null
+  subject_ids?: string[]
+  quarter?: number
+  weeks?: number[]
 }
 
 interface ProductCardProps {
@@ -47,17 +49,44 @@ interface ProductCardProps {
   searchQuery?: string // Optional: if product was shown in search results
 }
 
+/** Abbreviate grade display: "Grade 1" -> "Gr 1" to conserve space */
+function abbreviateGradeName(name: string): string {
+  if (!name) return ''
+  return name.replace(/^Grade\s+/i, 'Gr ')
+}
+
 function productContextLine(product: Product): string {
-  const subjectName = product.subject?.name ?? ''
+  const subjectName =
+    product.subject_ids && product.subject_ids.length > 1
+      ? 'Multiple Subjects'
+      : (product.subject?.name ?? '')
   if (product.class_type === 'sped' && product.sped_level?.name) {
     return [product.sped_level.name, subjectName].filter(Boolean).join(' • ')
   }
   if (product.class_type === 'regular' && product.strand?.name) {
-    const gradeName = product.grade?.name ?? ''
+    const gradeName = abbreviateGradeName(product.grade?.name ?? '')
     return [gradeName, product.strand.name, subjectName].filter(Boolean).join(' • ')
   }
-  const gradeName = product.grade?.name ?? ''
+  const gradeName = abbreviateGradeName(product.grade?.name ?? '')
   return [gradeName, subjectName].filter(Boolean).join(' • ')
+}
+
+function formatQuarterWeeks(quarter?: number, weeks?: number[]): string {
+  const hasQuarter = quarter != null
+  const hasWeeks = weeks && weeks.length > 0
+  if (!hasQuarter && !hasWeeks) return ''
+  if (hasQuarter && hasWeeks) {
+    const min = Math.min(...weeks!)
+    const max = Math.max(...weeks!)
+    return `Quarter ${quarter}: W${min}-W${max}`
+  }
+  if (hasQuarter) return `Quarter ${quarter}`
+  if (hasWeeks) {
+    const min = Math.min(...weeks!)
+    const max = Math.max(...weeks!)
+    return `W${min}-W${max}`
+  }
+  return ''
 }
 
 export function ProductCard({ product, showSeller = true, searchQuery }: ProductCardProps) {
@@ -66,9 +95,29 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
   const supabase = createClient()
   const contextLine = productContextLine(product)
+  const quarterWeeksLine = formatQuarterWeeks(product.quarter, product.weeks)
   const sellerName = product.seller?.name ?? (
     [product.seller?.first_name, product.seller?.last_name].filter(Boolean).join(' ').trim() || ''
   )
+  const infoSectionRef = React.useRef<HTMLDivElement>(null)
+
+  // #region agent log
+  useEffect(() => {
+    const el = infoSectionRef.current
+    if (!el) return
+    const title = el.querySelector('h3')
+    const seller = showSeller && sellerName ? el.querySelector('p') : null
+    if (title) {
+      const s = getComputedStyle(title)
+      const rect = title.getBoundingClientRect()
+      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'product-card.tsx:title-spacing',message:'Title computed spacing',data:{marginBottom:s.marginBottom,lineHeight:s.lineHeight,minHeight:s.minHeight,heightPx:rect.height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{})
+    }
+    if (seller) {
+      const s = getComputedStyle(seller)
+      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'product-card.tsx:seller-spacing',message:'Seller computed spacing',data:{marginTop:s.marginTop,marginBottom:s.marginBottom,lineHeight:s.lineHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{})
+    }
+  }, [product.id, showSeller, sellerName])
+  // #endregion
 
   useEffect(() => {
     let cancelled = false
@@ -227,14 +276,15 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
             </div>
           )}
 
-          {/* Trust Badges - Top Left (Lazada Style) */}
+          {/* Single trust badge: calculated badge over Featured */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-            {badge && <ProductBadge badge={badge} />}
-            {product.badges && product.badges.includes('featured') && (
+            {badge ? (
+              <ProductBadge badge={badge} />
+            ) : product.badges && product.badges.includes('featured') ? (
               <Badge className="bg-purple-600 text-white text-xs font-semibold px-2 py-0.5 border-0 shadow-sm">
                 FEATURED
               </Badge>
-            )}
+            ) : null}
           </div>
 
           {/* Wishlist Button - Top Right (Simple) */}
@@ -257,16 +307,30 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
         </div>
 
         {/* Info Section - Clean Typography Hierarchy */}
-        <div className="px-4 pt-0 pb-4 flex-1 flex flex-col bg-white">
-          {/* Product Title - Large and Bold (Primary Focus) */}
-          <h3 className="font-bold text-base leading-tight mb-1 line-clamp-2 text-gray-900 min-h-[2.5rem]">
+        <div ref={infoSectionRef} className="px-4 pt-0 pb-4 flex-1 flex flex-col bg-white">
+          {/* Product Title - Large and Bold (Primary Focus) - no margin/min-height to remove gap above seller */}
+          <h3 className="font-bold text-base leading-tight mb-0 line-clamp-2 text-gray-900">
             {product.title}
           </h3>
 
-          {/* Grade and Subject - Secondary Info (Phase 2: Level • Subject or Grade • Strand • Subject) */}
-          <p className="text-xs text-gray-500 mb-1.5">
+          {/* Seller - same height as "No reviews yet" row (text-xs) */}
+          {showSeller && sellerName && (
+            <p className="text-xs text-gray-500 leading-4 mb-0 mt-0">
+              by {sellerName}
+            </p>
+          )}
+
+          {/* Grade and Subject - Secondary Info (Phase 2: Level • Subject or Grade • Strand • Subject; Multiple Subjects when subject_ids.length > 1) */}
+          <p className="text-sm text-gray-500 mt-1.5 mb-1">
             {contextLine || '—'}
           </p>
+
+          {/* Quarter and Weeks - below Grade • Subject */}
+          {quarterWeeksLine && (
+            <p className="text-sm text-gray-500 mb-1.5">
+              {quarterWeeksLine}
+            </p>
+          )}
 
           {/* Price - Prominent Display */}
           <div className="mb-1.5">
@@ -275,48 +339,36 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
             </p>
           </div>
 
-          {/* Rating and Sales - Compact */}
+          {/* Rating and Sales - one line, no wrap */}
           {product.avg_rating ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-2 min-w-0 text-xs">
+              <div className="flex items-center gap-1 min-w-0 shrink-0">
                 <svg
-                  className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                  className="w-4 h-4 text-yellow-400 fill-yellow-400 shrink-0"
                   viewBox="0 0 20 20"
                 >
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="font-medium text-gray-700 truncate">
                   {product.avg_rating.toFixed(1)}
+                  {(product.reviews_count ?? 0) > 0 && ` (${product.reviews_count})`}
                 </span>
-                {(product.reviews_count ?? 0) > 0 && (
-                  <span className="text-xs text-gray-500">
-                    ({product.reviews_count})
-                  </span>
-                )}
               </div>
               {(product.sales_count ?? 0) > 0 && product.sales_count && (
-                <span className="text-xs text-gray-500">
+                <span className="text-gray-500 truncate shrink-0">
                   {product.sales_count.toLocaleString()} sales
                 </span>
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-400">No reviews yet</div>
+            <div className="flex items-center justify-between gap-2 min-w-0 text-xs">
+              <span className="text-gray-400">No reviews yet</span>
               {(product.sales_count ?? 0) > 0 && product.sales_count && (
-                <span className="text-xs text-gray-500">
+                <span className="text-gray-500 truncate shrink-0">
                   {product.sales_count.toLocaleString()} sales
                 </span>
               )}
             </div>
-          )}
-
-          {/* Stats - Views only */}
-          {(product.views_count ?? 0) > 0 && (
-            <ProductStats
-              viewsCount={product.views_count}
-              className="text-xs text-gray-500 mt-1"
-            />
           )}
         </div>
       </Card>

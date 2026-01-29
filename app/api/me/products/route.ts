@@ -44,7 +44,27 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ products: products || [] })
+    // Phase B: attach subject_ids from product_subjects for "Multiple Subjects" on SellerProductCard
+    const list = products || []
+    const productIds = list.map((p: { id: string }) => p.id)
+    const productSubjectIds: Record<string, string[]> = {}
+    if (productIds.length > 0) {
+      const { data: psRows } = await supabase
+        .from('product_subjects')
+        .select('product_id, subject_id, sort_order')
+        .in('product_id', productIds)
+        .order('sort_order', { ascending: true })
+      for (const row of psRows || []) {
+        if (!productSubjectIds[row.product_id]) productSubjectIds[row.product_id] = []
+        productSubjectIds[row.product_id].push(row.subject_id)
+      }
+    }
+    const productsWithSubjectIds = list.map((p: { id: string; subject_id?: string }) => ({
+      ...p,
+      subject_ids: productSubjectIds[p.id]?.length ? productSubjectIds[p.id] : (p.subject_id ? [p.subject_id] : []),
+    }))
+
+    return NextResponse.json({ products: productsWithSubjectIds })
   } catch (error) {
     console.error('Error in GET /api/me/products:', error)
     return NextResponse.json(

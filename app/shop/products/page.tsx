@@ -42,6 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SellerProductCard } from '@/components/products/seller-product-card'
 
 interface Product {
   id: string
@@ -559,176 +560,26 @@ export default function MyProductsPage() {
                 isProOrPioneer && product.views_count > 100 && conversionRate > 5
               const isLowConversion =
                 isProOrPioneer && product.views_count > 100 && conversionRate < 2
-
               return (
-                <Card
-                  key={product.id}
-                  className="group overflow-hidden h-full flex flex-col hover:shadow-lg transition-all duration-200 border-0 shadow-sm"
-                >
-                  {/* Image Section */}
-                  <CardHeader className="p-0 relative">
-                    <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
-                      {product.cover_image_url ? (
-                        <img
-                          src={product.cover_image_url}
-                          alt={product.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted">
-                          <Skeleton className="w-full h-full" />
-                        </div>
-                      )}
-
-                      {/* Checkbox for bulk selection */}
-                      <div className="absolute top-2 left-2 z-10">
-                        <div className="bg-background/80 backdrop-blur-sm rounded p-0.5">
-                          <Checkbox
-                            checked={selectedProducts.has(product.id)}
-                            onCheckedChange={() => handleSelectProduct(product.id)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Status Badge */}
-                      <div className="absolute top-2 right-2 z-10">
-                        <Badge
-                          className={`${STATUS_COLORS[product.status]} text-white text-xs shadow-sm`}
-                        >
-                          {STATUS_LABELS[product.status]}
-                        </Badge>
-                      </div>
-
-                      {/* Trending/Low Conversion Badges */}
-                      {isTrending && (
-                        <div className="absolute bottom-2 left-2 z-10">
-                          <Badge className="bg-orange-500 text-white text-xs shadow-sm">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Trending
-                          </Badge>
-                        </div>
-                      )}
-                      {isLowConversion && (
-                        <div className="absolute bottom-2 left-2 z-10">
-                          <Badge className="bg-yellow-500 text-white text-xs shadow-sm">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Low conversion
-                          </Badge>
-                        </div>
-                      )}
+                <div key={product.id} className="relative">
+                  <SellerProductCard
+                    product={product}
+                    onTogglePublish={handleTogglePublish}
+                    onDuplicate={handleDuplicate}
+                    onDelete={handleDelete}
+                    showTrendingBadge={isTrending}
+                    showLowConversionBadge={isLowConversion}
+                  />
+                  {/* Checkbox for bulk selection - overlay */}
+                  <div className="absolute top-2 left-2 z-20">
+                    <div className="bg-background/80 backdrop-blur-sm rounded p-0.5">
+                      <Checkbox
+                        checked={selectedProducts.has(product.id)}
+                        onCheckedChange={() => handleSelectProduct(product.id)}
+                      />
                     </div>
-                  </CardHeader>
-
-                  {/* Info Section */}
-                  <CardContent className="flex-1 flex flex-col p-4 space-y-3">
-                    {/* Product Title */}
-                    <div className="space-y-1.5">
-                      <h3 className="font-semibold text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
-                        {product.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {product.grade.name} • {product.subject.name}
-                      </p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Price */}
-                    <div>
-                      <p className="text-xl font-bold text-orange-600">
-                        ₱{product.price.toFixed(2)}
-                      </p>
-                    </div>
-
-                    {/* Rating and Sales */}
-                    {product.avg_rating ? (
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                          <span className="font-medium">{product.avg_rating.toFixed(1)}</span>
-                          {product.reviews_count > 0 && (
-                            <span className="text-muted-foreground">
-                              ({product.reviews_count})
-                            </span>
-                          )}
-                        </div>
-                        {product.sales_count > 0 && (
-                          <span className="text-muted-foreground">
-                            {product.sales_count.toLocaleString()} sales
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">No reviews yet</span>
-                        {product.sales_count > 0 && (
-                          <span className="text-muted-foreground">
-                            {product.sales_count.toLocaleString()} sales
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Stats - Views */}
-                    {product.views_count > 0 && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Eye className="h-3 w-3" />
-                        <span>{product.views_count.toLocaleString()} views</span>
-                        {conversionRate > 0 && (
-                          <>
-                            <Separator orientation="vertical" className="h-3" />
-                            <span>📊 {conversionRate.toFixed(1)}%</span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-
-                  {/* Actions */}
-                  <CardFooter className="p-4 pt-0 gap-2">
-                    <Link href={`/shop/products/${product.id}/edit`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Edit className="h-3 w-3 mr-1.5" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleTogglePublish(product.id, product.status)}
-                        >
-                          {product.status === 'published' ? (
-                            <>
-                              <EyeOff className="h-4 w-4 mr-2" />
-                              Unpublish
-                            </>
-                          ) : (
-                            <>
-                              <Send className="h-4 w-4 mr-2" />
-                              Publish
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicate(product.id)}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(product.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardFooter>
-                </Card>
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -1025,189 +876,25 @@ export default function MyProductsPage() {
                   isProOrPioneer && product.views_count > 100 && conversionRate > 5
                 const isLowConversion =
                   isProOrPioneer && product.views_count > 100 && conversionRate < 2
-
                 return (
-                  <Card
-                    key={product.id}
-                    className="overflow-hidden h-full flex flex-col group bg-white hover:shadow-lg transition-shadow duration-200 rounded-lg p-0"
-                  >
-                    {/* Image Section - Clean and Simple */}
-                    <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-                      {product.cover_image_url ? (
-                        <Image
-                          src={product.cover_image_url}
-                          alt={`${product.title} - ${product.grade.name} ${product.subject.name} lesson plan`}
-                          fill
-                          className="object-cover"
-                          loading="lazy"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                  <div key={product.id} className="relative">
+                    <SellerProductCard
+                      product={product}
+                      onTogglePublish={handleTogglePublish}
+                      onDuplicate={handleDuplicate}
+                      onDelete={handleDelete}
+                      showTrendingBadge={isTrending}
+                      showLowConversionBadge={isLowConversion}
+                    />
+                    <div className="absolute top-2 left-2 z-20">
+                      <div className="bg-white/90 backdrop-blur-sm rounded p-0.5 shadow-sm">
+                        <Checkbox
+                          checked={selectedProducts.has(product.id)}
+                          onCheckedChange={() => handleSelectProduct(product.id)}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
-                          <svg
-                            className="w-12 h-12"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                        </div>
-                      )}
-
-                      {/* Checkbox for bulk selection - Top Left */}
-                      <div className="absolute top-2 left-2 z-10">
-                        <div className="bg-white/90 backdrop-blur-sm rounded p-0.5 shadow-sm">
-                          <Checkbox
-                            checked={selectedProducts.has(product.id)}
-                            onCheckedChange={() => handleSelectProduct(product.id)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Status Badge - Top Right */}
-                      <div className="absolute top-2 right-2 z-10">
-                        <Badge
-                          className={`${STATUS_COLORS[product.status]} text-white text-xs shadow-sm`}
-                        >
-                          {STATUS_LABELS[product.status]}
-                        </Badge>
-                      </div>
-
-                      {/* Trending/Low Conversion Badges - Bottom Left */}
-                      {isTrending && (
-                        <div className="absolute bottom-2 left-2 z-10">
-                          <Badge className="bg-orange-500 text-white text-xs shadow-sm">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Trending
-                          </Badge>
-                        </div>
-                      )}
-                      {isLowConversion && (
-                        <div className="absolute bottom-2 left-2 z-10">
-                          <Badge className="bg-yellow-500 text-white text-xs shadow-sm">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Low conversion
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info Section - Clean Typography Hierarchy */}
-                    <div className="px-3 pt-1.5 pb-2 flex-1 flex flex-col bg-white">
-                      {/* Product Title - Large and Bold (Primary Focus) */}
-                      <h3 className="font-bold text-sm leading-tight mb-0.5 line-clamp-2 text-gray-900">
-                        {product.title}
-                      </h3>
-
-                      {/* Grade and Subject - Secondary Info */}
-                      <p className="text-xs text-gray-500 mb-0.5">
-                        {product.grade.name} • {product.subject.name}
-                      </p>
-
-                      {/* Price - Prominent Display */}
-                      <p className="text-lg font-bold text-orange-600 mb-0.5">
-                        ₱{product.price.toFixed(2)}
-                      </p>
-
-                      {/* Rating and Sales - Compact */}
-                      {product.avg_rating ? (
-                        <div className="flex items-center justify-between mb-0.5">
-                          <div className="flex items-center gap-1">
-                            <svg
-                              className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <span className="text-xs font-medium text-gray-700">
-                              {product.avg_rating.toFixed(1)}
-                            </span>
-                            {product.reviews_count > 0 && (
-                              <span className="text-xs text-gray-500">
-                                ({product.reviews_count})
-                              </span>
-                            )}
-                          </div>
-                          {product.sales_count > 0 && (
-                            <span className="text-xs text-gray-500">
-                              {product.sales_count.toLocaleString()} sales
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between mb-0.5">
-                          <div className="text-xs text-gray-400">No reviews yet</div>
-                          {product.sales_count > 0 && (
-                            <span className="text-xs text-gray-500">
-                              {product.sales_count.toLocaleString()} sales
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Stats - Views */}
-                      {product.views_count > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                          <Eye className="h-3 w-3" />
-                          <span>{product.views_count.toLocaleString()} views</span>
-                          {conversionRate > 0 && (
-                            <span className="ml-1.5">📊 {conversionRate.toFixed(1)}%</span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 mt-1">
-                        <Link href={`/shop/products/${product.id}/edit`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full h-7 text-xs">
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                        </Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 w-7 p-0">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleTogglePublish(product.id, product.status)}
-                            >
-                              {product.status === 'published' ? (
-                                <>
-                                  <EyeOff className="h-4 w-4 mr-2" />
-                                  Unpublish
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  Publish
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(product.id)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(product.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 )
               })}
             </div>

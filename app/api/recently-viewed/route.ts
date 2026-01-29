@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
           title,
           price,
           cover_image_url,
+          quarter,
+          weeks,
           seller:users!products_seller_id_fkey(
             id,
             first_name,
@@ -92,13 +94,35 @@ export async function GET(request: NextRequest) {
 
     // Filter out any items where product was deleted or unpublished
     const validItems = (recentlyViewed || []).filter((item) => item.product !== null)
+    const productIds = validItems.map((item) => item.product.id)
+
+    // Attach subject_ids from product_subjects for "Multiple Subjects" on cards
+    const productSubjectIds: Record<string, string[]> = {}
+    if (productIds.length > 0) {
+      const { data: psRows } = await supabase
+        .from('product_subjects')
+        .select('product_id, subject_id, sort_order')
+        .in('product_id', productIds)
+        .order('sort_order', { ascending: true })
+      for (const row of psRows || []) {
+        if (!productSubjectIds[row.product_id]) productSubjectIds[row.product_id] = []
+        productSubjectIds[row.product_id].push(row.subject_id)
+      }
+    }
+
+    const itemsWithSubjectIds = validItems.map((item) => ({
+      id: item.id,
+      viewed_at: item.viewed_at,
+      product: {
+        ...item.product,
+        subject_ids: productSubjectIds[item.product.id]?.length
+          ? productSubjectIds[item.product.id]
+          : (item.product.subject_id ? [item.product.subject_id] : []),
+      },
+    }))
 
     return NextResponse.json({
-      items: validItems.map((item) => ({
-        id: item.id,
-        viewed_at: item.viewed_at,
-        product: item.product,
-      })),
+      items: itemsWithSubjectIds,
     })
   } catch (error) {
     console.error('Error in GET /api/recently-viewed:', error)
