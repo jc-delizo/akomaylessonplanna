@@ -94,7 +94,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     productPages = (products || []).map((product: { id: string; slug?: string | null; updated_at?: string | null; published_at?: string | null }) => ({
       url: `${baseUrl}/products/${product.slug || product.id}`,
-      lastModified: product.updated_at || product.published_at || new Date(),
+      lastModified: new Date((product.updated_at || product.published_at) ?? Date.now()),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     }))
@@ -109,7 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     sellerPages = (sellers || []).map((seller: { username: string; updated_at?: string | null }) => ({
       url: `${baseUrl}/sellers/${seller.username}`,
-      lastModified: seller.updated_at || new Date(),
+      lastModified: new Date(seller.updated_at ?? Date.now()),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }))
