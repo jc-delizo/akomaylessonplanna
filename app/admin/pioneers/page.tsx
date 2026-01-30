@@ -5,9 +5,10 @@ import { getPioneersData } from '@/lib/utils/admin-pioneers'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Award, Plus, TrendingUp } from 'lucide-react'
+import { Award, BarChart3, Plus, User } from 'lucide-react'
 import Link from 'next/link'
 import { getFullName, getInitials } from '@/lib/utils/profile'
+import { RemovePioneerDialog } from '@/components/admin/remove-pioneer-dialog'
 
 export default async function PioneersPage() {
   const supabase = await createClient()
@@ -157,15 +158,29 @@ export default async function PioneersPage() {
 
               {/* Actions */}
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Profile
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Analytics
-                </Button>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-300">
-                  Remove
-                </Button>
+                {pioneer.username ? (
+                  <>
+                    <Link href={`/sellers/${pioneer.username}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <User className="h-3 w-3 mr-1" />
+                        View Profile
+                      </Button>
+                    </Link>
+                    <Link href={`/sellers/${pioneer.username}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <BarChart3 className="h-3 w-3 mr-1" />
+                        Analytics
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-400 flex-1">No public profile</span>
+                )}
+                <RemovePioneerDialog
+                  pioneerId={pioneer.id}
+                  fullName={getFullName(pioneer)}
+                  isSuperAdmin={adminUser.admin_role === 'super_admin'}
+                />
               </div>
             </Card>
           ))

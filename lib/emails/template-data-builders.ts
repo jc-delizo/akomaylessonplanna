@@ -234,6 +234,42 @@ export function buildVerificationRejectedData(params: {
 }
 
 /**
+ * Build template data for pioneer welcome email
+ */
+export function buildPioneerWelcomeData(params: {
+  userName: string
+  userEmail: string
+  userId: string
+  dashboardUrl?: string
+}): TemplateData {
+  return {
+    user_name: params.userName,
+    user_email: params.userEmail,
+    dashboard_url: params.dashboardUrl,
+    unsubscribe_link: generateUnsubscribeLink(params.userId, params.userEmail),
+    preferences_link: generatePreferencesLink(),
+  }
+}
+
+/**
+ * Build template data for pioneer removed email
+ */
+export function buildPioneerRemovedData(params: {
+  userName: string
+  userEmail: string
+  userId: string
+  reason?: string
+}): TemplateData {
+  return {
+    user_name: params.userName,
+    user_email: params.userEmail,
+    reason: params.reason,
+    unsubscribe_link: generateUnsubscribeLink(params.userId, params.userEmail),
+    preferences_link: generatePreferencesLink(),
+  }
+}
+
+/**
  * Build template data for refund processed email
  */
 export function buildRefundProcessedData(params: {

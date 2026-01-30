@@ -109,7 +109,7 @@
 - User management (all users, verification queue, banned users)
 - Product moderation (pending reviews, all products, suspended)
 - Content moderation (flagged reviews, user reports)
-- Pioneer management (20-slot limit)
+- Pioneer management (20-slot limit): Invite from Candidates, Remove with reason dialog, pioneer_welcome and pioneer_removed emails; only Super Admin can add/remove
 - Financial overview (Super Admin only)
 - System announcements
 - Admin roles (Super Admin, Moderator, Content Manager)

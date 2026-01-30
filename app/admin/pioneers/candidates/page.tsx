@@ -2,10 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getPioneersCandidatesData, getPioneersData } from '@/lib/utils/admin-pioneers'
+import { getFullName } from '@/lib/utils/profile'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Award, TrendingUp } from 'lucide-react'
+import { PioneerInviteButton } from '@/components/admin/pioneer-invite-button'
 
 export default async function PioneerCandidatesPage() {
   const supabase = await createClient()
@@ -80,54 +80,57 @@ export default async function PioneerCandidatesPage() {
                   </td>
                 </tr>
               ) : (
-                candidates?.map((candidate: any) => (
-                  <tr key={candidate.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          {candidate.avatar_url ? (
-                            <img
-                              src={candidate.avatar_url}
-                              alt={candidate.name}
-                              className="w-10 h-10 rounded-full"
-                            />
-                          ) : (
-                            <span className="text-sm font-medium">
-                              {candidate.name?.[0]?.toUpperCase()}
-                            </span>
-                          )}
+                candidates?.map((candidate: any) => {
+                  const fullName = getFullName(candidate)
+                  return (
+                    <tr key={candidate.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            {candidate.avatar_url ? (
+                              <img
+                                src={candidate.avatar_url}
+                                alt={fullName}
+                                className="w-10 h-10 rounded-full"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">
+                                {(candidate.first_name?.[0] ?? candidate.email?.[0] ?? '?').toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{fullName}</p>
+                            <p className="text-sm text-gray-500">{candidate.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{candidate.name}</p>
-                          <p className="text-sm text-gray-500">{candidate.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={getScoreColor(candidate.qualityScore)}>
-                        {candidate.qualityScore}/100
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{candidate.metrics.salesCount}</td>
-                    <td className="px-4 py-3 text-sm">{candidate.metrics.productCount}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {candidate.metrics.avgRating.toFixed(1)} ⭐
-                    </td>
-                    <td className="px-4 py-3 text-sm">{candidate.metrics.followersCount}</td>
-                    <td className="px-4 py-3">
-                      {candidate.qualityScore >= 70 && availableSlots > 0 ? (
-                        <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                          <Award className="h-4 w-4 mr-2" />
-                          Invite
-                        </Button>
-                      ) : (
-                        <span className="text-sm text-gray-400">
-                          {candidate.qualityScore < 70 ? 'Score too low' : 'No slots'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={getScoreColor(candidate.qualityScore)}>
+                          {candidate.qualityScore}/100
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{candidate.metrics.salesCount}</td>
+                      <td className="px-4 py-3 text-sm">{candidate.metrics.productCount}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {candidate.metrics.avgRating.toFixed(1)} ⭐
+                      </td>
+                      <td className="px-4 py-3 text-sm">{candidate.metrics.followersCount}</td>
+                      <td className="px-4 py-3">
+                        {candidate.qualityScore >= 70 && availableSlots > 0 ? (
+                          <PioneerInviteButton
+                            userId={candidate.id}
+                            fullName={fullName}
+                          />
+                        ) : (
+                          <span className="text-sm text-gray-400">
+                            {candidate.qualityScore < 70 ? 'Score too low' : 'No slots'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

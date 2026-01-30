@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { sendPioneerWelcomeEmail } from '@/lib/emails/pioneer-emails'
 
 /**
  * POST /api/admin/pioneers/add
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
       'Pioneer added'
     )
 
-    // TODO: Send invitation email
+    await sendPioneerWelcomeEmail(user_id)
 
     return NextResponse.json({
       success: true,

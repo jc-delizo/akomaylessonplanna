@@ -25,6 +25,8 @@ export type EmailType =
   | 'new_review'
   | 'verification_approved'
   | 'verification_rejected'
+  | 'pioneer_welcome'
+  | 'pioneer_removed'
   // Buying Notifications (5)
   | 'cart_abandonment'
   | 'review_reminder'
@@ -228,6 +230,24 @@ export const EMAIL_TYPES: Record<EmailType, EmailTypeMetadata> = {
     category: 'selling',
     name: 'Verification Rejected',
     description: 'Sent when teacher verification is rejected',
+    isTransactional: false,
+    priority: 2,
+    defaultEnabled: true,
+  },
+  pioneer_welcome: {
+    type: 'pioneer_welcome',
+    category: 'selling',
+    name: 'Pioneer Welcome',
+    description: 'Sent when a seller is added as a Pioneer',
+    isTransactional: false,
+    priority: 2,
+    defaultEnabled: true,
+  },
+  pioneer_removed: {
+    type: 'pioneer_removed',
+    category: 'selling',
+    name: 'Pioneer Status Removed',
+    description: 'Sent when Pioneer status is removed from a seller',
     isTransactional: false,
     priority: 2,
     defaultEnabled: true,

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { sendPioneerRemovedEmail } from '@/lib/emails/pioneer-emails'
 
 /**
  * DELETE /api/admin/pioneers/[id]/remove
@@ -78,7 +79,7 @@ export async function DELETE(
       reason.trim()
     )
 
-    // TODO: Send email notification with reason
+    await sendPioneerRemovedEmail(userId, reason.trim())
 
     return NextResponse.json({
       success: true,

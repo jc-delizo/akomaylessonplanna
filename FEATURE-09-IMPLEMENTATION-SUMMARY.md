@@ -142,17 +142,26 @@ Feature 9 (Admin Panel & Content Moderation) has been fully implemented accordin
 **Created:**
 - `app/admin/pioneers/page.tsx` - Current Pioneers
 - `app/admin/pioneers/candidates/page.tsx` - Pioneer Candidates
+- `app/admin/pioneers/add/page.tsx` - Add Pioneer (CTA to candidates + top candidates list)
 - `app/api/admin/pioneers/route.ts` - Get current Pioneers
 - `app/api/admin/pioneers/candidates/route.ts` - Get candidates with Quality Score
 - `app/api/admin/pioneers/add/route.ts` - Add Pioneer (invite-only)
 - `app/api/admin/pioneers/[id]/remove/route.ts` - Remove Pioneer
+- `components/admin/pioneer-invite-button.tsx` - Invite confirmation + POST add API
+- `components/admin/remove-pioneer-dialog.tsx` - Remove reason dialog + DELETE remove API
+- `lib/emails/pioneer-emails.ts` - sendPioneerWelcomeEmail, sendPioneerRemovedEmail
+- `lib/emails/templates/pioneer-welcome.tsx`, `pioneer-removed.tsx` - React Email templates
+- Migration `026_pioneer_email_types.sql` - pioneer_welcome, pioneer_removed in email_configuration
 
 **Features:**
 - 20-slot maximum (hard limit)
 - Quality Score calculation (sales 30%, rating 25%, products 20%, engagement 15%, professionalism 10%)
 - Commission management (15% standard, customizable 0-20%)
-- Invite-only workflow
-- Pioneer vs Standard performance comparison
+- Invite-only workflow: Invite from Candidates page (confirmation dialog) or Add page (top candidates + View All Candidates)
+- Remove Pioneer: reason required (Inactive 60+ days, Quality issues, Terms violation, Requested by seller, Other); Super Admin only
+- View Profile / Analytics links on Pioneer cards (to `/sellers/[username]`)
+- Emails: pioneer_welcome when added (“Welcome to the Pioneer Program!”), pioneer_removed when removed (“Changes to your Pioneer status” with reason)
+- Only Super Admin can add or remove Pioneers (API and UI)
 
 ### ✅ Phase 9: Financial Overview
 **Status:** Complete
