@@ -369,6 +369,20 @@ Incremental UX updates across marketplace, browse, and My Shop (cross-feature; n
 
 ---
 
+## Tier 2 Informational Pages (Jan 2026)
+
+Improvements to Tier 2 pages (About, How it works, For teachers, Contact, Become a seller, Category pages) for clarity, consistency, and conversion:
+
+- **Shared section component:** [components/tier2/page-section.tsx](components/tier2/page-section.tsx) for consistent section title + content on About, How it works, For teachers, Contact.
+- **About, How it works, For teachers, Contact:** Design tokens (`text-muted-foreground`, `text-foreground`) instead of raw gray; tightened copy; primary/secondary CTA order (Browse Marketplace, Become a Seller, Email Support, etc.).
+- **Become a seller:** Intro copy and short benefits list (earn from materials, reach teachers, simple upload/withdraw); form unchanged; Input/Label follow [UI-FIELD-STYLING.md](docs/implementationplan/UI-FIELD-STYLING.md).
+- **Category pages:** [app/categories/[categorySlug]/layout.tsx](app/categories/[categorySlug]/layout.tsx) with `generateMetadata` by slug (lesson-plans, exams, rpms, posters, tarpaulins) for unique title/description per category.
+- **Category hero:** [components/categories/category-hero.tsx](components/categories/category-hero.tsx) gradient aligned with brand (from-primary to-orange-800); subtitle uses `text-white/90`.
+
+**Summary**: [FEATURE-12-TIER2-PAGES-IMPLEMENTATION-SUMMARY.md](FEATURE-12-TIER2-PAGES-IMPLEMENTATION-SUMMARY.md)
+
+---
+
 ## Next Steps
 
 1. ✅ Complete documentation audit and cleanup

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
+import { PageSection } from '@/components/tier2/page-section'
 import { Mail } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -16,38 +17,38 @@ export default function ContactPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold mb-4 text-foreground">Contact Us</h1>
+        <p className="text-muted-foreground text-lg">
           Have questions or need help? Reach out to the Ako may lesson plan na! team.
         </p>
       </div>
 
       <Card className="mb-8">
         <CardContent className="pt-6">
-          <h2 className="text-2xl font-semibold mb-4">Support and Inquiries</h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Mail className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold">Email</h3>
-                <a
-                  href="mailto:support@akomaylessonplanna.com"
-                  className="text-primary hover:underline"
-                >
-                  support@akomaylessonplanna.com
-                </a>
-                <p className="text-gray-600 text-sm mt-1">
-                  For general support, seller verification, purchase issues, or platform questions.
-                </p>
+          <PageSection title="Support and Inquiries">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Mail className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-foreground">Email</h3>
+                  <a
+                    href="mailto:support@akomaylessonplanna.com"
+                    className="text-primary hover:underline"
+                  >
+                    support@akomaylessonplanna.com
+                  </a>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    For general support, seller verification, purchase issues, or platform questions.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </PageSection>
         </CardContent>
       </Card>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">What We Can Help With</h2>
-        <ul className="space-y-2 text-gray-700 list-disc list-inside">
+      <PageSection title="What We Can Help With" className="mb-8">
+        <ul className="space-y-2 text-muted-foreground list-disc list-inside">
           <li>Account and login issues</li>
           <li>Seller verification and becoming a seller</li>
           <li>Payment and checkout questions (GCash, Maya)</li>
@@ -56,9 +57,9 @@ export default function ContactPage() {
           <li>Report inappropriate content or sellers</li>
           <li>Partnership or collaboration inquiries</li>
         </ul>
-      </section>
+      </PageSection>
 
-      <p className="text-gray-600 mb-6">
+      <p className="text-muted-foreground mb-6">
         We aim to respond within 24–48 hours. For urgent order or payment issues, please include your order ID or email used for the account.
       </p>
 

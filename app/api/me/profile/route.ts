@@ -70,6 +70,9 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'app/api/me/profile/route.ts:PUT:body', message: 'PUT profile body keys', data: { bodyKeys: Object.keys(body), hasTeachingClassTypes: 'teaching_class_types' in body }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => {})
+    // #endregion
     const {
       first_name,
       last_name,
@@ -290,6 +293,9 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'app/api/me/profile/route.ts:PUT:beforeUpdate', message: 'updateData keys sent to Supabase', data: { updateDataKeys: Object.keys(updateData) }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'D' }) }).catch(() => {})
+    // #endregion
     // Update user profile
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
@@ -299,6 +305,9 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (updateError) {
+      // #region agent log
+      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'app/api/me/profile/route.ts:PUT:updateError', message: 'Supabase update error', data: { code: updateError.code, message: updateError.message, updateDataKeys: Object.keys(updateData) }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A,C,E' }) }).catch(() => {})
+      // #endregion
       console.error('Error updating profile:', updateError)
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
     }

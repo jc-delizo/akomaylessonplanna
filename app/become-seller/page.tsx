@@ -266,10 +266,15 @@ export default function BecomeSellerPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-3 text-white">Become a Seller! Earn more!</h1>
-        <p className="text-white/90 text-base">
+        <h1 className="text-3xl font-bold mb-3 text-white">Become a Seller</h1>
+        <p className="text-white/90 text-base mb-4">
           Verify your teacher credentials to start selling educational resources on Ako may lesson plan na!
         </p>
+        <ul className="text-white/80 text-sm space-y-1.5 list-disc list-inside">
+          <li>Earn from your lesson plans, exams, and teaching materials</li>
+          <li>Reach Filipino K-12 teachers nationwide</li>
+          <li>Simple upload process; withdraw via GCash or Maya</li>
+        </ul>
       </div>
 
       {/* Current Status */}

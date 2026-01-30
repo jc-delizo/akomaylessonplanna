@@ -406,6 +406,23 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 ---
 
+### 024_profile_teaching_phase2.sql
+
+**Purpose**: Add Phase 2 teaching preference columns to `users` for the Profile Teaching tab (class types, learner paths, strands, SPED levels).
+
+**What it does:**
+1. Adds `teaching_class_types` (TEXT[]), `teaching_learner_paths` (TEXT[]), `teaching_strand_ids` (UUID[]), `teaching_sped_level_ids` (UUID[]) to `users`
+2. Creates GIN indexes on the array columns
+3. Adds column comments
+
+**Table Modified**: `users`
+
+**Dependencies**: 001 (users table)
+
+**Status**: Apply if profile update fails with PGRST204 ("Could not find the 'teaching_class_types' column"). See [MIGRATION-024-PROFILE-TEACHING.md](implementationplan/MIGRATION-024-PROFILE-TEACHING.md).
+
+---
+
 ## Migration Dependencies Graph
 
 ```
