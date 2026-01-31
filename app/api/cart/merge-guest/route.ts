@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     // Validate products exist and are published
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('id, status')
+      .select('id, status, seller_id')
       .in('id', productIds)
       .eq('status', 'published')
 
@@ -163,6 +163,18 @@ export async function POST(request: Request) {
         { error: 'Failed to merge cart items' },
         { status: 500 }
       )
+    }
+
+    // Record add-to-cart events for seller analytics (funnel) - one per product added
+    const productById = new Map((products || []).map((p) => [p.id, p]))
+    for (const productId of newProductIds) {
+      const p = productById.get(productId)
+      if (p?.seller_id) {
+        await supabase.from('cart_add_events').insert({
+          product_id: productId,
+          seller_id: p.seller_id,
+        })
+      }
     }
 
     // Return merged cart

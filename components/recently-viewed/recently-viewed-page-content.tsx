@@ -123,6 +123,7 @@ export function RecentlyViewedPageContent() {
                 quarter: item.product.quarter,
                 weeks: item.product.weeks,
               }}
+              trafficSource="other"
             />
           ))}
         </div>

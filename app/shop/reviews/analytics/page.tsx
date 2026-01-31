@@ -69,10 +69,15 @@ export default function ReviewAnalyticsPage() {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card className="p-8 text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Link href="/shop/reviews">
-            <Button variant="outline">Back to Reviews</Button>
-          </Link>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Link href="/shop/upgrade">
+              <Button className="bg-[#ff7200] hover:bg-[#e66800]">Unlock with Pro</Button>
+            </Link>
+            <Link href="/shop/reviews">
+              <Button variant="outline">Back to Reviews</Button>
+            </Link>
+          </div>
         </Card>
       </div>
     )

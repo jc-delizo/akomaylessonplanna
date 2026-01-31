@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET(request: Request) {
   try {
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
     const productRevenue: Record<string, number> = {}
     orderItems
       ?.filter((item) => {
-        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        const order = getRelation(item.order)
         return order?.payment_status === 'completed'
       })
       .forEach((item) => {
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
     const categorySales: Record<string, number> = {}
     orderItems
       ?.filter((item) => {
-        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        const order = getRelation(item.order)
         return order?.payment_status === 'completed'
       })
       .forEach((item) => {

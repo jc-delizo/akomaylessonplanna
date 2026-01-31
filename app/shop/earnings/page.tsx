@@ -2,6 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,6 +24,13 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/registry/default/select/select'
 import {
   Wallet,
   Clock,
@@ -23,7 +44,11 @@ import {
   Info,
   DollarSign,
   Circle,
+  Download,
 } from 'lucide-react'
+import { ProTierPlaceholder } from '@/components/pro-tier-placeholder'
+
+const PIE_COLORS = ['#7c3aed', '#a78bfa', '#c4b5fd', '#8b5cf6', '#6d28d9']
 
 interface EarningsData {
   available_balance: number
@@ -64,6 +89,8 @@ export default function SellerEarningsPage() {
   const [paymentMethod, setPaymentMethod] = useState<'gcash' | 'maya'>('gcash')
   const [showWithdrawalForm, setShowWithdrawalForm] = useState(false)
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'pioneer'>('free')
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('csv')
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     loadEarnings()
@@ -152,6 +179,49 @@ export default function SellerEarningsPage() {
     }
   }
 
+  const isProOrPioneer = subscriptionTier === 'pro' || subscriptionTier === 'pioneer'
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/seller/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          export_type: 'earnings',
+          format: exportFormat,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Export failed')
+        setExporting(false)
+        return
+      }
+      const { job_id } = await res.json()
+      let attempts = 0
+      const poll = async () => {
+        const j = await fetch(`/api/seller/export/${job_id}`).then((r) => r.json())
+        if (j.status === 'completed' && j.file_url) {
+          window.open(j.file_url, '_blank')
+          setExporting(false)
+          return
+        }
+        if (j.status === 'failed') {
+          alert(j.error_message || 'Export failed')
+          setExporting(false)
+          return
+        }
+        if (++attempts < 30) setTimeout(poll, 1500)
+        else setExporting(false)
+      }
+      setTimeout(poll, 1000)
+    } catch (e) {
+      setExporting(false)
+      alert('Export failed')
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6 max-w-6xl">
@@ -193,9 +263,39 @@ export default function SellerEarningsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Earnings</h1>
-        <p className="text-gray-600 mt-1">Track your earnings and manage withdrawals</p>
+      <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Earnings</h1>
+          <p className="text-gray-600 mt-1">Track your earnings and manage withdrawals</p>
+        </div>
+        <div className="flex gap-2 items-center">
+          <Select
+            value={exportFormat}
+            onValueChange={(v) => setExportFormat(v as 'csv' | 'xlsx' | 'pdf')}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">CSV</SelectItem>
+              {isProOrPioneer && (
+                <>
+                  <SelectItem value="xlsx">Excel</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
+          </Button>
+        </div>
       </div>
 
       {/* Balance Cards */}
@@ -492,39 +592,43 @@ export default function SellerEarningsPage() {
             </Card>
           </div>
 
-          {/* Projected Earnings (Pro/Pioneer) */}
-          {earnings.projected && (subscriptionTier === 'pro' || subscriptionTier === 'pioneer') && (
-            <>
-              <Separator className="my-6" />
-              <Card className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-4 w-4 text-purple-700" />
-                      <CardDescription className="text-sm font-medium text-gray-700 mb-0">
-                        Projected Earnings This Month
-                      </CardDescription>
-                    </div>
-                    <p className="text-2xl font-bold text-purple-700 mb-1">
-                      ₱{earnings.projected.amount.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className={earnings.projected.growth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {earnings.projected.growth >= 0 ? '+' : ''}
-                        {earnings.projected.growth.toFixed(1)}%
-                      </span>
-                      {' '}vs last month
-                    </p>
+          {/* Projected Earnings: Pro/Pioneer real data, Free placeholder */}
+          <Separator className="my-6" />
+          {earnings.projected && (subscriptionTier === 'pro' || subscriptionTier === 'pioneer') ? (
+            <Card className="p-5 bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-purple-700" />
+                    <CardDescription className="text-sm font-medium text-gray-700 mb-0">
+                      Projected Earnings This Month
+                    </CardDescription>
                   </div>
+                  <p className="text-2xl font-bold text-purple-700 mb-1">
+                    ₱{earnings.projected.amount.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className={earnings.projected.growth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {earnings.projected.growth >= 0 ? '+' : ''}
+                      {earnings.projected.growth.toFixed(1)}%
+                    </span>
+                    {' '}vs last month
+                  </p>
                 </div>
-              </Card>
-            </>
-          )}
+              </div>
+            </Card>
+          ) : !(subscriptionTier === 'pro' || subscriptionTier === 'pioneer') ? (
+            <ProTierPlaceholder
+              title="Pro only"
+              description="Projected earnings this month based on your current pace. Unlock with Pro."
+              ctaLabel="Unlock with Pro"
+            />
+          ) : null}
         </CardContent>
       </Card>
 
-      {/* Pro/Pioneer Charts */}
-      {(subscriptionTier === 'pro' || subscriptionTier === 'pioneer') && earnings.charts && (
+      {/* Charts: Pro/Pioneer real charts, Free placeholder */}
+      {(subscriptionTier === 'pro' || subscriptionTier === 'pioneer') && earnings.charts ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Revenue by Month */}
           <Card>
@@ -536,21 +640,16 @@ export default function SellerEarningsPage() {
               <CardDescription>Monthly revenue breakdown</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center">
-                <div className="w-full space-y-3">
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-500">Interactive bar chart (Pro/Pioneer feature)</p>
-                    <p className="text-xs text-gray-400 mt-1">Full implementation with Recharts/Chart.js</p>
-                  </div>
-                  <div className="space-y-2">
-                    {earnings.charts.revenueByMonth.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <span className="text-sm text-gray-700">{item.month}</span>
-                        <span className="font-semibold text-gray-900">₱{item.revenue.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={earnings.charts.revenueByMonth} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} width={50} />
+                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']} />
+                    <Bar dataKey="revenue" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -565,23 +664,29 @@ export default function SellerEarningsPage() {
               <CardDescription>Revenue distribution by category</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center">
-                <div className="w-full space-y-3">
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-500">Interactive pie chart (Pro/Pioneer feature)</p>
-                    <p className="text-xs text-gray-400 mt-1">Full implementation with Recharts/Chart.js</p>
-                  </div>
-                  <div className="space-y-2">
-                    {earnings.charts.salesByCategory.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <span className="text-sm text-gray-700 capitalize">
-                          {item.category.replace('_', ' ')}
-                        </span>
-                        <span className="font-semibold text-gray-900">₱{item.revenue.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={earnings.charts.salesByCategory.map((item) => ({
+                        name: item.category.replace('_', ' '),
+                        value: item.revenue,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    >
+                      {earnings.charts.salesByCategory.map((_, index) => (
+                        <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -597,36 +702,34 @@ export default function SellerEarningsPage() {
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <div className="h-full flex items-end justify-between gap-1 pb-4">
-                  {earnings.charts.earningsTrend.slice(-30).map((point, index) => {
-                    const maxEarnings = Math.max(
-                      ...earnings.charts!.earningsTrend.map((p) => p.earnings),
-                      1
-                    )
-                    const height = (point.earnings / maxEarnings) * 100
-                    return (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div className="flex-1 flex flex-col items-center group cursor-pointer">
-                            <div
-                              className="w-full bg-gradient-to-t from-purple-600 to-purple-400 rounded-t transition-all hover:from-purple-700 hover:to-purple-500"
-                              style={{ height: `${height}%`, minHeight: '4px' }}
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="font-medium">{point.date}</p>
-                          <p>₱{point.earnings.toFixed(2)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  })}
-                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={earnings.charts.earningsTrend.slice(-30)} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} width={50} />
+                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Earnings']} labelFormatter={(label) => (label != null ? new Date(label).toLocaleDateString('en-US') : '')} />
+                    <Area type="monotone" dataKey="earnings" stroke="#7c3aed" strokeWidth={2} fill="url(#earningsGradient)" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : !(subscriptionTier === 'pro' || subscriptionTier === 'pioneer') ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ProTierPlaceholder
+            title="Pro Feature"
+            description="Revenue by month, sales by category, and earnings trend charts. Unlock with Pro."
+            ctaLabel="Unlock with Pro"
+          />
+        </div>
+      ) : null}
 
       {/* Commission Reminder */}
       <Card className="mb-8 bg-gradient-to-r from-gray-50 to-gray-100/50 border-gray-200">

@@ -27,45 +27,8 @@ export async function GET(request: Request) {
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const timePeriod = searchParams.get('time_period') || 'month' // today, week, month, all
-    const forceRefresh = searchParams.get('refresh') === 'true'
 
-    // Check cache first (unless force refresh)
-    if (!forceRefresh) {
-      const { data: cachedMetrics, error: cacheError } = await supabase
-        .from('seller_metrics_cache')
-        .select('*')
-        .eq('seller_id', user.id)
-        .eq('metric_type', 'dashboard_overview')
-        .eq('time_period', timePeriod)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle()
-
-      if (cachedMetrics) {
-        // Return cached data
-        return NextResponse.json({
-          metrics: {
-            revenue: {
-              value: parseFloat(cachedMetrics.value.toString()),
-              trend: cachedMetrics.previous_value
-                ? ((parseFloat(cachedMetrics.value.toString()) -
-                    parseFloat(cachedMetrics.previous_value.toString())) /
-                    parseFloat(cachedMetrics.previous_value.toString())) *
-                  100
-                : 0,
-              previousValue: cachedMetrics.previous_value
-                ? parseFloat(cachedMetrics.previous_value.toString())
-                : 0,
-            },
-            sales: { value: 0, trend: 0 }, // Simplified
-            views: { value: 0, trend: 0 }, // Simplified
-            rating: { value: 0, count: 0 }, // Simplified
-          },
-          chartData: [], // Would need separate cache
-          timePeriod,
-          cached: true,
-        })
-      }
-    }
+    // Cache read removed: single-metric cache returned wrong sales/views/rating. Always compute full metrics.
 
     // Calculate date range
     const now = new Date()
@@ -101,62 +64,77 @@ export async function GET(request: Request) {
 
     let revenue = 0
     let previousRevenue = 0
-    const salesCount = orderItems?.filter(
-      (item) => {
-        const order = getRelation(item.order)
-        return order?.payment_status === 'completed'
-      }
-    ).length || 0
-
-    // Calculate revenue for current period
+    let previousSalesCount = 0
     const currentPeriodItems = orderItems?.filter(
       (item) => {
         const order = getRelation(item.order)
         return order?.payment_status === 'completed'
       }
     ) || []
-
+    const salesCount = currentPeriodItems.length
     revenue = currentPeriodItems.reduce(
       (sum, item) => sum + parseFloat(item.net_earnings.toString()),
       0
     )
 
-    // Calculate previous period for trend
+    // Calculate previous period for revenue and sales trend
     if (dateFrom) {
       const periodDuration = now.getTime() - dateFrom.getTime()
       const previousPeriodStart = new Date(dateFrom.getTime() - periodDuration)
-      
-      const { data: previousItems, error: previousItemsError } = await supabase
+
+      const { data: previousItems } = await supabase
         .from('order_items')
         .select('net_earnings, order:orders!order_items_order_id_fkey(payment_status)')
         .eq('seller_id', user.id)
         .gte('created_at', previousPeriodStart.toISOString())
         .lt('created_at', dateFrom.toISOString())
 
-      previousRevenue =
-        previousItems
-          ?.filter((item) => {
-            const order = getRelation(item.order)
-            return order?.payment_status === 'completed'
-          })
-          .reduce(
-            (sum, item) => sum + parseFloat(item.net_earnings.toString()),
-            0
-          ) || 0
+      const previousCompleted = previousItems?.filter((item) => {
+        const order = getRelation(item.order)
+        return order?.payment_status === 'completed'
+      }) || []
+      previousRevenue = previousCompleted.reduce(
+        (sum, item) => sum + parseFloat(item.net_earnings.toString()),
+        0
+      )
+      previousSalesCount = previousCompleted.length
     }
 
-    // Get product views
-    const viewsQuery = supabase
+    // Get products for total views and seller product IDs (for product_views trend)
+    const { data: products } = await supabase
       .from('products')
-      .select('views_count')
+      .select('id, views_count')
       .eq('seller_id', user.id)
 
-    const { data: products, error: productsError } = await viewsQuery
-    
     const totalViews = products?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0
+    const sellerProductIds = products?.map((p) => p.id) || []
 
-    // Get previous views (simplified - using products table)
-    const previousViews = Math.floor(totalViews * 0.85) // Approximation
+    // Views trend from product_views table (current vs previous period counts)
+    let currentPeriodViewCount = 0
+    let previousPeriodViewCount = 0
+    if (sellerProductIds.length > 0) {
+      const viewPeriodFrom = dateFrom
+      const viewPeriodTo = now
+      if (viewPeriodFrom) {
+        const periodDuration = viewPeriodTo.getTime() - viewPeriodFrom.getTime()
+        const viewPreviousStart = new Date(viewPeriodFrom.getTime() - periodDuration)
+        const { count: currentCount } = await supabase
+          .from('product_views')
+          .select('*', { count: 'exact', head: true })
+          .in('product_id', sellerProductIds)
+          .gte('viewed_at', viewPeriodFrom.toISOString())
+          .lte('viewed_at', viewPeriodTo.toISOString())
+        const { count: prevCount } = await supabase
+          .from('product_views')
+          .select('*', { count: 'exact', head: true })
+          .in('product_id', sellerProductIds)
+          .gte('viewed_at', viewPreviousStart.toISOString())
+          .lt('viewed_at', viewPeriodFrom.toISOString())
+        currentPeriodViewCount = currentCount ?? 0
+        previousPeriodViewCount = prevCount ?? 0
+      }
+    }
+    const previousViews = previousPeriodViewCount
 
     // Get average rating - fix: filter reviews by seller_id after fetching
     const { data: reviews, error: reviewsError } = await supabase
@@ -181,11 +159,16 @@ export async function GET(request: Request) {
         : revenue > 0
         ? 100
         : 0
-    const salesTrend = salesCount > 0 ? 8 : 0 // Simplified
+    const salesTrend =
+      previousSalesCount > 0
+        ? ((salesCount - previousSalesCount) / previousSalesCount) * 100
+        : salesCount > 0
+        ? 100
+        : 0
     const viewsTrend =
-      previousViews > 0
-        ? ((totalViews - previousViews) / previousViews) * 100
-        : totalViews > 0
+      previousPeriodViewCount > 0
+        ? ((currentPeriodViewCount - previousPeriodViewCount) / previousPeriodViewCount) * 100
+        : currentPeriodViewCount > 0
         ? 100
         : 0
 
@@ -239,7 +222,7 @@ export async function GET(request: Request) {
         views: {
           value: totalViews,
           trend: viewsTrend,
-          previousValue: previousViews,
+          previousValue: previousPeriodViewCount,
         },
         rating: {
           value: avgRating,

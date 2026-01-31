@@ -15,11 +15,11 @@
 | 04 | Shopping Cart & Checkout Flow | ✅ Complete | [Design](docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md) \| [Summary](FEATURE-04-IMPLEMENTATION-SUMMARY.md) | All 11 phases complete |
 | 05 | Reviews & Ratings | ✅ Complete | [Design](docs/brainstorming/7-feature-05-reviews-and-ratings.md) \| [Summary](FEATURE-05-IMPLEMENTATION-SUMMARY.md) | Core + display + moderation + reminder email |
 | 06 | Social Features | 🚧 In Progress | [Design](docs/brainstorming/8-feature-06-social-features.md) | Notifications, sharing, recently viewed (sidebar + page), social proof badges; scope: no homepage section, no share-your-purchase |
-| 07 | Seller Dashboard & Analytics | 🚧 Design Complete | [Design](docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md) | Implementation pending |
+| 07 | Seller Dashboard & Analytics | 🚧 In Progress | [Design](docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md) \| [Summary](FEATURE-07-IMPLEMENTATION-SUMMARY.md) | Overview/analytics/earnings/orders APIs, Pro charts, export UI (Jan 2026) |
 | 08 | Advanced Search & Discovery | 🚧 Design Complete | [Design](docs/brainstorming/10-feature-08-advanced-search-and-discovery.md) | Implementation pending |
 | 09 | Admin Panel & Content Moderation | ✅ Complete | [Design](docs/brainstorming/11-feature-09-admin-panel-and-content-moderation.md) \| [Summary](FEATURE-09-IMPLEMENTATION-SUMMARY.md) | All 15 phases complete |
 | 10 | Email System (Transactional) | ✅ Complete | [Design](docs/brainstorming/12-feature-10-email-system-transactional-and-notification-emails.md) \| [Summary](FEATURE-10-IMPLEMENTATION-SUMMARY.md) | All 12 phases complete |
-| 11 | Messaging System | 🚧 Design Complete | [Design](docs/brainstorming/13-feature-11-messaging-system.md) | Implementation pending |
+| 11 | Messaging System | 🚧 In Progress | [Design](docs/brainstorming/13-feature-11-messaging-system.md) \| [Summary](FEATURE-11-IMPLEMENTATION-SUMMARY.md) | Contact Seller/Buyer wired, polling, unread badge (Jan 2026) |
 
 **Legend:**
 - ✅ **Complete**: Fully implemented and tested
@@ -97,6 +97,7 @@
 - Order confirmation system
 - Download library
 - Refund system (7-day window)
+- **My Library & My Orders UX (Jan 2026):** Library API seller field fixed (first_name/last_name); My Library and My Orders in main nav (desktop dropdown + mobile); buyer orders list at `/orders` (GET /api/orders, layout + page); "Preparing your download" toast on library page. See [FEATURE-04-LIBRARY-ORDERS-UX-SUMMARY.md](FEATURE-04-LIBRARY-ORDERS-UX-SUMMARY.md).
 
 **Database Tables:**
 - `cart_items` - Shopping cart
@@ -154,6 +155,28 @@
 - Social proof badges: ProductBadge + client-side thresholds (New, Trending, Bestseller, Popular); ProductStats (views, sales, wishlist). See design doc [Social proof: cron vs client-side](docs/brainstorming/8-feature-06-social-features.md#social-proof-cron-vs-client-side-decision-pending) for implementation options and decision.
 
 **Design**: [docs/brainstorming/8-feature-06-social-features.md](docs/brainstorming/8-feature-06-social-features.md)
+
+---
+
+### 🚧 Feature 07: Seller Dashboard & Analytics
+
+**Status**: In Progress (January 2026)
+
+**Implemented (Jan 2026):**
+- **Overview API:** Correct metrics (no single-metric cache); sales trend vs previous period; views trend from `product_views`; chart data for Pro/Pioneer.
+- **Products API:** Per-product `revenue` (sum of `order_items.net_earnings` for completed orders).
+- **Analytics APIs:** `getRelation()` for order/buyer relations in revenue, products, demographics; traffic API now real (product_views.source); funnel API (views, add-to-cart, purchases).
+- **Orders API:** Status filter applied in memory (not nested PostgREST) for reliability.
+- **Export API:** Commission by tier (Pioneer 15%, Free/Pro 20%); Excel/PDF placeholder (libraries TBD).
+- **Charts (Recharts):** Overview Pro revenue area chart; Earnings Pro (revenue by month, sales by category, earnings trend); Analytics Pro (revenue over time, sales by product/category), **Buyer Demographics** (grade levels BarChart, regions PieChart, repeat rate), **Conversion Funnel** (three-stage BarChart), **Traffic Sources** (PieChart from product_views.source); recommendations from API.
+- **Export UI:** Format selector (CSV for all; CSV/Excel/PDF for Pro/Pioneer) on Orders, Analytics, Products, and Earnings; CSV client-side or API, Excel/PDF via job poll.
+- **Demographics:** API filtered to completed orders only; Analytics page fetches and shows grade levels, regions, repeat customer rate.
+- **Conversion Funnel:** Table `cart_add_events` (migration 031); recording in cart add, wishlist move-to-cart, cart merge-guest; `GET /api/seller/analytics/funnel`; Analytics card with three-stage BarChart.
+- **Traffic Sources:** Column `product_views.source` (migration 032); product view API and POST /view accept and store source; traffic API aggregates by source; Analytics card with PieChart; client passes `?source=` (search, marketplace, direct, profile, category, other) from ProductCard/SearchResultsGrid/ProductDetailLayout.
+
+**Out of scope (this pass):** Scheduled reports; Excel/PDF binary generation (xlsx/jspdf).
+
+**Summary**: [FEATURE-07-IMPLEMENTATION-SUMMARY.md](FEATURE-07-IMPLEMENTATION-SUMMARY.md)
 
 ---
 
@@ -215,9 +238,24 @@
 
 ---
 
+### 🚧 Feature 11: Messaging System
+
+**Status**: In Progress (January 2026)
+
+**Implemented:**
+- **Entry points:** Product page "Contact seller" (Chat) → create/find conversation then redirect to `/messages/[id]`. Seller orders "Contact Buyer" → find-or-create single buyer–seller conversation (product from order on first create; reuse for later orders). Seller profile "Contact Seller" → link to `/messages/new?sellerId=...`; new message page auto-create/redirect when logged in.
+- **Conversation model:** Contact Seller = one conversation per buyer+seller+product. Contact Buyer = one conversation per buyer+seller (product context on first create only).
+- **Polling:** 30s interval; `after=<last_message_created_at>` (timestamp); pause when tab inactive. Conversation view uses `useMessages` with `initialAfter` and merges new messages.
+- **Unread badge:** `GET /api/messages/unread-count`; Messages icon in navbar and seller sidebar only (no message count in notifications bell).
+- **Migration status:** Docs updated for 019, 020, 027, 031, 032 as applied. New migration 033 (sellers can create conversations) for Contact Buyer flow.
+
+**Summary**: [FEATURE-11-IMPLEMENTATION-SUMMARY.md](FEATURE-11-IMPLEMENTATION-SUMMARY.md)
+
+---
+
 ## Database Migrations Status
 
-**Total Migrations**: 29
+**Total Migrations**: 33
 
 | Migration # | Filename | Status | Feature |
 |-------------|----------|--------|---------|
@@ -239,17 +277,21 @@
 | 016 | `016_teacher_verification_storage.sql` | ✅ Applied | Teacher ID verification |
 | 017 | `017_seller_settings_fields.sql` | ✅ Applied | Seller shop customization |
 | 018 | `018_replace_name_with_first_last_name.sql` | ✅ Applied | Name field split |
-| 019 | `019_handle_new_user_trigger.sql` | 🟡 Pending | Auth trigger (first_name/last_name) |
-| 020 | `020_fix_users_rls_recursion.sql` | 🟡 Pending | RLS recursion fix |
+| 019 | `019_handle_new_user_trigger.sql` | ✅ Applied | Auth trigger (first_name/last_name) |
+| 020 | `020_fix_users_rls_recursion.sql` | ✅ Applied | RLS recursion fix |
 | 021 | `021_lesson_plan_filters_and_strands.sql` | ✅ Applied | Lesson Plan Phase 2 (Filters) |
 | 022 | `022_lesson_plan_hierarchy.sql` | ✅ Applied | Lesson Plan Phase 2 (Hierarchy) |
 | 023 | `023_product_subjects_multiselect.sql` | ✅ Applied | Lesson Plan Phase 2 (Subject multiselect) |
 | 024 | `024_profile_teaching_phase2.sql` | ✅ Applied | Profile Teaching tab Phase 2 |
 | 025 | `025_add_display_name.sql` | ✅ Applied | Shop display name |
 | 026 | `026_pioneer_email_types.sql` | ✅ Applied | Pioneer email types |
-| 027 | `027_platform_settings_marketplace_closed.sql` | 🟡 Pending | Marketplace shutoff |
+| 027 | `027_platform_settings_marketplace_closed.sql` | ✅ Applied | Marketplace shutoff |
 | 028 | `028_reports_resolution_fields.sql` | ✅ Applied | Admin User Management (reports) |
 | 029 | `029_notifications_admin_warning.sql` | ✅ Applied | Admin User Management (notifications) |
+| 030 | `030_product_social_proof_cache.sql` | ✅ Applied | Product social proof cache |
+| 031 | `031_seller_analytics_cart_events.sql` | ✅ Applied | Feature 07 (Conversion Funnel – cart_add_events) |
+| 032 | `032_analytics_product_views_source.sql` | ✅ Applied | Feature 07 (Traffic Sources – product_views.source) |
+| 033 | `033_conversations_seller_create_policy.sql` | 🟡 Pending | Feature 11 (Messaging – sellers can create conversations) |
 
 **Note**: Migrations are applied but not all features are fully implemented. See [DATABASE-MIGRATIONS-INDEX.md](docs/DATABASE-MIGRATIONS-INDEX.md) for details.
 

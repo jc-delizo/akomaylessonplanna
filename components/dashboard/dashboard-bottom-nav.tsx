@@ -3,14 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Home, Package, Palette, ShoppingBag, DollarSign, User } from 'lucide-react'
+import { Home, Package, Palette, ShoppingBag, DollarSign, BarChart3, User } from 'lucide-react'
 
 const navigationItems = [
   { href: '/shop', label: 'Home', icon: Home },
   { href: '/shop/products', label: 'Products', icon: Package },
-  { href: '/shop/customize', label: 'Customize', icon: Palette },
   { href: '/shop/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/shop/earnings', label: 'Earnings', icon: DollarSign },
+  { href: '/shop/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/shop/settings', label: 'Settings', icon: User },
 ]
 

@@ -3,11 +3,26 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import { PullToRefresh } from '@/components/dashboard/pull-to-refresh'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { GlareButton } from '@/components/ui/glare-button'
+import { ProTierPlaceholder } from '@/components/pro-tier-placeholder'
+import {
+  Tooltip as UITooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 import {
   DollarSign,
   ShoppingBag,
@@ -19,6 +34,7 @@ import {
   FileText,
   Wallet,
   RefreshCw,
+  Info,
 } from 'lucide-react'
 
 interface DashboardMetrics {
@@ -228,6 +244,14 @@ export default function DashboardOverviewPage() {
               <DollarSign className="h-5 w-5" />
               <span className="text-sm font-medium">Revenue</span>
             </div>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Net earnings from completed orders in the selected period. Available for withdrawal after processing.</p>
+              </TooltipContent>
+            </UITooltip>
           </div>
           <div className="mb-2">
             <p className="text-2xl font-bold text-gray-900">
@@ -245,6 +269,14 @@ export default function DashboardOverviewPage() {
               <ShoppingBag className="h-5 w-5" />
               <span className="text-sm font-medium">Sales</span>
             </div>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Number of completed orders in the selected period.</p>
+              </TooltipContent>
+            </UITooltip>
           </div>
           <div className="mb-2">
             <p className="text-2xl font-bold text-gray-900">{metrics.sales.value}</p>
@@ -260,6 +292,14 @@ export default function DashboardOverviewPage() {
               <Eye className="h-5 w-5" />
               <span className="text-sm font-medium">Product Views</span>
             </div>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Total product page loads (including your own). Trend compares this period to the previous period.</p>
+              </TooltipContent>
+            </UITooltip>
           </div>
           <div className="mb-2">
             <p className="text-2xl font-bold text-gray-900">
@@ -277,6 +317,14 @@ export default function DashboardOverviewPage() {
               <Star className="h-5 w-5" />
               <span className="text-sm font-medium">Average Rating</span>
             </div>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Average star rating across all reviews on your products.</p>
+              </TooltipContent>
+            </UITooltip>
           </div>
           <div className="mb-2">
             <p className="text-2xl font-bold text-gray-900">
@@ -306,34 +354,46 @@ export default function DashboardOverviewPage() {
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Revenue Trend</h3>
           {isProOrPioneer ? (
-            <div className="h-64 flex items-center justify-center text-gray-500">
-              <p>Interactive chart (Pro/Pioneer feature)</p>
-              <p className="text-sm mt-2">Full implementation with Recharts/Chart.js</p>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="rgb(147 51 234)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="rgb(147 51 234)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    className="text-xs"
+                  />
+                  <YAxis
+                    tickFormatter={(v) => `₱${v}`}
+                    className="text-xs"
+                    width={50}
+                  />
+                  <Tooltip
+                    formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']}
+                    labelFormatter={(label) => (label != null ? new Date(label).toLocaleDateString('en-US') : '')}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="rgb(147 51 234)"
+                    strokeWidth={2}
+                    fill="url(#revenueGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-64">
-              {/* Simple static chart for Free tier */}
-              <div className="h-full flex items-end justify-between gap-1">
-                {chartData.slice(-7).map((point, index) => {
-                  const maxRevenue = Math.max(...chartData.map((p) => p.revenue), 1)
-                  const height = (point.revenue / maxRevenue) * 100
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div
-                        className="w-full bg-purple-600 rounded-t transition-all"
-                        style={{ height: `${height}%`, minHeight: '4px' }}
-                      />
-                      <span className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top-left">
-                        {new Date(point.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            <ProTierPlaceholder
+              title="Pro Feature"
+              description="Interactive charts and 30-day revenue trends. Unlock with Pro to see full analytics."
+              ctaLabel="Unlock with Pro"
+            />
           )}
         </Card>
 

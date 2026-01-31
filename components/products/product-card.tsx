@@ -49,6 +49,8 @@ interface ProductCardProps {
   product: Product
   showSeller?: boolean
   searchQuery?: string // Optional: if product was shown in search results
+  /** Traffic source for analytics: search, marketplace, direct, profile, category, other */
+  trafficSource?: string
 }
 
 /** Abbreviate grade display: "Grade 1" -> "Gr 1" to conserve space */
@@ -91,7 +93,7 @@ function formatQuarterWeeks(quarter?: number, weeks?: number[]): string {
   return ''
 }
 
-export function ProductCard({ product, showSeller = true, searchQuery }: ProductCardProps) {
+export function ProductCard({ product, showSeller = true, searchQuery, trafficSource }: ProductCardProps) {
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
@@ -232,8 +234,9 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
     }
   }
 
+  const productHref = trafficSource ? `/products/${product.id}?source=${encodeURIComponent(trafficSource)}` : `/products/${product.id}`
   return (
-    <Link href={`/products/${product.id}`} prefetch={false} onClick={handleProductClick}>
+    <Link href={productHref} prefetch={false} onClick={handleProductClick}>
       <Card className="overflow-hidden h-full flex flex-col group bg-white hover:shadow-lg transition-shadow duration-200 rounded-lg p-0">
         {/* Image Section - Clean and Simple */}
         <div className="relative aspect-square bg-gray-50 overflow-hidden">

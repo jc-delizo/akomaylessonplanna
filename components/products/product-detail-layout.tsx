@@ -40,6 +40,56 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
+/** Contact Seller: create/find conversation then redirect to /messages/[id] */
+function ContactSellerButton({
+  sellerId,
+  productId,
+}: {
+  sellerId: string
+  productId: string
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/messages/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seller_id: sellerId, product_id: productId }),
+      })
+      if (res.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Failed to start conversation')
+        return
+      }
+      const data = await res.json()
+      router.push(`/messages/${data.conversation.id}`)
+    } catch (e) {
+      toast.error('Failed to start conversation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="outline"
+      className="h-10"
+      onClick={handleClick}
+      disabled={loading}
+    >
+      <MessageSquare className="size-4 mr-2" />
+      {loading ? 'Opening...' : 'Chat'}
+    </Button>
+  )
+}
+
 /** Derive display name from file URL (last path segment decoded), strip leading numeric code (digits-), or fallback to File N */
 function getFileNameFromUrl(url: string, index: number): string {
   try {
@@ -119,9 +169,11 @@ interface Product {
 
 interface ProductDetailLayoutProps {
   product: Product
+  /** Traffic source for analytics: search, marketplace, direct, profile, category, other */
+  trafficSource?: string
 }
 
-export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
+export function ProductDetailLayout({ product, trafficSource }: ProductDetailLayoutProps) {
   const router = useRouter()
   const supabase = createClient()
   const { addItem: addToGuestCart } = useGuestCart()
@@ -152,9 +204,11 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Track view (fire and forget)
+      // Track view (fire and forget) with traffic source for seller analytics
       fetch(`/api/products/${product.id}/view`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: trafficSource || 'direct' }),
       }).catch((err) => {
         console.error('Error tracking view:', err)
       })
@@ -728,14 +782,10 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
               <div className="flex items-center gap-2 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link 
-                      href={`/messages/new?sellerId=${product.seller.id}&productId=${product.id}`}
-                    >
-                      <Button variant="outline" className="h-10">
-                        <MessageSquare className="size-4 mr-2" />
-                        Chat
-                      </Button>
-                    </Link>
+                    <ContactSellerButton
+                      sellerId={product.seller.id}
+                      productId={product.id}
+                    />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Ask the seller about this product</p>

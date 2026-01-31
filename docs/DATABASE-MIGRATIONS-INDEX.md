@@ -387,7 +387,7 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 **Dependencies**: 001, 018 (users table with first_name/last_name)
 
-**Status**: Pending / apply to dev
+**Status**: ✅ Applied (may be applied manually in Supabase SQL editor)
 
 ---
 
@@ -402,7 +402,7 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 **Dependencies**: 001, 003 (users table and existing RLS)
 
-**Status**: Pending / apply to dev
+**Status**: ✅ Applied (may be applied manually in Supabase SQL editor)
 
 ---
 
@@ -529,7 +529,7 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 **Feature**: Marketplace shutoff (admin)
 
-**Status**: Pending / apply to dev
+**Status**: ✅ Applied (may be applied manually in Supabase SQL editor)
 
 ---
 

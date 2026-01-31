@@ -65,7 +65,8 @@ export async function POST(request: Request) {
 
     // Process export asynchronously (in production, use a queue system)
     // For now, process immediately
-    processExportJob(exportJob.id, user.id, export_type, format, date_from, date_to, supabase)
+    const subscriptionTier = userData.subscription_tier ?? 'free'
+    processExportJob(exportJob.id, user.id, export_type, format, date_from, date_to, subscriptionTier, supabase)
 
     return NextResponse.json({ job_id: exportJob.id, status: 'processing' })
   } catch (error) {
@@ -81,6 +82,7 @@ async function processExportJob(
   format: string,
   dateFrom: string | null,
   dateTo: string | null,
+  subscriptionTier: 'free' | 'pro' | 'pioneer',
   supabase: any
 ) {
   try {
@@ -163,8 +165,8 @@ async function processExportJob(
           .join('\n')
         fileName = `orders-${new Date().toISOString().split('T')[0]}.csv`
       } else {
-        // Excel/PDF - placeholder
-        fileContent = 'Excel/PDF export requires additional libraries'
+        // Excel/PDF: placeholder until xlsx/jspdf (or similar) implemented. See FEATURE-07 plan.
+        fileContent = 'Excel/PDF export requires additional libraries (xlsx, jspdf). Use CSV for now.'
         fileName = `orders-${new Date().toISOString().split('T')[0]}.${format}`
       }
     } else if (exportType === 'products') {
@@ -206,7 +208,7 @@ async function processExportJob(
           .join('\n')
         fileName = `products-${new Date().toISOString().split('T')[0]}.csv`
       } else {
-        fileContent = 'Excel/PDF export requires additional libraries'
+        fileContent = 'Excel/PDF export requires additional libraries (xlsx, jspdf). Use CSV for now.'
         fileName = `products-${new Date().toISOString().split('T')[0]}.${format}`
       }
     } else if (exportType === 'earnings') {
@@ -219,12 +221,14 @@ async function processExportJob(
       if (format === 'csv') {
         const headers = ['Date Range', 'Total Revenue', 'Commission Deducted', 'Net Earnings']
 
-        const totalRevenue = (orderItems || [])
+        const netEarnings = (orderItems || [])
           .filter((item: any) => item.order?.payment_status === 'completed')
           .reduce((sum: number, item: any) => sum + parseFloat(item.net_earnings.toString()), 0)
 
-        const commission = totalRevenue * 0.2 // 20% commission
-        const netEarnings = totalRevenue
+        // Pioneer: 15% commission; Free/Pro: 20%
+        const commissionRate = subscriptionTier === 'pioneer' ? 0.15 : 0.2
+        const grossRevenue = netEarnings / (1 - commissionRate)
+        const commission = grossRevenue - netEarnings
 
         const rows = [
           [
@@ -233,7 +237,7 @@ async function processExportJob(
               : dateFrom
               ? `From ${dateFrom}`
               : 'All Time',
-            `₱${(totalRevenue + commission).toFixed(2)}`,
+            `₱${grossRevenue.toFixed(2)}`,
             `₱${commission.toFixed(2)}`,
             `₱${netEarnings.toFixed(2)}`,
           ],
@@ -244,7 +248,7 @@ async function processExportJob(
           .join('\n')
         fileName = `earnings-${new Date().toISOString().split('T')[0]}.csv`
       } else {
-        fileContent = 'Excel/PDF export requires additional libraries'
+        fileContent = 'Excel/PDF export requires additional libraries (xlsx, jspdf). Use CSV for now.'
         fileName = `earnings-${new Date().toISOString().split('T')[0]}.${format}`
       }
     } else {

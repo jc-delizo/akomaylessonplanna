@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ReviewCard } from '@/components/reviews/review-card'
 import { SellerResponseForm } from '@/components/reviews/seller-response-form'
 import Link from 'next/link'
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   BarChart3,
   Calendar,
+  Info,
 } from 'lucide-react'
 
 interface Review {
@@ -167,29 +169,49 @@ export default function SellerReviewsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card className="p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Star className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Star className="w-5 h-5 text-primary" />
+              </div>
+              {reviewsData.total > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  Active
+                </Badge>
+              )}
             </div>
-            {reviewsData.total > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                Active
-              </Badge>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Total number of reviews left by buyers on your products.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-3xl font-bold mb-1">{reviewsData.total}</div>
           <div className="text-sm text-muted-foreground">Total Reviews</div>
         </Card>
         <Card className="p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <MessageSquare className="w-5 h-5 text-green-600" />
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-green-600" />
+              </div>
+              {reviewsData.responseRate >= 80 && (
+                <Badge variant="secondary" className="text-xs">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  Great
+                </Badge>
+              )}
             </div>
-            {reviewsData.responseRate >= 80 && (
-              <Badge variant="secondary" className="text-xs">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                Great
-              </Badge>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Percentage of reviews you have replied to. Replying can build trust with buyers.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-3xl font-bold mb-1">
             {Math.round(reviewsData.responseRate)}%
@@ -198,14 +220,24 @@ export default function SellerReviewsPage() {
         </Card>
         <Card className="p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+              </div>
+              {reviewsData.reviews.filter((r) => !r.seller_response).length > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  Action Needed
+                </Badge>
+              )}
             </div>
-            {reviewsData.reviews.filter((r) => !r.seller_response).length > 0 && (
-              <Badge variant="destructive" className="text-xs">
-                Action Needed
-              </Badge>
-            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help flex-shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reviews that don&apos;t have a seller response yet. Consider replying to improve your response rate.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-3xl font-bold mb-1">
             {reviewsData.reviews.filter((r) => !r.seller_response).length}

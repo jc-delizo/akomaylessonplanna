@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET(request: Request) {
   try {
@@ -58,10 +59,7 @@ export async function GET(request: Request) {
       )
       .eq('seller_id', user.id)
 
-    // Filter by status if provided
-    if (status && status !== 'all') {
-      query = query.eq('order.payment_status', status)
-    }
+    // Status filter applied in-memory after fetch (nested order relation not reliably filterable in PostgREST)
 
     // Filter by date range
     if (dateFrom) {
@@ -80,21 +78,21 @@ export async function GET(request: Request) {
 
     const { data: orderItems, error } = await query.order('created_at', { ascending: false })
 
-    // Filter by location (after fetching, since it's on buyer)
-    let filteredItems = orderItems || []
-    if (location && location !== 'All regions') {
-      // We'll filter this after getting buyer data
-    }
-
     if (error) {
       console.error('Error fetching seller orders:', error)
       return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
     }
 
+    // Filter by status in-memory (completed, pending, failed)
+    let filteredItems = orderItems || []
+    if (status && status !== 'all') {
+      filteredItems = filteredItems.filter((item) => getRelation(item.order)?.payment_status === status)
+    }
+
     // Get buyer names and location (anonymized) for each order
     let orderItemsWithBuyers = await Promise.all(
       filteredItems.map(async (item) => {
-        const order = Array.isArray(item.order) ? item.order[0] : item.order
+        const order = getRelation(item.order)
         if (order?.buyer_id) {
           const { data: buyer } = await supabase
             .from('users')

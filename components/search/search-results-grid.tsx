@@ -39,13 +39,16 @@ interface SearchResultsGridProps {
   viewMode?: 'grid' | 'list'
   onViewModeChange?: (mode: 'grid' | 'list') => void
   searchQuery?: string
+  /** Traffic source for analytics: search, marketplace, direct, profile, category, other */
+  trafficSource?: string
 }
 
 export function SearchResultsGrid({ 
   products, 
   viewMode: controlledViewMode,
   onViewModeChange,
-  searchQuery
+  searchQuery,
+  trafficSource = 'search',
 }: SearchResultsGridProps) {
   const [internalViewMode, setInternalViewMode] = useState<'grid' | 'list'>('grid')
   const viewMode = controlledViewMode || internalViewMode
@@ -87,14 +90,14 @@ export function SearchResultsGrid({
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} searchQuery={searchQuery} />
+            <ProductCard key={product.id} product={product} searchQuery={searchQuery} trafficSource={trafficSource} />
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {products.map((product) => (
             <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <ProductCard product={product} searchQuery={searchQuery} />
+              <ProductCard product={product} searchQuery={searchQuery} trafficSource={trafficSource} />
             </div>
           ))}
         </div>

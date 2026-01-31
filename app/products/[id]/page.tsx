@@ -7,10 +7,13 @@ import { notFound } from 'next/navigation'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
+export default async function ProductDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
+  const source = typeof resolvedSearchParams?.source === 'string' ? resolvedSearchParams.source : undefined
   const supabase = await createClient()
 
   // Fetch product with related data (incl. product_subjects for multiselect subject badges)
@@ -118,7 +121,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />
-      <ProductDetailLayout product={product} />
+      <ProductDetailLayout product={product} trafficSource={source} />
       <div className="container mx-auto px-4">
         <RelatedProducts productId={product.id} />
       </div>

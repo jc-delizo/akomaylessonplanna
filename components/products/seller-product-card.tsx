@@ -56,6 +56,8 @@ interface SellerProductCardProps {
   onDelete: (productId: string) => void
   showTrendingBadge?: boolean
   showLowConversionBadge?: boolean
+  /** Traffic source for product link: search, marketplace, direct, profile, category, other */
+  trafficSource?: string
 }
 
 /** Abbreviate grade display: "Grade 1" -> "Gr 1" to conserve space */
@@ -98,16 +100,18 @@ export function SellerProductCard({
   onDelete,
   showTrendingBadge = false,
   showLowConversionBadge = false,
+  trafficSource,
 }: SellerProductCardProps) {
   const conversionRate = product.conversion_rate ?? 0
   const context = contextLine(product)
   const quarterWeeksLine = formatQuarterWeeks(product.quarter, product.weeks)
+  const productHref = trafficSource ? `/products/${product.id}?source=${encodeURIComponent(trafficSource)}` : `/products/${product.id}`
 
   return (
     <Card className="overflow-hidden h-full flex flex-col bg-white hover:shadow-lg transition-shadow duration-200 rounded-lg p-0">
       {/* Image Section - 1:1 like ProductCard */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        <Link href={`/products/${product.id}`} className="block w-full h-full">
+        <Link href={productHref} className="block w-full h-full">
           {product.cover_image_url ? (
             <Image
               src={product.cover_image_url}
@@ -166,7 +170,7 @@ export function SellerProductCard({
 
       {/* Info Section - same hierarchy as ProductCard */}
       <div className="px-4 pt-0 pb-4 flex-1 flex flex-col bg-white">
-        <Link href={`/products/${product.id}`} className="min-w-0">
+        <Link href={productHref} className="min-w-0">
           <h3 className="font-bold text-base leading-tight mb-1 line-clamp-2 text-gray-900 min-h-[2.5rem] hover:text-purple-600 transition-colors">
             {product.title}
           </h3>

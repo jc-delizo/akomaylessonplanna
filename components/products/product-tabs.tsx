@@ -132,7 +132,7 @@ export function ProductTabs({
       {activeProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6">
           {activeProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} trafficSource="marketplace" />
           ))}
         </div>
       ) : activeTab === 'recommended' && recommendedProducts.length === 0 && !teachingComplete ? (

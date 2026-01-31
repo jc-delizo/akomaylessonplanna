@@ -34,6 +34,7 @@ import {
   Clock,
   XCircle,
   Pause,
+  Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -42,6 +43,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/registry/default/select/select'
 import { SellerProductCard } from '@/components/products/seller-product-card'
 
 interface Product {
@@ -102,6 +110,8 @@ export default function MyProductsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'pioneer'>('free')
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('csv')
+  const [exporting, setExporting] = useState(false)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -291,6 +301,83 @@ export default function MyProductsPage() {
 
   const isProOrPioneer = subscriptionTier === 'pro' || subscriptionTier === 'pioneer'
 
+  const handleExport = async () => {
+    if (exportFormat === 'csv') {
+      const headers = [
+        'Title',
+        'Price',
+        'Status',
+        'Views',
+        'Sales',
+        'Rating',
+        'Reviews',
+        'Conversion Rate',
+        'Created Date',
+      ]
+      const rows = filteredProducts.map((p) => [
+        p.title,
+        `₱${p.price.toFixed(2)}`,
+        p.status,
+        (p.views_count || 0).toString(),
+        (p.sales_count || 0).toString(),
+        p.avg_rating ? p.avg_rating.toFixed(1) : 'N/A',
+        (p.reviews_count || 0).toString(),
+        p.conversion_rate ? `${p.conversion_rate.toFixed(2)}%` : '0%',
+        new Date(p.created_at).toLocaleDateString(),
+      ])
+      const csvContent = [headers, ...rows]
+        .map((row) => row.map((cell) => `"${cell}"`).join(','))
+        .join('\n')
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `products-${new Date().toISOString().split('T')[0]}.csv`
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      return
+    }
+    setExporting(true)
+    try {
+      const res = await fetch('/api/seller/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          export_type: 'products',
+          format: exportFormat,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Export failed')
+        setExporting(false)
+        return
+      }
+      const { job_id } = await res.json()
+      let attempts = 0
+      const poll = async () => {
+        const j = await fetch(`/api/seller/export/${job_id}`).then((r) => r.json())
+        if (j.status === 'completed' && j.file_url) {
+          window.open(j.file_url, '_blank')
+          setExporting(false)
+          return
+        }
+        if (j.status === 'failed') {
+          alert(j.error_message || 'Export failed')
+          setExporting(false)
+          return
+        }
+        if (++attempts < 30) setTimeout(poll, 1500)
+        else setExporting(false)
+      }
+      setTimeout(poll, 1000)
+    } catch (e) {
+      setExporting(false)
+      alert('Export failed')
+    }
+  }
+
   // Calculate stats
   const stats = {
     total: products.length,
@@ -383,7 +470,7 @@ export default function MyProductsPage() {
     }}>
       <div className="space-y-6">
         {/* Page Header - Settings Style */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gradient-to-br from-[#ff7200] to-[#e66500]">
               <ShoppingBag className="size-5 text-white" />
@@ -394,6 +481,39 @@ export default function MyProductsPage() {
                 Manage and organize your products
               </p>
             </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <Select
+              value={exportFormat}
+              onValueChange={(v) => setExportFormat(v as 'csv' | 'xlsx' | 'pdf')}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="xlsx" disabled={!isProOrPioneer}>
+                  Excel{!isProOrPioneer ? ' (Pro only)' : ''}
+                </SelectItem>
+                <SelectItem value="pdf" disabled={!isProOrPioneer}>
+                  PDF{!isProOrPioneer ? ' (Pro only)' : ''}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {!isProOrPioneer && (
+              <Link href="/shop/upgrade" className="text-sm text-[#ff7200] hover:underline">
+                Unlock with Pro
+              </Link>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={filteredProducts.length === 0 || exporting}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
+            </Button>
           </div>
         </div>
 
@@ -569,6 +689,7 @@ export default function MyProductsPage() {
                     onDelete={handleDelete}
                     showTrendingBadge={isTrending}
                     showLowConversionBadge={isLowConversion}
+                    trafficSource="direct"
                   />
                   {/* Checkbox for bulk selection - overlay */}
                   <div className="absolute top-2 left-2 z-20">
@@ -885,6 +1006,7 @@ export default function MyProductsPage() {
                       onDelete={handleDelete}
                       showTrendingBadge={isTrending}
                       showLowConversionBadge={isLowConversion}
+                      trafficSource="direct"
                     />
                     <div className="absolute top-2 left-2 z-20">
                       <div className="bg-white/90 backdrop-blur-sm rounded p-0.5 shadow-sm">

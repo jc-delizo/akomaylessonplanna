@@ -31,15 +31,18 @@ export interface UseMessagesOptions {
   conversationId?: string // Optional: poll for specific conversation
   enabled?: boolean // Enable/disable polling
   onNewMessage?: (message: Message) => void // Callback for new messages
+  /** Initial `after` timestamp (ISO) so first poll only fetches messages after this */
+  initialAfter?: string | null
 }
 
 export function useMessages(options: UseMessagesOptions = {}) {
-  const { conversationId, enabled = true, onNewMessage } = options
+  const { conversationId, enabled = true, onNewMessage, initialAfter } = options
 
   const [messages, setMessages] = useState<Message[]>([])
   const [isPolling, setIsPolling] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const lastMessageIdRef = useRef<string | null>(null)
+  /** Server expects after=ISO timestamp; we send last message's created_at */
+  const lastMessageCreatedAtRef = useRef<string | null>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isTabActiveRef = useRef(true)
 
@@ -54,8 +57,8 @@ export function useMessages(options: UseMessagesOptions = {}) {
       setError(null)
 
       const params = new URLSearchParams()
-      if (lastMessageIdRef.current) {
-        params.append('after', lastMessageIdRef.current)
+      if (lastMessageCreatedAtRef.current) {
+        params.append('after', lastMessageCreatedAtRef.current)
       }
       if (conversationId) {
         params.append('conversation_id', conversationId)
@@ -70,18 +73,15 @@ export function useMessages(options: UseMessagesOptions = {}) {
       const newMessages: Message[] = data.messages || []
 
       if (newMessages.length > 0) {
-        // Update last message ID
         const latestMessage = newMessages[newMessages.length - 1]
-        lastMessageIdRef.current = latestMessage.id
+        lastMessageCreatedAtRef.current = latestMessage.created_at
 
-        // Add new messages to state
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id))
           const uniqueNew = newMessages.filter((m) => !existingIds.has(m.id))
           return [...prev, ...uniqueNew]
         })
 
-        // Call callback for each new message
         newMessages.forEach((msg) => {
           onNewMessage?.(msg)
         })
@@ -135,6 +135,13 @@ export function useMessages(options: UseMessagesOptions = {}) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [enabled, startPolling, stopPolling])
+
+  // Set initial after from already-loaded messages (e.g. conversation view)
+  useEffect(() => {
+    if (initialAfter) {
+      lastMessageCreatedAtRef.current = initialAfter
+    }
+  }, [initialAfter])
 
   // Start/stop polling based on enabled state
   useEffect(() => {

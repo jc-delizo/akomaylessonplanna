@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getRelation } from '@/lib/utils/supabase-relations'
 
 export async function GET() {
   try {
@@ -30,14 +31,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Pro/Pioneer subscription required' }, { status: 403 })
     }
 
-    // Get order items with buyer data
-    const { data: orderItems } = await supabase
+    // Get order items with buyer data (include payment_status for completed-only filter)
+    const { data: rawOrderItems } = await supabase
       .from('order_items')
       .select(
         `
         product_id,
         order:orders!order_items_order_id_fkey(
           buyer_id,
+          payment_status,
           buyer:users!orders_buyer_id_fkey(
             grade_levels_taught,
             location_region
@@ -46,6 +48,11 @@ export async function GET() {
       `
       )
       .eq('seller_id', user.id)
+
+    // Filter to completed orders only for demographics
+    const orderItems = (rawOrderItems || []).filter(
+      (item) => getRelation(item.order)?.payment_status === 'completed'
+    )
 
     // Get products to map to grades
     const { data: products } = await supabase
@@ -57,7 +64,7 @@ export async function GET() {
     const gradeLevels: Record<string, number> = {}
     orderItems?.forEach((item) => {
       const product = products?.find((p) => p.id === item.product_id)
-      const grade = Array.isArray(product?.grade) ? product.grade[0] : product?.grade
+      const grade = product ? getRelation(product.grade) : null
       if (grade?.name) {
         gradeLevels[grade.name] = (gradeLevels[grade.name] || 0) + 1
       }
@@ -66,8 +73,8 @@ export async function GET() {
     // Regions breakdown
     const regions: Record<string, number> = {}
     orderItems?.forEach((item) => {
-      const order = Array.isArray(item.order) ? item.order[0] : item.order
-      const buyer = Array.isArray(order?.buyer) ? order.buyer[0] : order?.buyer
+      const order = getRelation(item.order)
+      const buyer = order ? getRelation(order.buyer) : null
       const region = buyer?.location_region
       if (region) {
         regions[region] = (regions[region] || 0) + 1
@@ -76,32 +83,27 @@ export async function GET() {
 
     // Repeat customer rate
     const buyerIds = new Set(
-      orderItems?.map((item) => {
-        const order = Array.isArray(item.order) ? item.order[0] : item.order
-        return order?.buyer_id
-      }).filter(Boolean) || []
+      orderItems?.map((item) => getRelation(item.order)?.buyer_id).filter(Boolean) || []
     )
     const totalBuyers = buyerIds.size
     const repeatBuyers = Array.from(buyerIds).filter((buyerId) => {
-      const orders = orderItems?.filter((item) => {
-        const order = Array.isArray(item.order) ? item.order[0] : item.order
-        return order?.buyer_id === buyerId
-      }) || []
+      const orders = orderItems?.filter((item) => getRelation(item.order)?.buyer_id === buyerId) || []
       return orders.length > 1
     }).length
 
     const repeatCustomerRate = totalBuyers > 0 ? (repeatBuyers / totalBuyers) * 100 : 0
 
+    const totalItems = orderItems.length
     return NextResponse.json({
       gradeLevels: Object.entries(gradeLevels).map(([grade, count]) => ({
         grade,
         count,
-        percentage: (count / (orderItems?.length || 1)) * 100,
+        percentage: totalItems > 0 ? (count / totalItems) * 100 : 0,
       })),
       regions: Object.entries(regions).map(([region, count]) => ({
         region,
         count,
-        percentage: (count / (orderItems?.length || 1)) * 100,
+        percentage: totalItems > 0 ? (count / totalItems) * 100 : 0,
       })),
       repeatCustomerRate,
       totalBuyers,

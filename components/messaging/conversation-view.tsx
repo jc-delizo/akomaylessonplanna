@@ -30,19 +30,25 @@ export function ConversationView({
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Poll for new messages in this conversation
-  const { messages: newMessages, refresh: refreshMessages } = useMessages({
+  // Poll for new messages in this conversation (30s, pauses when tab hidden)
+  const { refresh: refreshMessages } = useMessages({
     conversationId,
     enabled: true,
+    initialAfter:
+      messages.length > 0
+        ? (() => {
+            const sorted = [...messages].sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
+            return sorted[sorted.length - 1]?.created_at ?? null
+          })()
+        : undefined,
     onNewMessage: (message) => {
       setMessages((prev) => {
-        // Avoid duplicates
-        if (prev.some((m) => m.id === message.id)) {
-          return prev
-        }
+        if (prev.some((m) => m.id === message.id)) return prev
         return [...prev, message]
       })
-      // Auto-scroll to bottom
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)

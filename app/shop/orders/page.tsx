@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { PullToRefresh } from '@/components/dashboard/pull-to-refresh'
 import { Button } from '@/components/ui/button'
@@ -89,6 +90,71 @@ interface OrderItem {
 
 const REGIONS = ['All regions', 'NCR', 'Luzon', 'Visayas', 'Mindanao']
 
+/** Contact Buyer: find-or-create buyer-seller conversation then redirect to /messages/[id] */
+function ContactBuyerButton({
+  buyerId,
+  productId,
+  orderId,
+  children,
+  className,
+  size,
+  variant = 'ghost',
+}: {
+  buyerId: string
+  productId: string
+  orderId: string
+  children?: React.ReactNode
+  className?: string
+  size?: 'default' | 'sm' | 'lg' | 'icon'
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/messages/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyer_id: buyerId,
+          product_id: productId,
+          order_id: orderId,
+        }),
+      })
+      if (res.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.error(data.error || 'Failed to start conversation')
+        return
+      }
+      const data = await res.json()
+      router.push(`/messages/${data.conversation.id}`)
+    } catch (e) {
+      console.error('Failed to start conversation', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      variant={variant}
+      size={size ?? 'sm'}
+      className={className}
+      onClick={handleClick}
+      disabled={loading}
+    >
+      <MessageSquare className={children ? 'h-4 w-4 mr-1' : 'h-4 w-4'} />
+      {children}
+    </Button>
+  )
+}
+
 export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<OrderItem[]>([])
   const [allOrders, setAllOrders] = useState<OrderItem[]>([])
@@ -104,8 +170,22 @@ export default function SellerOrdersPage() {
   const [productFilter, setProductFilter] = useState('all')
   const [locationFilter, setLocationFilter] = useState('All regions')
 
+  const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'pioneer'>('free')
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx' | 'pdf'>('csv')
+  const [exporting, setExporting] = useState(false)
+
   useEffect(() => {
     loadOrders()
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/me/profile')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data: { profile?: { subscription_tier?: string } } | null) => {
+        const tier = data?.profile?.subscription_tier || 'free'
+        setSubscriptionTier(tier === 'pro' || tier === 'pioneer' ? tier : 'free')
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -165,48 +245,86 @@ export default function SellerOrdersPage() {
     setOrders(filtered)
   }
 
-  const handleExportCSV = () => {
-    const headers = [
-      'Order ID',
-      'Date',
-      'Product',
-      'Buyer',
-      'Location',
-      'Price',
-      'Commission',
-      'Net Earnings',
-      'Payment Method',
-      'Status',
-      'Downloads',
-    ]
-
-    const rows = orders.map((order) => [
-      order.order.id.slice(0, 8).toUpperCase(),
-      new Date(order.order.created_at).toLocaleDateString(),
-      order.product_title,
-      order.buyer ? formatBuyerName(order.buyer.first_name, order.buyer.last_name || '') : 'Anonymous',
-      order.buyer?.location_region || 'N/A',
-      `₱${order.price_at_purchase.toFixed(2)}`,
-      `₱${order.commission_amount.toFixed(2)} (${order.commission_rate}%)`,
-      `₱${order.net_earnings.toFixed(2)}`,
-      order.order.payment_method.toUpperCase(),
-      order.order.payment_status.toUpperCase(),
-      order.download_count.toString(),
-    ])
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `orders-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleExport = async () => {
+    if (exportFormat === 'csv') {
+      const headers = [
+        'Order ID',
+        'Date',
+        'Product',
+        'Buyer',
+        'Location',
+        'Price',
+        'Commission',
+        'Net Earnings',
+        'Payment Method',
+        'Status',
+        'Downloads',
+      ]
+      const rows = orders.map((order) => [
+        order.order.id.slice(0, 8).toUpperCase(),
+        new Date(order.order.created_at).toLocaleDateString(),
+        order.product_title,
+        order.buyer ? formatBuyerName(order.buyer.first_name, order.buyer.last_name || '') : 'Anonymous',
+        order.buyer?.location_region || 'N/A',
+        `₱${order.price_at_purchase.toFixed(2)}`,
+        `₱${order.commission_amount.toFixed(2)} (${order.commission_rate}%)`,
+        `₱${order.net_earnings.toFixed(2)}`,
+        order.order.payment_method.toUpperCase(),
+        order.order.payment_status.toUpperCase(),
+        order.download_count.toString(),
+      ])
+      const csvContent = [headers, ...rows]
+        .map((row) => row.map((cell) => `"${cell}"`).join(','))
+        .join('\n')
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `orders-${new Date().toISOString().split('T')[0]}.csv`
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      return
+    }
+    setExporting(true)
+    try {
+      const res = await fetch('/api/seller/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          export_type: 'orders',
+          format: exportFormat,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Export failed')
+        return
+      }
+      const { job_id } = await res.json()
+      let attempts = 0
+      const poll = async () => {
+        const j = await fetch(`/api/seller/export/${job_id}`).then((r) => r.json())
+        if (j.status === 'completed' && j.file_url) {
+          window.open(j.file_url, '_blank')
+          setExporting(false)
+          return
+        }
+        if (j.status === 'failed') {
+          alert(j.error_message || 'Export failed')
+          setExporting(false)
+          return
+        }
+        if (++attempts < 30) setTimeout(poll, 1500)
+        else setExporting(false)
+      }
+      setTimeout(poll, 1000)
+    } catch (e) {
+      setExporting(false)
+      alert('Export failed')
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -484,13 +602,35 @@ export default function SellerOrdersPage() {
                 </div>
               </SheetContent>
             </Sheet>
+            <Select
+              value={exportFormat}
+              onValueChange={(v) => setExportFormat(v as 'csv' | 'xlsx' | 'pdf')}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="xlsx" disabled={subscriptionTier !== 'pro' && subscriptionTier !== 'pioneer'}>
+                  Excel{subscriptionTier !== 'pro' && subscriptionTier !== 'pioneer' ? ' (Pro only)' : ''}
+                </SelectItem>
+                <SelectItem value="pdf" disabled={subscriptionTier !== 'pro' && subscriptionTier !== 'pioneer'}>
+                  PDF{subscriptionTier !== 'pro' && subscriptionTier !== 'pioneer' ? ' (Pro only)' : ''}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {(subscriptionTier !== 'pro' && subscriptionTier !== 'pioneer') && (
+              <Link href="/shop/upgrade" className="text-sm text-[#ff7200] hover:underline">
+                Unlock Excel & PDF export
+              </Link>
+            )}
             <Button
               variant="outline"
-              onClick={handleExportCSV}
-              disabled={orders.length === 0}
+              onClick={handleExport}
+              disabled={orders.length === 0 || exporting}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
             </Button>
           </div>
         </div>
@@ -611,11 +751,12 @@ export default function SellerOrdersPage() {
                             >
                               View
                             </Button>
-                            <Link href={`/messages/new?buyerId=${order.order.buyer_id}&orderId=${order.order.id}`}>
-                              <Button variant="ghost" size="sm">
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                            <ContactBuyerButton
+                              buyerId={order.order.buyer_id}
+                              productId={order.product_id}
+                              orderId={order.order.id}
+                              size="sm"
+                            />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -695,15 +836,16 @@ export default function SellerOrdersPage() {
                     >
                       View Details
                     </Button>
-                    <Link
-                      href={`/messages/new?buyerId=${order.order.buyer_id}&orderId=${order.order.id}`}
-                      className="flex-1"
+                    <ContactBuyerButton
+                      buyerId={order.order.buyer_id}
+                      productId={order.product_id}
+                      orderId={order.order.id}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 w-full"
                     >
-                      <Button variant="outline" size="sm" className="w-full">
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        Contact
-                      </Button>
-                    </Link>
+                      Contact
+                    </ContactBuyerButton>
                   </div>
                 </Card>
               ))}
@@ -833,12 +975,15 @@ export default function SellerOrdersPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4">
-                  <Button variant="outline" className="flex-1" asChild>
-                    <Link href={`/messages/new?buyerId=${selectedOrder.order.buyer_id}&orderId=${selectedOrder.order.id}`}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Contact Buyer
-                    </Link>
-                  </Button>
+                  <ContactBuyerButton
+                    buyerId={selectedOrder.order.buyer_id}
+                    productId={selectedOrder.product_id}
+                    orderId={selectedOrder.order.id}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Contact Buyer
+                  </ContactBuyerButton>
                   <Button variant="outline" className="flex-1" asChild>
                     <Link href={`/products/${selectedOrder.product_id}`}>
                       <ExternalLink className="h-4 w-4 mr-2" />

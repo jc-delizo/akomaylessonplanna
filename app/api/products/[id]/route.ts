@@ -7,6 +7,15 @@ import { toPromise } from '@/lib/utils/supabase-promise'
  * Get product details by ID
  * Tracks view in product_views table
  */
+const TRAFFIC_SOURCE_VALUES = ['search', 'marketplace', 'direct', 'profile', 'category', 'other'] as const
+
+function normalizeSource(raw: string | null): string | null {
+  if (!raw || typeof raw !== 'string') return 'direct'
+  const lower = raw.trim().toLowerCase()
+  if (TRAFFIC_SOURCE_VALUES.includes(lower as (typeof TRAFFIC_SOURCE_VALUES)[number])) return lower
+  return 'other'
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,6 +23,9 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
+    const sourceParam = searchParams.get('source')
+    const source = normalizeSource(sourceParam)
 
     // Get current user (if authenticated)
     const {
@@ -107,6 +119,7 @@ export async function GET(
           .insert({
             product_id: id,
             user_id: user?.id || null,
+            source,
           })
       )
         .then(({ error: viewError }) => {

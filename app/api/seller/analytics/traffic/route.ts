@@ -1,6 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+const SOURCE_LABELS: Record<string, string> = {
+  search: 'Search',
+  marketplace: 'Marketplace',
+  direct: 'Direct',
+  profile: 'Profile',
+  category: 'Category',
+  other: 'Other',
+}
+
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -12,7 +21,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify user is Pro/Pioneer seller
     const { data: userData } = await supabase
       .from('users')
       .select('role, can_sell, subscription_tier')
@@ -30,14 +38,38 @@ export async function GET() {
       return NextResponse.json({ error: 'Pro/Pioneer subscription required' }, { status: 403 })
     }
 
-    // Simplified traffic sources (in production, this would come from product_views table with source tracking)
-    // For now, return mock data structure
-    const trafficSources = [
-      { source: 'Search', percentage: 45, count: 450 },
-      { source: 'Homepage', percentage: 25, count: 250 },
-      { source: 'Direct Link', percentage: 20, count: 200 },
-      { source: 'Profile', percentage: 10, count: 100 },
-    ]
+    // Seller's product IDs (RLS allows sellers to read product_views for their products)
+    const { data: sellerProducts } = await supabase
+      .from('products')
+      .select('id')
+      .eq('seller_id', user.id)
+
+    const productIds = (sellerProducts || []).map((p) => p.id)
+    if (productIds.length === 0) {
+      return NextResponse.json({ trafficSources: [] })
+    }
+
+    // Fetch product_views for seller's products (source may be null for older rows)
+    const { data: views } = await supabase
+      .from('product_views')
+      .select('source')
+      .in('product_id', productIds)
+
+    const bySource: Record<string, number> = {}
+    let total = 0
+    for (const row of views || []) {
+      const source = row.source && row.source.trim() ? row.source : 'direct'
+      bySource[source] = (bySource[source] || 0) + 1
+      total += 1
+    }
+
+    const trafficSources = Object.entries(bySource)
+      .map(([source, count]) => ({
+        source: SOURCE_LABELS[source] || source,
+        count,
+        percentage: total > 0 ? (count / total) * 100 : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
 
     return NextResponse.json({ trafficSources })
   } catch (error) {

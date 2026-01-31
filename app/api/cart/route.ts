@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     // Check if product exists and is published
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, status')
+      .select('id, status, seller_id')
       .eq('id', product_id)
       .single()
 
@@ -106,6 +106,14 @@ export async function POST(request: Request) {
       }
       console.error('Error adding to cart:', error)
       return NextResponse.json({ error: 'Failed to add to cart' }, { status: 500 })
+    }
+
+    // Record add-to-cart event for seller analytics (funnel)
+    if (product.seller_id) {
+      await supabase.from('cart_add_events').insert({
+        product_id: product_id,
+        seller_id: product.seller_id,
+      })
     }
 
     return NextResponse.json({ item: cartItem }, { status: 201 })

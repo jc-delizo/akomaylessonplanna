@@ -88,6 +88,7 @@ export function RecentlyViewedSection() {
               quarter: item.product.quarter,
               weeks: item.product.weeks,
             }}
+            trafficSource="other"
           />
         ))}
       </div>

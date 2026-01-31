@@ -38,11 +38,42 @@ export default function NewMessagePage() {
     if (productId) {
       fetchProduct()
     }
-    // If orderId provided, fetch order to get seller_id
+    // If orderId provided (seller flow), fetch order to get seller_id
     if (orderId && !sellerId) {
       fetchOrder()
     }
   }, [sellerId, productId, orderId])
+
+  // Auto create/find conversation and redirect when sellerId (and optionally productId) are in URL (e.g. from product page link or seller profile)
+  const [autoRedirectTried, setAutoRedirectTried] = useState(false)
+  useEffect(() => {
+    if (!sellerId || autoRedirectTried) return
+
+    const tryAutoRedirect = async () => {
+      setAutoRedirectTried(true)
+      try {
+        const body: Record<string, string> = { seller_id: sellerId }
+        if (productId) body.product_id = productId
+        if (orderId) body.order_id = orderId
+
+        const res = await fetch('/api/messages/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (res.status === 401) return // User not logged in, show form
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.conversation?.id) {
+          router.replace(`/messages/${data.conversation.id}`)
+        }
+      } catch {
+        // Ignore; user can use form
+      }
+    }
+
+    tryAutoRedirect()
+  }, [sellerId, productId, orderId, router, autoRedirectTried])
 
   const fetchOrder = async () => {
     if (!orderId) return

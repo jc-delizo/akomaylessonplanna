@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator'
 import { MessageSquare, Calendar, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ProTierPlaceholder } from '@/components/pro-tier-placeholder'
 
 interface MessagingSettingsProps {
   initialData?: {
@@ -174,27 +175,31 @@ Thank you for your patience! 💚`
           )}
         </div>
 
-        {/* Quick Reply Templates (Pro/Pioneer) */}
-        {isProOrPioneer && (
-          <>
-            <Separator />
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-orange-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  <Sparkles className="size-5 text-[#ff7200] mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-semibold mb-1">Quick Reply Templates</h3>
-                    <p className="text-xs text-gray-600">
-                      Create custom templates for faster responses
-                    </p>
-                  </div>
+        {/* Quick Reply Templates: Pro/Pioneer real, Free placeholder */}
+        <Separator />
+        {isProOrPioneer ? (
+          <div className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-orange-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                <Sparkles className="size-5 text-[#ff7200] mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">Quick Reply Templates</h3>
+                  <p className="text-xs text-gray-600">
+                    Create custom templates for faster responses
+                  </p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/shop/messages/templates">Manage</Link>
-                </Button>
               </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/shop/messages/templates">Manage</Link>
+              </Button>
             </div>
-          </>
+          </div>
+        ) : (
+          <ProTierPlaceholder
+            title="Pro only"
+            description="Custom quick-reply templates for faster responses. Unlock with Pro."
+            ctaLabel="Unlock with Pro"
+          />
         )}
       </CardContent>
 

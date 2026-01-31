@@ -10,6 +10,8 @@ import { getFullName, getInitials, getUserBadges, type User } from '@/lib/utils/
 import { BadgeDisplay } from '@/components/profiles/badge-display'
 import { Palette, Pencil, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
+import { ProTierPlaceholder } from '@/components/pro-tier-placeholder'
 
 interface Profile {
   id: string
@@ -214,7 +216,7 @@ export default function CustomizeShopPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="relative">
-            {/* Banner with Edit */}
+            {/* Banner with Edit (Pro/Pioneer) or placeholder (Free) */}
             <div className="relative h-40 md:h-52 w-full bg-muted">
               {profile.banner_url ? (
                 <img
@@ -230,19 +232,32 @@ export default function CustomizeShopPage() {
                 className="hidden"
                 onChange={handleBannerUpload}
               />
-              <p className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-black/50 text-white px-2 py-1 rounded">
-                Recommended: 1200×300px, max 5MB
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-2 right-2 gap-1"
-                onClick={() => bannerInputRef.current?.click()}
-              >
-                <ImageIcon className="size-4" />
-                Edit banner
-              </Button>
+              {(profile.subscription_tier === 'pro' || profile.subscription_tier === 'pioneer') && (
+                <>
+                  <p className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-black/50 text-white px-2 py-1 rounded">
+                    Recommended: 1200×300px, max 5MB
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-2 right-2 gap-1"
+                    onClick={() => bannerInputRef.current?.click()}
+                  >
+                    <ImageIcon className="size-4" />
+                    Edit banner
+                  </Button>
+                </>
+              )}
             </div>
+            {(profile.subscription_tier !== 'pro' && profile.subscription_tier !== 'pioneer') && (
+              <div className="p-4">
+                <ProTierPlaceholder
+                  title="Pro Feature"
+                  description="Custom banner for your shop. Unlock with Pro to personalize your storefront."
+                  ctaLabel="Unlock with Pro"
+                />
+              </div>
+            )}
 
             {/* Avatar with Edit */}
             <div className="absolute -bottom-10 left-4">

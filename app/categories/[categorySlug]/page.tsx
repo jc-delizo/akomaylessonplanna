@@ -279,6 +279,7 @@ export default function CategoryPage() {
                 products={products}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
+                trafficSource="category"
               />
             )}
           </main>

@@ -1,10 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+const TRAFFIC_SOURCE_VALUES = ['search', 'marketplace', 'direct', 'profile', 'category', 'other'] as const
+
+function normalizeSource(raw: string | null): string {
+  if (!raw || typeof raw !== 'string') return 'direct'
+  const lower = raw.trim().toLowerCase()
+  if (TRAFFIC_SOURCE_VALUES.includes(lower as (typeof TRAFFIC_SOURCE_VALUES)[number])) return lower
+  return 'other'
+}
+
 /**
  * POST /api/products/[id]/view
  * Track product view (called when user visits product page)
  * Auth required (logged-in users only)
+ * Body: { source?: string } for traffic analytics (search, marketplace, direct, profile, category, other)
  */
 export async function POST(
   request: NextRequest,
@@ -13,6 +23,13 @@ export async function POST(
   try {
     const { id: productId } = await params
     const supabase = await createClient()
+    let source = 'direct'
+    try {
+      const body = await request.json().catch(() => ({}))
+      source = normalizeSource(body?.source ?? null)
+    } catch {
+      // ignore body parse errors
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -25,7 +42,7 @@ export async function POST(
     // Verify product exists and is published
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, status')
+      .select('id, status, views_count')
       .eq('id', productId)
       .single()
 
@@ -54,6 +71,23 @@ export async function POST(
       console.warn('recently_viewed table does not exist. Please run migration 009_feature_06_social_features.sql')
       return NextResponse.json({ message: 'View tracking unavailable (table not found)' })
     }
+
+    // Record in product_views for seller traffic analytics
+    const { error: viewInsertError } = await supabase
+      .from('product_views')
+      .insert({
+        product_id: productId,
+        user_id: user.id,
+        source,
+      })
+    if (viewInsertError) {
+      console.error('Error inserting product_views:', viewInsertError)
+    }
+    // Increment views_count on product
+    await supabase
+      .from('products')
+      .update({ views_count: (product.views_count || 0) + 1 })
+      .eq('id', productId)
 
     if (existingView && !existingViewError) {
       // Update viewed_at timestamp (move to top)

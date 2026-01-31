@@ -14,6 +14,7 @@ import {
   Star,
   MessageSquare,
   Settings,
+  Sparkles,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -57,20 +58,16 @@ export function DashboardSidebar({
   const isProOrPioneer =
     user?.subscription_tier === 'pro' || user?.subscription_tier === 'pioneer'
 
-  // Fetch unread message count
+  // Fetch unread message count (lightweight endpoint for badge)
   useEffect(() => {
     if (!user) return
 
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch('/api/messages/conversations?status=active&per_page=100')
+        const response = await fetch('/api/messages/unread-count')
         if (response.ok) {
           const data = await response.json()
-          const totalUnread = data.conversations?.reduce(
-            (sum: number, conv: any) => sum + (conv.unread_count || 0),
-            0
-          ) || 0
-          setUnreadMessageCount(totalUnread)
+          setUnreadMessageCount(data.unread_count ?? 0)
         }
       } catch (error) {
         console.error('Error fetching unread message count:', error)
@@ -78,7 +75,6 @@ export function DashboardSidebar({
     }
 
     fetchUnreadCount()
-    // Poll every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [user])
@@ -94,11 +90,6 @@ export function DashboardSidebar({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {navigationItems.map((item) => {
-            // Hide Pro features if user is not Pro/Pioneer
-            if (item.requiresPro && !isProOrPioneer) {
-              return null
-            }
-
             const isActive = item.href === '/shop' 
               ? pathname === item.href 
               : pathname === item.href || pathname.startsWith(item.href + '/')
@@ -150,6 +141,22 @@ export function DashboardSidebar({
             )
           })}
         </nav>
+        {/* Upgrade to Pro - visible only for Free tier */}
+        {user?.subscription_tier === 'free' && (
+          <div className="p-4 border-t">
+            <Link
+              href="/shop/upgrade"
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'bg-[#ff7200] text-white hover:bg-[#e66800]',
+                collapsed && 'justify-center'
+              )}
+            >
+              <Sparkles className={cn('h-5 w-5 flex-shrink-0', collapsed && 'mx-auto')} />
+              {!collapsed && <span>Upgrade to Pro</span>}
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   )

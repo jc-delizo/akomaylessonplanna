@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   User,
@@ -1206,11 +1207,14 @@ export default function ProfileEditPage() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Palette className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <CardTitle className="mb-2">Pro Feature</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="mb-2">Pro only</CardTitle>
+                    <CardDescription className="mb-4">
                       Customization options are available for Pro and Pioneer subscribers.
                       Upgrade your account to access banner images and custom accent colors.
                     </CardDescription>
+                    <Link href="/shop/upgrade">
+                      <Button className="bg-[#ff7200] hover:bg-[#e66800]">Unlock with Pro</Button>
+                    </Link>
                   </CardContent>
                 </Card>
               )}

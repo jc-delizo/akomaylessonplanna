@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SearchBar } from '@/components/search/search-bar'
 import { AnimatedNavText } from '@/components/navigation/animated-nav-text'
-import { MessageSquare, Shield, User, LogOut, ShoppingCart, Loader2 } from 'lucide-react'
+import { MessageSquare, Shield, User, LogOut, ShoppingCart, Loader2, BookOpen, Package } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { GlareButton } from '@/components/ui/glare-button'
 import { useAdminAuth } from '@/lib/hooks/useAdminAuth'
@@ -188,35 +188,24 @@ export function MainNav({ user }: MainNavProps) {
     const fetchUnreadCount = async () => {
       if (cancelled) return
 
-      // Cancel previous request if still pending
       if (abortController) {
         abortController.abort()
       }
       abortController = new AbortController()
 
       try {
-        const response = await fetch('/api/messages/conversations?status=active&per_page=1', {
+        const response = await fetch('/api/messages/unread-count', {
           signal: abortController.signal,
         })
-        
         if (cancelled) return
-
         if (response.ok) {
           const data = await response.json()
-          // Calculate total unread from conversations
-          const totalUnread = data.conversations?.reduce(
-            (sum: number, conv: any) => sum + (conv.unread_count || 0),
-            0
-          ) || 0
           if (!cancelled) {
-            setUnreadMessageCount(totalUnread)
+            setUnreadMessageCount(data.unread_count ?? 0)
           }
         }
       } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          // Request was cancelled, ignore
-          return
-        }
+        if (error instanceof Error && error.name === 'AbortError') return
         if (!cancelled) {
           console.error('Error fetching unread message count:', error)
         }
@@ -528,6 +517,18 @@ export function MainNav({ user }: MainNavProps) {
                           View Profile
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/library" className="cursor-pointer flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          My Library
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/orders" className="cursor-pointer flex items-center">
+                          <Package className="mr-2 h-4 w-4" />
+                          My Orders
+                        </Link>
+                      </DropdownMenuItem>
                       {isAdmin && (
                         <>
                           <DropdownMenuSeparator />
@@ -650,6 +651,22 @@ export function MainNav({ user }: MainNavProps) {
                         {totalCartCount > 9 ? '9+' : totalCartCount}
                       </Badge>
                     )}
+                  </Link>
+                  <Link
+                    href="/library"
+                    className="text-sm font-medium text-gray-700 hover:text-orange-600 flex items-center gap-2 py-2 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <BookOpen className="size-4" />
+                    My Library
+                  </Link>
+                  <Link
+                    href="/orders"
+                    className="text-sm font-medium text-gray-700 hover:text-orange-600 flex items-center gap-2 py-2 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Package className="size-4" />
+                    My Orders
                   </Link>
                   {(userProfile?.role === 'seller' || userProfile?.role === 'admin' || userProfile?.can_sell === true) && (
                     <Link

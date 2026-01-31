@@ -19,6 +19,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'product_id is required' }, { status: 400 })
     }
 
+    // Get product seller_id for cart_add_events
+    const { data: product } = await supabase
+      .from('products')
+      .select('id, seller_id')
+      .eq('id', product_id)
+      .single()
+
     // Remove from wishlist
     const { error: wishlistError } = await supabase
       .from('wishlist')
@@ -45,6 +52,12 @@ export async function POST(request: Request) {
         console.error('Error adding to cart:', cartError)
         return NextResponse.json({ error: 'Failed to add to cart' }, { status: 500 })
       }
+    } else if (product?.seller_id) {
+      // Record add-to-cart event for seller analytics (funnel)
+      await supabase.from('cart_add_events').insert({
+        product_id: product_id,
+        seller_id: product.seller_id,
+      })
     }
 
     return NextResponse.json({ message: 'Moved to cart successfully' })

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Download, Star, Search, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { getFullName } from '@/lib/utils/profile'
+import { toast } from 'sonner'
 
 interface LibraryItem {
   id: string
@@ -98,6 +99,7 @@ export default function LibraryPage() {
 
   const handleDownload = async (productId: string) => {
     setDownloading(productId)
+    const toastId = toast.loading('Preparing your download...')
     try {
       const response = await fetch(`/api/library/${productId}/download`)
       if (!response.ok) {
@@ -124,11 +126,13 @@ export default function LibraryPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
+      toast.dismiss(toastId)
       // Reload library to update download count
       loadLibrary()
     } catch (error) {
       console.error('Error downloading:', error)
-      alert('Failed to download. Please try again.')
+      toast.dismiss(toastId)
+      toast.error('Failed to download. Please try again.')
     } finally {
       setDownloading(null)
     }

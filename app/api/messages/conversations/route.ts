@@ -161,8 +161,9 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/messages/conversations
- * Create new conversation
- * Body: { seller_id, product_id (optional), initial_message (optional) }
+ * Create new conversation (buyer-initiated or seller-initiated "Contact Buyer")
+ * Body (buyer): { seller_id, product_id (optional), order_id (optional), initial_message (optional) }
+ * Body (seller): { buyer_id, product_id (optional, from order), order_id (optional) }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -176,11 +177,98 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { seller_id, product_id, order_id, initial_message } = body
+    const {
+      seller_id,
+      buyer_id,
+      product_id,
+      order_id,
+      initial_message,
+    } = body
 
+    // --- Seller-initiated: "Contact Buyer" (buyer_id provided, current user is seller) ---
+    if (buyer_id) {
+      if (buyer_id === user.id) {
+        return NextResponse.json(
+          { error: 'Cannot create conversation with yourself' },
+          { status: 400 }
+        )
+      }
+
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('id, can_sell')
+        .eq('id', user.id)
+        .single()
+
+      if (!currentUser?.can_sell) {
+        return NextResponse.json(
+          { error: 'Only sellers can start a conversation with a buyer' },
+          { status: 403 }
+        )
+      }
+
+      // Find existing conversation: one per buyer-seller (any product)
+      const { data: existingConvs } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('buyer_id', buyer_id)
+        .eq('seller_id', user.id)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+
+      const existingConv = existingConvs?.[0]
+      if (existingConv) {
+        const { data: conversation } = await supabase
+          .from('conversations')
+          .select(
+            `
+            *,
+            buyer:buyer_id(id, first_name, last_name, username, avatar_url),
+            seller:seller_id(id, first_name, last_name, username, avatar_url),
+            product:product_id(id, title, price, cover_image_url)
+          `
+          )
+          .eq('id', existingConv.id)
+          .single()
+
+        return NextResponse.json({ conversation }, { status: 200 })
+      }
+
+      // Create new conversation (seller-initiated): buyer_id, seller_id, product_id from order
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          buyer_id,
+          seller_id: user.id,
+          product_id: product_id || null,
+          order_id: order_id || null,
+          status: 'active',
+        })
+        .select(
+          `
+          *,
+          buyer:buyer_id(id, first_name, last_name, username, avatar_url),
+          seller:seller_id(id, first_name, last_name, username, avatar_url),
+          product:product_id(id, title, price, cover_image_url)
+        `
+        )
+        .single()
+
+      if (convError) {
+        console.error('Error creating conversation (seller-initiated):', convError)
+        return NextResponse.json(
+          { error: 'Failed to create conversation' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({ conversation }, { status: 201 })
+    }
+
+    // --- Buyer-initiated: "Contact Seller" (seller_id required) ---
     if (!seller_id) {
       return NextResponse.json(
-        { error: 'seller_id is required' },
+        { error: 'seller_id or buyer_id is required' },
         { status: 400 }
       )
     }
@@ -192,7 +280,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if seller exists and can sell
     const { data: seller, error: sellerError } = await supabase
       .from('users')
       .select('id, first_name, last_name, can_sell')
@@ -213,7 +300,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user is blocked
     const { data: block } = await supabase
       .from('user_blocks')
       .select('id')
@@ -228,7 +314,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if conversation already exists
     const conversationQuery: any = {
       buyer_id: user.id,
       seller_id: seller_id,
@@ -246,7 +331,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingConv) {
-      // Return existing conversation
       const { data: conversation } = await supabase
         .from('conversations')
         .select(
@@ -263,7 +347,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ conversation }, { status: 200 })
     }
 
-    // Create new conversation
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
       .insert({
@@ -291,7 +374,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If initial message provided, create it
     if (initial_message && initial_message.trim()) {
       const { error: msgError } = await supabase.from('messages').insert({
         conversation_id: conversation.id,
@@ -302,7 +384,6 @@ export async function POST(request: NextRequest) {
 
       if (msgError) {
         console.error('Error creating initial message:', msgError)
-        // Don't fail the request, conversation is created
       }
     }
 
