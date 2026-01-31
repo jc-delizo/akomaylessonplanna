@@ -49,6 +49,21 @@ export default function BrowseProductsPage() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [marketplaceClosed, setMarketplaceClosed] = useState(false)
+
+  // Fetch marketplace status (closed = show blur overlay)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/marketplace-status')
+      .then((res) => (res.ok ? res.json() : { marketplaceClosed: false }))
+      .then((data) => {
+        if (!cancelled) setMarketplaceClosed(data.marketplaceClosed === true)
+      })
+      .catch(() => {
+        if (!cancelled) setMarketplaceClosed(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   // Build initial filters from URL params (parse weeks and modalities as arrays)
   useEffect(() => {
@@ -178,7 +193,7 @@ export default function BrowseProductsPage() {
   }
 
 
-  return (
+  const mainContent = (
     <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
           {/* Filter Sidebar */}
@@ -312,4 +327,22 @@ export default function BrowseProductsPage() {
         </div>
       </div>
   )
+
+  if (marketplaceClosed) {
+    return (
+      <div className="relative">
+        {mainContent}
+        <div
+          className="absolute inset-0 z-10 flex items-start justify-center pt-8 backdrop-blur-md bg-white/60"
+          aria-hidden="true"
+        >
+          <p className="text-xl md:text-2xl font-medium text-center text-foreground px-4 max-w-lg">
+            Still perfecting this website for you guys! Will open soon!
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return mainContent
 }

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { ProductCard } from '@/components/products/product-card'
 import { ProductTabs } from '@/components/products/product-tabs'
 import { CurvedLoopHero } from '@/components/curved-loop-hero'
+import { getMarketplaceClosed } from '@/lib/utils/marketplace-status'
 import Link from 'next/link'
 
 // Helper: attach subject_ids from product_subjects for each product (for "Multiple Subjects" on cards)
@@ -39,6 +39,7 @@ function transformProducts(products: any[]): any[] {
 
 export default async function MarketplacePage() {
   const supabase = await createClient()
+  const marketplaceClosed = await getMarketplaceClosed(supabase)
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -242,7 +243,7 @@ export default async function MarketplacePage() {
   const transformedBestsellerProducts = transformProducts(withSubjectIdsBestseller)
   const transformedRecommendedProducts = transformProducts(withSubjectIdsRecommended)
 
-  return (
+  const content = (
     <>
       {/* CurvedLoop Hero Section */}
       <CurvedLoopHero />
@@ -290,4 +291,22 @@ export default async function MarketplacePage() {
       </div>
     </>
   )
+
+  if (marketplaceClosed) {
+    return (
+      <div className="relative">
+        {content}
+        <div
+          className="absolute inset-0 z-10 flex items-start justify-center pt-8 backdrop-blur-md bg-white/60"
+          aria-hidden="true"
+        >
+          <p className="text-xl md:text-2xl font-medium text-center text-foreground px-4 max-w-lg">
+            Still perfecting this website for you guys! Will open soon!
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return content
 }

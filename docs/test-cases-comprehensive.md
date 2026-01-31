@@ -898,12 +898,12 @@ WCAG 2.1 AA compliance, screen reader compatibility.
   5. Click notification
   6. Verify navigates to order
 
-- **TC-06-021**: Recently viewed section
-  1. Browse products (view 5+)
-  2. Navigate to homepage
-  3. Verify "Recently Viewed" section
-  4. Click product
-  5. Verify navigates to product page
+- **TC-06-021**: Recently viewed (product page sidebar)
+  1. Browse products (view 3+)
+  2. Open a product detail page
+  3. Verify "You recently viewed:" sidebar shows recently viewed items
+  4. Click a recently viewed product
+  5. Verify navigates to that product page
 
 #### Social Sharing
 - **TC-06-022**: Share product to Facebook

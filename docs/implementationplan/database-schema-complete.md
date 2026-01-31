@@ -830,7 +830,7 @@ CREATE INDEX idx_user_blocks_blocked ON user_blocks(blocked_id);
 
 ---
 
-### Group 6: Admin & Moderation (5 tables)
+### Group 6: Admin & Moderation (6 tables)
 
 #### Table: `reports`
 **Purpose:** User reports (content moderation)
@@ -957,6 +957,26 @@ CREATE TABLE disputes (
 CREATE INDEX idx_disputes_status ON disputes(status, created_at DESC);
 CREATE INDEX idx_disputes_admin ON disputes(admin_id);
 ```
+
+---
+
+#### Table: `platform_settings`
+**Purpose:** Key-value store for platform-wide flags (e.g. marketplace shutoff). Used by admin toggle on /admin/announcements and by buyer-facing marketplace/browse pages.
+**Feature:** Marketplace shutoff (admin)
+
+```sql
+CREATE TABLE platform_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_platform_settings_updated_at ON platform_settings(updated_at DESC);
+```
+
+**Key:** `marketplace_closed` (JSONB boolean). When `true`, marketplace and browse pages show a blur overlay with message "Still perfecting this website for you guys! Will open soon!"
+
+**Migration:** `027_platform_settings_marketplace_closed.sql`
 
 ---
 

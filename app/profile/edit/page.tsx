@@ -32,7 +32,7 @@ import { ProfileCompletionIndicator } from '@/components/profiles/profile-comple
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/registry/default/tabs/tabs'
 import { Checkbox } from '@/registry/default/checkbox/checkbox'
-import { Badge } from '@/registry/default/badge/badge'
+import { RadioGroup, RadioGroupItem } from '@/registry/default/radio-group/radio-group'
 import { Separator } from '@/registry/default/separator/separator'
 import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/alert'
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/registry/default/tooltip/tooltip'
@@ -102,10 +102,8 @@ export default function ProfileEditPage() {
   const [selectedRegionCode, setSelectedRegionCode] = useState<string>('')
   const [availableCities, setAvailableCities] = useState<City[]>([])
   const [allRegions] = useState<Region[]>(getAllRegions())
-  // Use sentinel string to keep Accordion controlled from first render
-  // Base UI determines controlled/uncontrolled based on first render value
-  // Using a sentinel that's not a valid accordion item value ('region' or 'city')
-  const [accordionValue, setAccordionValue] = useState<string>('__closed__')
+  // Accordion value: Base UI expects (any | null)[]. [] = closed, ['region'] | ['city'] = open.
+  const [accordionValue, setAccordionValue] = useState<(string | null)[]>([])
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
     instagram: '',
@@ -136,21 +134,6 @@ export default function ProfileEditPage() {
     }
     fetchHierarchy()
   }, [])
-
-  // #region agent log
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const list = document.querySelector('[data-slot="tabs-list"]')
-      const triggers = list ? Array.from(list.querySelectorAll('[role="tab"]')) : []
-      triggers.forEach((el, i) => {
-        const attrs: Record<string, string> = {}
-        for (const a of el.attributes) if (a.name.startsWith('data-')) attrs[a.name] = a.value || '(present)'
-        fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'profile/edit:tab-inspect', message: 'Tab DOM', data: { index: i, dataAttributes: attrs, backgroundColor: getComputedStyle(el).backgroundColor }, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId: 'A' }) }).catch(() => {})
-      })
-    }, 500)
-    return () => clearTimeout(t)
-  }, [])
-  // #endregion
 
   // Load profile data
   useEffect(() => {
@@ -345,8 +328,8 @@ export default function ProfileEditPage() {
       setAvailableCities(region.cities)
       // Reset city when region changes
       setLocationCity('')
-      // Auto-expand city accordion when region is selected
-      setAccordionValue('city')
+      // Close accordion after region selection (user can open again to pick city)
+      setAccordionValue([])
     }
   }
 
@@ -354,7 +337,7 @@ export default function ProfileEditPage() {
   const handleCityChange = (cityName: string) => {
     setLocationCity(cityName)
     // Close accordion after selection
-    setAccordionValue('__closed__')
+    setAccordionValue([])
   }
 
   // Check if Basic Info section is complete
@@ -475,6 +458,7 @@ export default function ProfileEditPage() {
 
   const isProOrPioneer =
     profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'pioneer'
+  const showCustomizationTab = profile?.role !== 'buyer'
 
   return (
     <TooltipProvider>
@@ -508,7 +492,7 @@ export default function ProfileEditPage() {
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 gap-1 h-10 items-center rounded-md bg-muted p-1 text-muted-foreground w-full mb-6">
+            <TabsList className={`grid w-full gap-1 h-10 items-center rounded-md bg-muted p-1 text-muted-foreground w-full mb-6 ${showCustomizationTab ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger
                   value="basic"
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -563,6 +547,7 @@ export default function ProfileEditPage() {
                     )}
                   </span>
                 </TabsTrigger>
+                {showCustomizationTab && (
                 <TabsTrigger
                   value="customization"
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all data-[active]:bg-gray-900 dark:data-[active]:bg-gray-800 data-[active]:text-white data-[active]:font-semibold data-[active]:shadow-sm data-[active]:[&_.ring-white]:ring-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -571,99 +556,34 @@ export default function ProfileEditPage() {
                   <span className="hidden sm:inline">Customization</span>
                   <span className="sm:hidden">Custom</span>
                 </TabsTrigger>
+                )}
             </TabsList>
 
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-6">
-              {/* Display Name and Username */}
+              {/* Single card: Row 1 = Avatar + First Name + Last Name; Row 2 = Username + Bio */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <CardTitle>Display Name & Username</CardTitle>
+                    <CardTitle>Profile</CardTitle>
                   </div>
                   <CardDescription>
-                    Your public display name and unique username for your profile
+                    Your public display name, username, profile picture, and bio
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-6">
+                  {/* Row 1: Avatar left, First Name + Last Name, Username below names */}
+                  <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        minLength={1}
-                        maxLength={255}
-                        required
-                        placeholder="Enter your first name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        maxLength={255}
-                        placeholder="Enter your last name (optional)"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Your username must be unique and will be used in your profile URL</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        minLength={3}
-                        maxLength={20}
-                        pattern="[a-zA-Z0-9_]+"
-                        placeholder="username"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        /sellers/{username || 'username'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              {/* Avatar */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <FileImage className="h-4 w-4" />
-                    <CardTitle>Avatar</CardTitle>
-                  </div>
-                  <CardDescription>Upload a profile picture (max 5MB)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-6">
-                    <Avatar className="h-24 w-24 ring-2 ring-border">
-                      {profile?.avatar_url && (
-                        <AvatarImage src={profile.avatar_url} alt={firstName && lastName ? `${firstName} ${lastName}` : firstName || 'Avatar'} />
-                      )}
-                      <AvatarFallback className="text-2xl bg-muted">
-                        {getInitials(firstName || 'User', lastName || '')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-2">
+                      <Avatar className="h-24 w-24 ring-2 ring-border">
+                        {profile?.avatar_url && (
+                          <AvatarImage src={profile.avatar_url} alt={firstName && lastName ? `${firstName} ${lastName}` : firstName || 'Avatar'} />
+                        )}
+                        <AvatarFallback className="text-2xl bg-muted">
+                          {getInitials(firstName || 'User', lastName || '')}
+                        </AvatarFallback>
+                      </Avatar>
                       <Label htmlFor="avatar" className="cursor-pointer">
                         <div className="flex items-center gap-2 text-sm font-medium">
                           <FileImage className="h-4 w-4" />
@@ -681,30 +601,62 @@ export default function ProfileEditPage() {
                         JPG, PNG or GIF. Max size 5MB
                       </p>
                     </div>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input
+                            id="firstName"
+                            type="text"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            minLength={1}
+                            maxLength={255}
+                            required
+                            placeholder="Enter your first name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            maxLength={255}
+                            placeholder="Enter your last name (optional)"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="username">Username</Label>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Your username must be unique and will be used in your profile URL</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Input
+                          id="username"
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          minLength={3}
+                          maxLength={20}
+                          pattern="[a-zA-Z0-9_]+"
+                          placeholder="username"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          /sellers/{username || 'username'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              {/* Bio */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <CardTitle>Bio</CardTitle>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Write a brief description about yourself. 50+ characters recommended for 100% profile completion.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <CardDescription>Tell others about yourself (max 500 characters)</CardDescription>
-                </CardHeader>
-                <CardContent>
+                  {/* Row 2: Bio full width */}
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
@@ -738,37 +690,41 @@ export default function ProfileEditPage() {
                   Phase 2 Preferences
                 </h3>
 
-                {/* Phase 2: Class Type */}
+                {/* Phase 2: Class Type (single-select) */}
                 <Card>
                   <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4" />
                       <CardTitle>Class Type</CardTitle>
                     </div>
-                    <CardDescription>Select the class types you teach (optional)</CardDescription>
+                    <CardDescription>Select the class type you teach (optional)</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <CardContent className="pt-4 pb-4 px-6 space-y-2">
+                    <RadioGroup
+                      value={teachingClassTypes[0] ?? ''}
+                      onValueChange={(value) => {
+                        if (value && typeof value === 'string') {
+                          setTeachingClassTypes([value])
+                          if (value === 'sped') {
+                            setTeachingLearnerPaths([])
+                            setTeachingSpedLevelIds([])
+                          } else {
+                            setTeachingStrandIds([])
+                          }
+                        } else {
+                          setTeachingClassTypes([])
+                          setTeachingLearnerPaths([])
+                          setTeachingSpedLevelIds([])
+                          setTeachingStrandIds([])
+                        }
+                      }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                    >
                       {CLASS_TYPES.map((classType) => (
                         <div key={classType.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <Checkbox
+                          <RadioGroupItem
                             id={`class-type-${classType.value}`}
-                            checked={teachingClassTypes.includes(classType.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setTeachingClassTypes([...teachingClassTypes, classType.value])
-                              } else {
-                                setTeachingClassTypes(teachingClassTypes.filter((c) => c !== classType.value))
-                                // Clear dependent fields when class type is removed
-                                if (classType.value === 'sped') {
-                                  setTeachingLearnerPaths([])
-                                  setTeachingSpedLevelIds([])
-                                }
-                                if (classType.value === 'regular') {
-                                  setTeachingStrandIds([])
-                                }
-                              }
-                            }}
+                            value={classType.value}
                           />
                           <Label
                             htmlFor={`class-type-${classType.value}`}
@@ -778,43 +734,11 @@ export default function ProfileEditPage() {
                           </Label>
                         </div>
                       ))}
-                    </div>
-                    {teachingClassTypes.length > 0 && (
-                      <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                        <Label className="text-xs text-muted-foreground">Selected Class Types</Label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {teachingClassTypes.map((classType) => (
-                            <Badge key={classType} variant="secondary" className="gap-1">
-                              {CLASS_TYPES.find((c) => c.value === classType)?.label || classType}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setTeachingClassTypes(teachingClassTypes.filter((c) => c !== classType))
-                                  if (classType === 'sped') {
-                                    setTeachingLearnerPaths([])
-                                    setTeachingSpedLevelIds([])
-                                  }
-                                  if (classType === 'regular') {
-                                    setTeachingStrandIds([])
-                                  }
-                                }}
-                                className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                aria-label={`Remove ${classType}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {teachingClassTypes.length === 0 && (
-                      <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
-                    )}
+                    </RadioGroup>
                   </CardContent>
                 </Card>
 
-                {/* Phase 2: Learner Path (conditional on SPED) */}
+                {/* Phase 2: Learner Path (conditional on SPED, single-select) */}
                 {isSpedSelected && (
                   <Card className="border-l-4 border-purple-200 dark:border-purple-800">
                     <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
@@ -822,26 +746,29 @@ export default function ProfileEditPage() {
                         <BookOpen className="h-4 w-4" />
                         <CardTitle>SPED Learner Path</CardTitle>
                       </div>
-                      <CardDescription>Select the SPED learner paths you teach (optional)</CardDescription>
+                      <CardDescription>Select the SPED learner path you teach (optional)</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <CardContent className="pt-4 pb-4 px-6 space-y-2">
+                      <RadioGroup
+                        value={teachingLearnerPaths[0] ?? ''}
+                        onValueChange={(value) => {
+                          if (value && typeof value === 'string') {
+                            setTeachingLearnerPaths([value])
+                            if (value !== 'non_graded') {
+                              setTeachingSpedLevelIds([])
+                            }
+                          } else {
+                            setTeachingLearnerPaths([])
+                            setTeachingSpedLevelIds([])
+                          }
+                        }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                      >
                         {LEARNER_PATHS.map((path) => (
                           <div key={path.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <Checkbox
+                            <RadioGroupItem
                               id={`learner-path-${path.value}`}
-                              checked={teachingLearnerPaths.includes(path.value)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setTeachingLearnerPaths([...teachingLearnerPaths, path.value])
-                                } else {
-                                  setTeachingLearnerPaths(teachingLearnerPaths.filter((p) => p !== path.value))
-                                  // Clear SPED levels if Non-Graded is removed
-                                  if (path.value === 'non_graded') {
-                                    setTeachingSpedLevelIds([])
-                                  }
-                                }
-                              }}
+                              value={path.value}
                             />
                             <Label
                               htmlFor={`learner-path-${path.value}`}
@@ -851,35 +778,7 @@ export default function ProfileEditPage() {
                             </Label>
                           </div>
                         ))}
-                      </div>
-                      {teachingLearnerPaths.length > 0 && (
-                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                          <Label className="text-xs text-muted-foreground">Selected Learner Paths</Label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {teachingLearnerPaths.map((path) => (
-                              <Badge key={path} variant="secondary" className="gap-1">
-                                {LEARNER_PATHS.find((p) => p.value === path)?.label || path}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setTeachingLearnerPaths(teachingLearnerPaths.filter((p) => p !== path))
-                                    if (path === 'non_graded') {
-                                      setTeachingSpedLevelIds([])
-                                    }
-                                  }}
-                                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                  aria-label={`Remove ${path}`}
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {teachingLearnerPaths.length === 0 && (
-                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
-                      )}
+                      </RadioGroup>
                     </CardContent>
                   </Card>
                 )}
@@ -918,34 +817,6 @@ export default function ProfileEditPage() {
                           </div>
                         ))}
                       </div>
-                      {teachingSpedLevelIds.length > 0 && (
-                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                          <Label className="text-xs text-muted-foreground">Selected SPED Levels</Label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {teachingSpedLevelIds.map((levelId) => {
-                              const level = hierarchy?.sped?.levels.find((l) => l.id === levelId)
-                              return (
-                                <Badge key={levelId} variant="secondary" className="gap-1">
-                                  {level?.name || levelId}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setTeachingSpedLevelIds(teachingSpedLevelIds.filter((id) => id !== levelId))
-                                    }
-                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                    aria-label={`Remove ${level?.name || levelId}`}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {teachingSpedLevelIds.length === 0 && (
-                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
-                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -984,34 +855,6 @@ export default function ProfileEditPage() {
                           </div>
                         ))}
                       </div>
-                      {teachingStrandIds.length > 0 && (
-                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                          <Label className="text-xs text-muted-foreground">Selected Strands</Label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {teachingStrandIds.map((strandId) => {
-                              const strand = hierarchy?.regular?.strands.find((s) => s.id === strandId)
-                              return (
-                                <Badge key={strandId} variant="secondary" className="gap-1">
-                                  {strand?.name || strandId}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setTeachingStrandIds(teachingStrandIds.filter((id) => id !== strandId))
-                                    }
-                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                    aria-label={`Remove ${strand?.name || strandId}`}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {teachingStrandIds.length === 0 && (
-                        <p className="text-xs text-muted-foreground italic">Select at least one option to get started</p>
-                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -1026,6 +869,51 @@ export default function ProfileEditPage() {
                   Teaching Assignments
                 </h3>
 
+                {/* Grade Levels Taught (hidden when SPED Non-Graded selected) */}
+                {!isSpedNonGradedSelected && (
+                  <Card>
+                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4" />
+                        <CardTitle>Grade Levels Taught</CardTitle>
+                      </div>
+                      <CardDescription>Select all grade levels you teach</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {availableGrades.map((grade) => (
+                          <div key={grade.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <Checkbox
+                              id={`grade-${grade.id}`}
+                              checked={gradeLevelsTaught.includes(grade.name)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setGradeLevelsTaught([...gradeLevelsTaught, grade.name])
+                                } else {
+                                  const newGrades = gradeLevelsTaught.filter((g) => g !== grade.name)
+                                  setGradeLevelsTaught(newGrades)
+                                  if (grade.name === 'Grade 11' || grade.name === 'Grade 12') {
+                                    const stillHasG11Or12 = newGrades.some((g) => g === 'Grade 11' || g === 'Grade 12')
+                                    if (!stillHasG11Or12) {
+                                      setTeachingStrandIds([])
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`grade-${grade.id}`}
+                              className={`flex-1 cursor-pointer text-sm ${gradeLevelsTaught.includes(grade.name) ? 'font-medium' : 'font-normal'}`}
+                            >
+                              {grade.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Subjects Taught */}
                 <Card>
                   <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
@@ -1037,127 +925,31 @@ export default function ProfileEditPage() {
                   </CardHeader>
                   <CardContent className="p-6 space-y-4">
                     {availableSubjects.length > 0 ? (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {availableSubjects.map((subject) => (
-                            <div key={subject.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                              <Checkbox
-                                id={`subject-${subject.id}`}
-                                checked={subjectsTaught.includes(subject.name)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSubjectsTaught([...subjectsTaught, subject.name])
-                                  } else {
-                                    setSubjectsTaught(subjectsTaught.filter((s) => s !== subject.name))
-                                  }
-                                }}
-                              />
-                              <Label
-                                htmlFor={`subject-${subject.id}`}
-                                className={`flex-1 cursor-pointer text-sm ${subjectsTaught.includes(subject.name) ? 'font-medium' : 'font-normal'}`}
-                              >
-                                {subject.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                        {subjectsTaught.length > 0 && (
-                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                            <Label className="text-xs text-muted-foreground">Selected Subjects</Label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {subjectsTaught.map((subject) => (
-                                <Badge key={subject} variant="secondary" className="gap-1">
-                                  {subject}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setSubjectsTaught(subjectsTaught.filter((s) => s !== subject))
-                                    }
-                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                    aria-label={`Remove ${subject}`}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {availableSubjects.map((subject) => (
+                          <div key={subject.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <Checkbox
+                              id={`subject-${subject.id}`}
+                              checked={subjectsTaught.includes(subject.name)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSubjectsTaught([...subjectsTaught, subject.name])
+                                } else {
+                                  setSubjectsTaught(subjectsTaught.filter((s) => s !== subject.name))
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`subject-${subject.id}`}
+                              className={`flex-1 cursor-pointer text-sm ${subjectsTaught.includes(subject.name) ? 'font-medium' : 'font-normal'}`}
+                            >
+                              {subject.name}
+                            </Label>
                           </div>
-                        )}
-                        {subjectsTaught.length === 0 && (
-                          <p className="text-xs text-muted-foreground italic">Select at least one subject to get started</p>
-                        )}
-                      </>
+                        ))}
+                      </div>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">Select grade levels first to see available subjects</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Grade Levels Taught */}
-                <Card>
-                  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4" />
-                      <CardTitle>Grade Levels Taught</CardTitle>
-                    </div>
-                    <CardDescription>Select all grade levels you teach</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {availableGrades.map((grade) => (
-                        <div key={grade.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <Checkbox
-                            id={`grade-${grade.id}`}
-                            checked={gradeLevelsTaught.includes(grade.name)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setGradeLevelsTaught([...gradeLevelsTaught, grade.name])
-                              } else {
-                                const newGrades = gradeLevelsTaught.filter((g) => g !== grade.name)
-                                setGradeLevelsTaught(newGrades)
-                                // Clear strands if Grade 11/12 is removed
-                                if (grade.name === 'Grade 11' || grade.name === 'Grade 12') {
-                                  const stillHasG11Or12 = newGrades.some((g) => g === 'Grade 11' || g === 'Grade 12')
-                                  if (!stillHasG11Or12) {
-                                    setTeachingStrandIds([])
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                          <Label
-                            htmlFor={`grade-${grade.id}`}
-                            className={`flex-1 cursor-pointer text-sm ${gradeLevelsTaught.includes(grade.name) ? 'font-medium' : 'font-normal'}`}
-                          >
-                            {grade.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    {gradeLevelsTaught.length > 0 && (
-                      <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 space-y-2">
-                        <Label className="text-xs text-muted-foreground">Selected Grade Levels</Label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {gradeLevelsTaught.map((grade) => (
-                            <Badge key={grade} variant="secondary" className="gap-1">
-                              {grade}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setGradeLevelsTaught(gradeLevelsTaught.filter((g) => g !== grade))
-                                }
-                                className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                aria-label={`Remove ${grade}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {gradeLevelsTaught.length === 0 && (
-                      <p className="text-xs text-muted-foreground italic">Select at least one grade level to get started</p>
                     )}
                   </CardContent>
                 </Card>
@@ -1179,12 +971,8 @@ export default function ProfileEditPage() {
                   <div className="space-y-2">
                     <Label>Location</Label>
                     <Accordion
-                      type="single"
-                      {...({ value: accordionValue === '__closed__' ? undefined : accordionValue } as any)}
-                      onValueChange={(value) => {
-                        // Convert undefined to sentinel to keep state controlled
-                        setAccordionValue((value as unknown as string | undefined) ?? '__closed__')
-                      }}
+                      value={accordionValue}
+                      onValueChange={(value) => setAccordionValue(Array.isArray(value) ? value : [])}
                       className="w-full"
                     >
                       <AccordionItem value="region">
@@ -1311,7 +1099,8 @@ export default function ProfileEditPage() {
               </Card>
             </TabsContent>
 
-            {/* Customization Tab */}
+            {/* Customization Tab (hidden for buyers) */}
+            {showCustomizationTab && (
             <TabsContent value="customization" className="space-y-6">
               {isProOrPioneer ? (
                 <>
@@ -1426,6 +1215,7 @@ export default function ProfileEditPage() {
                 </Card>
               )}
             </TabsContent>
+            )}
           </Tabs>
 
           {/* Submit Button */}

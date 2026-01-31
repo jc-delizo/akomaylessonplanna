@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         email,
-        name,
+        first_name,
+        last_name,
         username,
         avatar_url,
         role,
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Search filter
     if (search) {
       query = query.or(
-        `name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`
       )
     }
 

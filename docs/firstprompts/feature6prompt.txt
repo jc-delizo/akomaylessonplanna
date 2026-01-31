@@ -40,7 +40,7 @@ Please lead us through finalizing decisions for the following areas:
 - UTM tracking for share analytics
 
 ### 3. Recently Viewed Items
-- Where should recently viewed appear? (Homepage section, sidebar, separate page?)
+- Where should recently viewed appear? (Sidebar on product page, dedicated page only—no homepage section.)
 - How many items to track? (10, 20, 50?)
 - Persistence behavior (session-only, 7 days, 30 days, forever?)
 - Anonymous users (track via localStorage? require login?)
@@ -87,11 +87,8 @@ This is a MAJOR component. Types to consider:
   - Show system announcements
 - Or keep it simple (notifications only, no feed)?
 
-### 6. "Tell a Friend" Feature
-- Send product recommendation via email
-- Pre-filled message with product link
-- User can customize message
-- Track referrals (for future reward system?)
+### 6. "Tell a Friend" / Share your purchase (Out of scope for MVP)
+- Deferred: email sharing and order-confirmation share CTA.
 
 ### 7. Social Proof Elements
 - "X people viewing this product now" (real-time counter)

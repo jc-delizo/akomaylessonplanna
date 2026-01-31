@@ -18,6 +18,7 @@ function getEmailTypeForNotification(type: NotificationType): string | null {
     system_announcement: 'system_announcement',
     new_follower: null, // In-app only
     new_product: null, // In-app only
+    admin_warning: null, // In-app only
   }
 
   return mapping[type] || null

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Search, Filter, Download } from 'lucide-react'
 import { getFullName, getInitials } from '@/lib/utils/profile'
+import { UsersTableActions } from '@/components/admin/users-table-actions'
 
 async function getUsers(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -260,9 +262,7 @@ export default async function AdminUsersPage({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
+                    <UsersTableActions user={user} />
                   </td>
                 </tr>
                 ))
@@ -286,12 +286,28 @@ export default async function AdminUsersPage({
               {pagination.total} users
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={pagination.page === 1}>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled={pagination.page === pagination.totalPages}>
-                Next
-              </Button>
+              {pagination.page > 1 ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    href={`?page=${pagination.page - 1}${params.search ? `&search=${params.search}` : ''}${params.role ? `&role=${params.role}` : ''}${params.tier ? `&tier=${params.tier}` : ''}`}
+                  >
+                    Previous
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+              )}
+              {pagination.page < pagination.totalPages ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    href={`?page=${pagination.page + 1}${params.search ? `&search=${params.search}` : ''}${params.role ? `&role=${params.role}` : ''}${params.tier ? `&tier=${params.tier}` : ''}`}
+                  >
+                    Next
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" disabled>Next</Button>
+              )}
             </div>
           </div>
         )}

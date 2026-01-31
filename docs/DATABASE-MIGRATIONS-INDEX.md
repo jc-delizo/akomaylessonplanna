@@ -1,7 +1,7 @@
 # Database Migrations Index
 
-**Last Updated**: January 25, 2026  
-**Total Migrations**: 20  
+**Last Updated**: January 31, 2026  
+**Total Migrations**: 29  
 **Status**: All migrations applied to development database
 
 ---
@@ -406,6 +406,62 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 
 ---
 
+### 021_lesson_plan_filters_and_strands.sql
+
+**Purpose**: Add lesson-plan filter fields and SHS strands for product filtering
+
+**What it creates:**
+- `strands` table - SHS strands (STEM, ABM, HUMSS, GAS, TVL-ICT, etc.)
+- Product columns: `curriculum`, `modalities`, `teaching_framework`, `class_type`, `learner_path`, `strand_id`
+- Enforces weeks 1-9 for lesson plans
+- Indexes for filter performance
+
+**Dependencies**: 005 (products table)
+
+**Feature**: Lesson Plan Phase 2 (Filters & Strands)
+
+**Status**: ✅ Applied
+
+---
+
+### 022_lesson_plan_hierarchy.sql
+
+**Purpose**: SPED levels, SPED subjects, strand_subjects for Phase 2 hierarchy
+
+**What it creates:**
+- `sped_levels` table - Primary, Intermediate, Pre-Vocational, Transition
+- `sped_level_id` on products (for SPED Non-Graded)
+- `grade_id` made nullable (SPED Non-Graded can omit grade)
+- SPED subjects in `subjects` table
+- `strand_subjects` - SHS strand-to-subject mapping for specialized subjects
+
+**Table Modified**: `products`, `subjects`
+
+**Dependencies**: 005, 021 (products, strands)
+
+**Feature**: Lesson Plan Phase 2 (Hierarchy)
+
+**Status**: ✅ Applied
+
+---
+
+### 023_product_subjects_multiselect.sql
+
+**Purpose**: Subject multiselect via product_subjects M:N table (Phase B)
+
+**What it creates:**
+- `product_subjects` - M:N table linking products to multiple subjects
+- Backfill from `products.subject_id` for backward compatibility
+- `products.subject_id` retained as primary subject
+
+**Dependencies**: 005 (products, subjects tables)
+
+**Feature**: Lesson Plan Phase 2 (Subject multiselect)
+
+**Status**: ✅ Applied
+
+---
+
 ### 024_profile_teaching_phase2.sql
 
 **Purpose**: Add Phase 2 teaching preference columns to `users` for the Profile Teaching tab (class types, learner paths, strands, SPED levels).
@@ -420,6 +476,96 @@ See [DEPLOYMENT-WORKFLOW.md](implementationplan/DEPLOYMENT-WORKFLOW.md) for deta
 **Dependencies**: 001 (users table)
 
 **Status**: Apply if profile update fails with PGRST204 ("Could not find the 'teaching_class_types' column"). See [MIGRATION-024-PROFILE-TEACHING.md](implementationplan/MIGRATION-024-PROFILE-TEACHING.md).
+
+---
+
+### 025_add_display_name.sql
+
+**Purpose**: Add optional display name for seller shop customization
+
+**What it does:**
+- Adds `display_name` VARCHAR(255) NULL to `users` table
+- Display name shown above full name on public seller page (Customize Shop feature)
+
+**Table Modified**: `users`
+
+**Dependencies**: 001 (users table)
+
+**Feature**: Feature 02 (User Profiles - shop customization)
+
+**Status**: ✅ Applied
+
+---
+
+### 026_pioneer_email_types.sql
+
+**Purpose**: Add Pioneer program email types to email configuration
+
+**What it does:**
+- Inserts `pioneer_welcome` - Sent when seller is added as Pioneer
+- Inserts `pioneer_removed` - Sent when Pioneer status is removed
+- Uses ON CONFLICT DO NOTHING for idempotency
+
+**Table Modified**: `email_configuration`
+
+**Dependencies**: 013 (email system)
+
+**Feature**: Feature 09 (Admin Panel - Pioneer management)
+
+**Status**: ✅ Applied
+
+---
+
+### 027_platform_settings_marketplace_closed.sql
+
+**Purpose**: Add platform_settings table for marketplace shutoff (Super Admin toggle on /admin/announcements).
+
+**What it creates:**
+- `platform_settings` – key (TEXT PK), value (JSONB), updated_at (TIMESTAMPTZ)
+- Seed row: key `marketplace_closed`, value `false`
+- RLS: public read; only admin users can UPDATE/INSERT
+
+**Dependencies**: 001 (users table for RLS policy)
+
+**Feature**: Marketplace shutoff (admin)
+
+**Status**: Pending / apply to dev
+
+---
+
+### 028_reports_resolution_fields.sql
+
+**Purpose**: Add resolution fields to reports table for admin user management
+
+**What it does:**
+- Adds `resolved_by` UUID REFERENCES users(id) to `reports`
+- Adds `resolution_type` VARCHAR(30) with CHECK: dismissed, user_banned, user_warned, product_suspended, review_deleted
+
+**Table Modified**: `reports`
+
+**Dependencies**: 012, 015 (reports table)
+
+**Feature**: Admin User Management (Feature 09 extension)
+
+**Status**: ✅ Applied
+
+---
+
+### 029_notifications_admin_warning.sql
+
+**Purpose**: Add admin_warning and new_message to notifications type CHECK constraint
+
+**What it does:**
+- Drops existing `notifications_type_check` constraint
+- Adds new constraint including `new_message` and `admin_warning` types
+
+**Table Modified**: `notifications`
+
+**Dependencies**: 009 (notifications table)
+
+**Feature**: Admin User Management (Feature 09 extension)
+
+**Status**: ✅ Applied
 
 ---
 
@@ -605,7 +751,7 @@ When adding new features:
 
 ### Applied Migrations
 
-All 18 migrations are currently applied to the development database.
+All 29 migrations are currently applied to the development database.
 
 **To check migration status:**
 ```bash

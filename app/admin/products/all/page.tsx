@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Search, Filter, Download, Eye } from 'lucide-react'
 import Image from 'next/image'
 import { getFullName, getInitials } from '@/lib/utils/profile'
+import { RefreshSocialProofButton } from '@/components/admin/refresh-social-proof-button'
 
 async function getAllProducts(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -150,10 +151,13 @@ export default async function AllProductsPage({
           <h1 className="text-2xl font-bold">All Products</h1>
           <p className="text-gray-600 mt-1">Manage all platform products</p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <RefreshSocialProofButton />
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}

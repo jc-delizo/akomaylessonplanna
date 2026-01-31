@@ -3,10 +3,10 @@ import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getReportsData } from '@/lib/utils/admin-reports'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, User, Package, MessageSquare } from 'lucide-react'
 import { getFullName } from '@/lib/utils/profile'
+import { ReportsActionsClient } from './reports-actions-client'
 
 export default async function UserReportsPage() {
   const supabase = await createClient()
@@ -100,20 +100,7 @@ export default async function UserReportsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Dismiss
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Warn User
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 border-red-300 text-red-600">
-                  Suspend/Ban
-                </Button>
-                <Button variant="outline" size="sm">
-                  Contact Reporter
-                </Button>
-              </div>
+              <ReportsActionsClient report={report} />
             </Card>
           ))
         )}

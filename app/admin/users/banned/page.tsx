@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getFullName, getInitials } from '@/lib/utils/profile'
+import { UnbanUserDialog } from '@/components/admin/unban-user-dialog'
 
 async function getBannedUsers(
   supabase: Awaited<ReturnType<typeof createClient>>
@@ -105,9 +105,7 @@ export default async function BannedUsersPage() {
                       {new Date(user.updated_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
-                      <Button variant="outline" size="sm">
-                        Unban
-                      </Button>
+                      <UnbanUserDialog userId={user.id} />
                     </td>
                   </tr>
                 ))

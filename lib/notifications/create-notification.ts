@@ -10,6 +10,7 @@ export type NotificationType =
   | 'new_product'
   | 'system_announcement'
   | 'new_message'
+  | 'admin_warning'
 
 export interface CreateNotificationParams {
   user_id: string

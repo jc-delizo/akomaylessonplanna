@@ -148,7 +148,7 @@ Before testing, ensure you have:
 1. Go to `/signup`
 2. Try submitting empty form
 3. Try submitting with invalid email
-4. Try submitting with password < 6 characters
+4. Try submitting with password < 8 characters
 
 **Expected Result:**
 - ✅ Browser validation prevents submission

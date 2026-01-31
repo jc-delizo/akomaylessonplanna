@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Megaphone, Calendar, Users } from 'lucide-react'
 import Link from 'next/link'
+import { MarketplaceShutoffToggle } from '@/components/admin/marketplace-shutoff-toggle'
 
 export default async function AnnouncementsPage() {
   const supabase = await createClient()
@@ -59,12 +60,15 @@ export default async function AnnouncementsPage() {
           <h1 className="text-2xl font-bold">System Announcements</h1>
           <p className="text-gray-600 mt-1">Create and manage platform announcements</p>
         </div>
-        <Link href="/admin/announcements/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Announcement
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <MarketplaceShutoffToggle isSuperAdmin={adminUser.admin_role === 'super_admin'} />
+          <Link href="/admin/announcements/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Announcement
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

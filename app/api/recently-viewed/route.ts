@@ -68,6 +68,11 @@ export async function GET(request: NextRequest) {
           cover_image_url,
           quarter,
           weeks,
+          wishlist_count,
+          computed_badge,
+          views_count,
+          sales_count,
+          created_at,
           seller:users!products_seller_id_fkey(
             id,
             first_name,

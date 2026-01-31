@@ -131,6 +131,10 @@ Step 4: VALIDATE against brainstorming
 **Icons:**
 - lucide-react 0.562.0
 
+**Auth (Supabase):**
+- @supabase/ssr (NOT deprecated @supabase/auth-helpers-nextjs)
+- Use `createClient()` from `@/lib/supabase/server` in API routes and server components; use `createServerClient` from `@supabase/ssr` in middleware with cookie get/set
+
 **Utilities:**
 - class-variance-authority 0.7.1
 - clsx 2.1.1
@@ -142,6 +146,7 @@ Step 4: VALIDATE against brainstorming
 |---------|-----------|---------------|
 | TanStack Query | Next.js `fetch` / `use server` | `cat package.json \| grep next` |
 | TanStack Router | Next.js App Router | `ls app/` - see route groups |
+| @supabase/auth-helpers-nextjs | @supabase/ssr | `cat package.json \| grep supabase` - use createClient from lib/supabase/server |
 | @radix-ui/* | @base-ui/react | `cat components.json` |
 | Online shadcn registry | Local registry at `registry/` | `ls registry/registry.json` |
 | React Query patterns | Server Components | Check for `async function` in app/ |
@@ -157,6 +162,7 @@ cat package.json | grep -A 20 "dependencies"
 npm list @tanstack/react-query 2>/dev/null && echo "❌ WRONG: TanStack Query installed" || echo "✅ Correct: Not using TanStack"
 npm list @tanstack/router 2>/dev/null && echo "❌ WRONG: TanStack Router installed" || echo "✅ Correct: Using Next.js"
 npm list @radix-ui/react-button 2>/dev/null && echo "❌ WRONG: Radix UI installed" || echo "✅ Correct: Using @base-ui/react"
+npm list @supabase/auth-helpers-nextjs 2>/dev/null && echo "❌ WRONG: Use @supabase/ssr instead" || echo "✅ Correct: Using @supabase/ssr"
 
 # Verify local registry exists
 test -f registry/registry.json && echo "✅ Local registry exists" || echo "❌ Local registry missing"
@@ -1063,14 +1069,13 @@ app/api/
 
 ```typescript
 // app/api/products/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { productSchema } from '@/lib/validations/product.schema';
 
 export async function GET(request: Request) {
-  // 1. Authentication check
-  const supabase = createRouteHandlerClient({ cookies });
+  // 1. Authentication check (createClient uses @supabase/ssr under the hood)
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -1106,7 +1111,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   // 1. Authentication check
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || user.user_metadata.role !== 'seller') {
@@ -1139,8 +1144,9 @@ export async function POST(request: Request) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
-  // 4. Invalidate React Query cache
-  await supabase.rpc('invalidate_product_cache');
+  // 4. Invalidate server cache (e.g., revalidatePath, or custom DB cache RPC if applicable)
+  // Next.js: use revalidatePath('/products') or revalidateTag('products') for fetch cache
+  // await supabase.rpc('invalidate_product_cache'); // Only if such RPC exists
 
   // 5. Return response
   return Response.json({ product: data }, { status: 201 });
@@ -1260,16 +1266,28 @@ Set authentication cookies
 
 ### Protected Routes Middleware
 
+**Use @supabase/ssr (not deprecated auth-helpers).** Example with createServerClient in middleware:
+
 ```typescript
 // middleware.ts
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
+  let res = NextResponse.next({ request: req });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return req.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => res.cookies.set(name, value));
+        },
+      },
+    }
+  );
   const { data: { session } } = await supabase.auth.getSession();
 
   // Check if route requires authentication
@@ -2419,7 +2437,7 @@ This Master Implementation Plan provides a comprehensive roadmap for building AK
 **Technical Foundation:**
 - **Next.js 16.1.1 + Supabase** - Modern, scalable stack
 - **TypeScript + Zod** - Type safety throughout
-- **React Query + Zustand** - Optimized state management
+- **Next.js Server Components + Zustand** - Optimized state management
 - **shadcn/ui** - Beautiful, accessible components
 
 **Key Success Factors:**

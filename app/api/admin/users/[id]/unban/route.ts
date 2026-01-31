@@ -6,6 +6,9 @@ import { hasPermission } from '@/lib/utils/admin-permissions'
 /**
  * POST /api/admin/users/[id]/unban
  * Unban a user
+ * 
+ * Body:
+ * - reason?: string (optional, for audit log)
  */
 export async function POST(
   request: NextRequest,
@@ -24,6 +27,8 @@ export async function POST(
 
     const { id: userId } = await params
     const supabase = await createClient()
+    const body = await request.json().catch(() => ({}))
+    const reason = body?.reason
 
     // Get current ban reason for audit log
     const { data: currentUser } = await supabase
@@ -60,7 +65,7 @@ export async function POST(
         is_banned: { from: true, to: false },
         ban_reason: { from: currentUser.ban_reason, to: null },
       },
-      'User unbanned'
+      reason || 'User unbanned'
     )
 
     // TODO: Send email notification

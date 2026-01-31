@@ -24,21 +24,11 @@ export function ForgotPasswordForm() {
     setError(null)
     setLoading(true)
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'forgot-password-form.tsx:22',message:'handleSubmit entry',data:{email,emailLength:email?.length,emailTrimmed:email?.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
-
     try {
       await resetPassword(email)
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'forgot-password-form.tsx:30',message:'resetPassword success',data:{email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
-      // #endregion
       // Always show success message to prevent email enumeration
       setSuccess(true)
     } catch (err: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'forgot-password-form.tsx:34',message:'resetPassword error caught',data:{email,errorMessage:err?.message,errorStatus:err?.status,errorCode:err?.code,errorName:err?.name,errorStack:err?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,E'})}).catch(()=>{});
-      // #endregion
       // Even on error, show success message for security
       // This prevents attackers from knowing which emails exist
       setSuccess(true)

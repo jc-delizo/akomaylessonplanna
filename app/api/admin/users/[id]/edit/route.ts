@@ -40,6 +40,16 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Require reason for destructive changes (is_banned, subscription_tier)
+    const changingBan = body.is_banned !== undefined && body.is_banned !== currentUser.is_banned
+    const changingTier = body.subscription_tier !== undefined && body.subscription_tier !== currentUser.subscription_tier
+    if ((changingBan || changingTier) && (!body.reason || !String(body.reason).trim())) {
+      return NextResponse.json(
+        { error: 'Reason is required when changing ban status or subscription tier' },
+        { status: 400 }
+      )
+    }
+
     // Build update object
     const updates: Record<string, unknown> = {}
     const changes: Record<string, { from: unknown; to: unknown }> = {}

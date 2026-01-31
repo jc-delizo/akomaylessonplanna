@@ -1,7 +1,7 @@
 # AKOMAYLESSONPLANNA - Implementation Status
 
-**Last Updated**: January 30, 2026  
-**Overall Progress**: 4 of 11 features complete (36%)
+**Last Updated**: January 31, 2026  
+**Overall Progress**: 5 of 11 features complete (45%)
 
 ---
 
@@ -10,11 +10,11 @@
 | Feature # | Feature Name | Status | Documentation | Summary |
 |-----------|--------------|--------|---------------|---------|
 | 01 | Authentication & User Management | 🚧 In Progress | [Design](docs/brainstorming/2-feature-01-authentication-user-management.md) \| [Summary](FEATURE-01-IMPLEMENTATION-SUMMARY.md) | Auth UI + standardized inputs + seller verification UI polish (Jan 2026) |
-| 02 | User Profiles & Profile Management | 🚧 In Progress | [Design](docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md) | - |
+| 02 | User Profiles & Profile Management | 🚧 In Progress | [Design](docs/brainstorming/3-feature-02-user-profiles-and-profile-management.md) \| [Summary](FEATURE-02-IMPLEMENTATION-SUMMARY.md) | Profile edit layout + Teaching tab UX (Jan 2026) |
 | 03 | Product Listings & Management | ✅ Complete | [Design](docs/brainstorming/5-feature-03-product-listings-and-management.md) \| [Summary](FEATURE-03-IMPLEMENTATION-SUMMARY.md) | All 7 phases complete |
 | 04 | Shopping Cart & Checkout Flow | ✅ Complete | [Design](docs/brainstorming/6-feature-04-shopping-cart-and-checkout-flow.md) \| [Summary](FEATURE-04-IMPLEMENTATION-SUMMARY.md) | All 11 phases complete |
-| 05 | Reviews & Ratings | 🚧 Design Complete | [Design](docs/brainstorming/7-feature-05-reviews-and-ratings.md) | Implementation pending |
-| 06 | Social Features | 🚧 Design Complete | [Design](docs/brainstorming/8-feature-06-social-features.md) | Implementation pending |
+| 05 | Reviews & Ratings | ✅ Complete | [Design](docs/brainstorming/7-feature-05-reviews-and-ratings.md) \| [Summary](FEATURE-05-IMPLEMENTATION-SUMMARY.md) | Core + display + moderation + reminder email |
+| 06 | Social Features | 🚧 In Progress | [Design](docs/brainstorming/8-feature-06-social-features.md) | Notifications, sharing, recently viewed (sidebar + page), social proof badges; scope: no homepage section, no share-your-purchase |
 | 07 | Seller Dashboard & Analytics | 🚧 Design Complete | [Design](docs/brainstorming/9-feature-07-seller-dashboard-and-analytics.md) | Implementation pending |
 | 08 | Advanced Search & Discovery | 🚧 Design Complete | [Design](docs/brainstorming/10-feature-08-advanced-search-and-discovery.md) | Implementation pending |
 | 09 | Admin Panel & Content Moderation | ✅ Complete | [Design](docs/brainstorming/11-feature-09-admin-panel-and-content-moderation.md) \| [Summary](FEATURE-09-IMPLEMENTATION-SUMMARY.md) | All 15 phases complete |
@@ -43,6 +43,18 @@
 - Become a Seller UI polish (Jan 2026): PRC License upload uses a dropzone-style control (click or drag-and-drop) instead of the native file input
 
 **Summary**: [FEATURE-01-IMPLEMENTATION-SUMMARY.md](FEATURE-01-IMPLEMENTATION-SUMMARY.md)
+
+---
+
+### 🚧 Feature 02: User Profiles & Profile Management
+
+**Status**: In Progress (January 2026)
+
+**Implemented:**
+- Profile edit Basic Info layout (Jan 2026): Single Profile card with Row 1 = Avatar left + First Name + Last Name; Row 2 = Username left + Bio; Teaching tab Grade Levels Taught before Subjects Taught; Class Type and SPED Learner Path single-select (radio) with tighter spacing; Grade Levels Taught hidden when SPED Non-Graded selected; all "Selected …" badge areas removed
+- Profile edit UX (Jan 2026): Customization tab hidden when user role is buyer; Location accordion controlled value (no uncontrolled/controlled switch), auto-close after region selection
+
+**Summary**: [FEATURE-02-IMPLEMENTATION-SUMMARY.md](FEATURE-02-IMPLEMENTATION-SUMMARY.md)
 
 ---
 
@@ -100,6 +112,51 @@
 
 ---
 
+### ✅ Feature 05: Reviews & Ratings
+
+**Status**: Complete (January 2026)
+
+**Implemented:**
+- 5-star product reviews (rating required, comment optional 500 chars)
+- Eligibility: purchase + at least one download (one review per product per buyer)
+- Review submission from library (`/library/[productId]/review`) and product flow
+- Product page: ReviewsSection (summary + top 3 recent), full page at `/products/[id]/reviews`
+- Seller profile: SellerReviewsSection; full page at `/sellers/[username]/reviews`
+- Seller dashboard: `/shop/reviews` (respond to reviews), `/shop/reviews/analytics` (Pro/Pioneer)
+- Seller response (500 char, one-level); 7-day edit window; anonymized buyer names
+- Auto-flagging (profanity, spam, excessive caps/punctuation); admin moderation at `/admin/reviews/flagged`
+- Product and seller stats triggers; review reminder email (24h after download)
+
+**Database Tables:**
+- `reviews` - Product reviews
+- `review_flags` - Moderation queue
+
+**Migration**: `008_feature_05_reviews.sql`
+
+**Summary**: [FEATURE-05-IMPLEMENTATION-SUMMARY.md](FEATURE-05-IMPLEMENTATION-SUMMARY.md)
+
+---
+
+### 🚧 Feature 06: Social Features
+
+**Status**: In Progress (January 2026)
+
+**Scope decisions (not in plan):**
+- **Homepage "Recently Viewed" section** – Out of scope; recently viewed appears only on product page sidebar and dedicated `/recently-viewed` page.
+- **"Share your purchase" on order confirmation** – Out of scope; sharing is product page and seller profile only.
+
+**Notification preference:** The single "Email notifications" toggle from the design is implemented as part of the broader **Email Preferences** at `/settings/notifications` (same route; page uses `EmailPreferencesContent`). `PUT /api/settings/notifications` exists for the simple `email_notifications` flag; the UI is the full email-preferences screen. No separate simple-toggle page is required.
+
+**Implemented:**
+- Notification bell, dropdown (5 recent), full `/notifications` page, mark read/read-all, APIs; notification triggers (new_sale, new_review, new_follower, product_approved, product_rejected, price_drop, new_product, system_announcement, admin_warning).
+- Sharing: ShareDropdown on product page, ShareButtons on seller profile; `POST /api/products/[id]/share`, `GET /api/products/[id]/share-stats`.
+- Recently viewed: table + triggers, `POST /api/products/[id]/view`, sidebar on product page, `/recently-viewed` page, `GET /api/recently-viewed`.
+- Social proof badges: ProductBadge + client-side thresholds (New, Trending, Bestseller, Popular); ProductStats (views, sales, wishlist). See design doc [Social proof: cron vs client-side](docs/brainstorming/8-feature-06-social-features.md#social-proof-cron-vs-client-side-decision-pending) for implementation options and decision.
+
+**Design**: [docs/brainstorming/8-feature-06-social-features.md](docs/brainstorming/8-feature-06-social-features.md)
+
+---
+
 ### ✅ Feature 09: Admin Panel & Content Moderation
 
 **Status**: Complete (January 2026)
@@ -113,6 +170,7 @@
 - Financial overview (Super Admin only)
 - System announcements
 - Admin roles (Super Admin, Moderator, Content Manager)
+- **Admin User Management (Jan 2026):** Ban/Unban (wired UI), Edit user (detail page + modal), Admin Notes (add/view with user selector), Reports resolution (Dismiss/Warn/Ban/Suspend Product/Delete Review), Warn User (admin_warning notification), Content Manager can ban; migrations 028-029
 
 **Database Tables:**
 - `categories` - Product categories
@@ -124,7 +182,7 @@
 
 **Migration**: `012_feature_09_admin_panel.sql`
 
-**Summary**: [FEATURE-09-IMPLEMENTATION-SUMMARY.md](FEATURE-09-IMPLEMENTATION-SUMMARY.md)
+**Summary**: [FEATURE-09-IMPLEMENTATION-SUMMARY.md](FEATURE-09-IMPLEMENTATION-SUMMARY.md) \| [Admin User Management](ADMIN-USER-MANAGEMENT-IMPLEMENTATION-SUMMARY.md)
 
 ---
 
@@ -159,7 +217,7 @@
 
 ## Database Migrations Status
 
-**Total Migrations**: 18
+**Total Migrations**: 29
 
 | Migration # | Filename | Status | Feature |
 |-------------|----------|--------|---------|
@@ -170,7 +228,7 @@
 | 005 | `005_feature_03_products.sql` | ✅ Applied | Feature 03 (Products) ✅ |
 | 006 | `006_storage_buckets_and_policies.sql` | ✅ Applied | Storage configuration |
 | 007 | `007_feature_04_cart_and_checkout.sql` | ✅ Applied | Feature 04 (Cart/Checkout) ✅ |
-| 008 | `008_feature_05_reviews.sql` | ✅ Applied | Feature 05 (Reviews) |
+| 008 | `008_feature_05_reviews.sql` | ✅ Applied | Feature 05 (Reviews) ✅ |
 | 009 | `009_feature_06_social_features.sql` | ✅ Applied | Feature 06 (Social) |
 | 010 | `010_feature_07_seller_dashboard.sql` | ✅ Applied | Feature 07 (Dashboard) |
 | 011 | `011_feature_08_advanced_search.sql` | ✅ Applied | Feature 08 (Search) |
@@ -181,6 +239,17 @@
 | 016 | `016_teacher_verification_storage.sql` | ✅ Applied | Teacher ID verification |
 | 017 | `017_seller_settings_fields.sql` | ✅ Applied | Seller shop customization |
 | 018 | `018_replace_name_with_first_last_name.sql` | ✅ Applied | Name field split |
+| 019 | `019_handle_new_user_trigger.sql` | 🟡 Pending | Auth trigger (first_name/last_name) |
+| 020 | `020_fix_users_rls_recursion.sql` | 🟡 Pending | RLS recursion fix |
+| 021 | `021_lesson_plan_filters_and_strands.sql` | ✅ Applied | Lesson Plan Phase 2 (Filters) |
+| 022 | `022_lesson_plan_hierarchy.sql` | ✅ Applied | Lesson Plan Phase 2 (Hierarchy) |
+| 023 | `023_product_subjects_multiselect.sql` | ✅ Applied | Lesson Plan Phase 2 (Subject multiselect) |
+| 024 | `024_profile_teaching_phase2.sql` | ✅ Applied | Profile Teaching tab Phase 2 |
+| 025 | `025_add_display_name.sql` | ✅ Applied | Shop display name |
+| 026 | `026_pioneer_email_types.sql` | ✅ Applied | Pioneer email types |
+| 027 | `027_platform_settings_marketplace_closed.sql` | 🟡 Pending | Marketplace shutoff |
+| 028 | `028_reports_resolution_fields.sql` | ✅ Applied | Admin User Management (reports) |
+| 029 | `029_notifications_admin_warning.sql` | ✅ Applied | Admin User Management (notifications) |
 
 **Note**: Migrations are applied but not all features are fully implemented. See [DATABASE-MIGRATIONS-INDEX.md](docs/DATABASE-MIGRATIONS-INDEX.md) for details.
 
@@ -219,20 +288,19 @@
 
 1. ⏳ Complete Feature 01 (Authentication) - Foundation feature
 2. ⏳ Complete Feature 02 (User Profiles) - Required for social features
-3. ⏳ Complete Feature 05 (Reviews & Ratings) - Critical for marketplace trust
 
 ### Next Phase
 
-4. ⏳ Complete Feature 06 (Social Features) - Notifications and engagement
-5. ⏳ Complete Feature 07 (Seller Dashboard) - Seller tools and analytics
-6. ⏳ Complete Feature 08 (Advanced Search) - Discovery and UX
+3. ⏳ Complete Feature 06 (Social Features) - Notifications and engagement
+4. ⏳ Complete Feature 07 (Seller Dashboard) - Seller tools and analytics
+5. ⏳ Complete Feature 08 (Advanced Search) - Discovery and UX
 
 ### Final Phase
 
-7. ⏳ Complete Feature 11 (Messaging System) - Communication
-8. ⏳ Final integration and polish
-9. ⏳ Comprehensive testing
-10. ⏳ Production launch
+6. ⏳ Complete Feature 11 (Messaging System) - Communication
+7. ⏳ Final integration and polish
+8. ⏳ Comprehensive testing
+9. ⏳ Production launch
 
 ---
 
@@ -253,6 +321,7 @@
 ### Manual Testing
 - ✅ Feature 03: Tested
 - ✅ Feature 04: Tested
+- ✅ Feature 05: Tested
 - ✅ Feature 09: Tested
 - ✅ Feature 10: Tested
 
@@ -369,6 +438,18 @@ Incremental UX updates across marketplace, browse, and My Shop (cross-feature; n
 
 ---
 
+## Marketplace shutoff (Admin)
+
+Super Admin can hide the marketplace and browse page product listings behind a blur overlay with the message "Still perfecting this website for you guys! Will open soon!"
+
+- **Toggle:** On `/admin/announcements`, left of the "Create Announcement" button (Super Admin only). "Marketplace open" switch: off = closed = overlay shown.
+- **Buyer-facing:** When closed, `/marketplace` and `/marketplace/browse` show products blurred with the message above.
+- **Storage:** `platform_settings` table, key `marketplace_closed` (JSONB). Public `GET /api/marketplace-status`; admin `GET/PUT /api/admin/settings/platform` persists the flag.
+
+**Summary**: [MARKETPLACE-SHUTOFF-IMPLEMENTATION-SUMMARY.md](MARKETPLACE-SHUTOFF-IMPLEMENTATION-SUMMARY.md)
+
+---
+
 ## Tier 2 Informational Pages (Jan 2026)
 
 Improvements to Tier 2 pages (About, How it works, For teachers, Contact, Become a seller, Category pages) for clarity, consistency, and conversion:
@@ -388,12 +469,11 @@ Improvements to Tier 2 pages (About, How it works, For teachers, Contact, Become
 1. ✅ Complete documentation audit and cleanup
 2. ⏳ Complete Feature 01 (Authentication)
 3. ⏳ Complete Feature 02 (User Profiles)
-4. ⏳ Complete Feature 05 (Reviews)
-5. ⏳ Set up dev/prod isolated environments
-6. ⏳ Comprehensive testing phase
-7. ⏳ Performance optimization
-8. ⏳ Security audit
-9. ⏳ Production launch
+4. ⏳ Set up dev/prod isolated environments
+5. ⏳ Comprehensive testing phase
+6. ⏳ Performance optimization
+7. ⏳ Security audit
+8. ⏳ Production launch
 
 ---
 

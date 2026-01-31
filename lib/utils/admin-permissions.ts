@@ -143,8 +143,9 @@ const PERMISSIONS: Record<AdminRole, Set<Permission>> = {
     // Dashboard (basic only)
     'view_dashboard',
     
-    // Users (read-only, can approve verification)
+    // Users (read-only, can approve verification, can ban)
     'view_users',
+    'ban_user',
     'view_verification_queue',
     'approve_verification',
     
@@ -183,17 +184,10 @@ export function hasPermission(adminRole: AdminRole, permission: Permission): boo
 
 /**
  * Check if an admin role requires approval for a restricted action
+ * Note: ban_user and suspend_products no longer require approval per plan - Moderator and Content Manager can execute directly
  */
 export function requiresApproval(adminRole: AdminRole, action: Permission): boolean {
-  // Moderator and Content Manager need approval for certain actions
-  if (adminRole === 'moderator') {
-    return ['ban_user', 'suspend_products', 'suspend_user'].includes(action)
-  }
-  
-  if (adminRole === 'content_manager') {
-    return ['ban_user', 'suspend_products', 'suspend_user'].includes(action)
-  }
-  
+  // No actions require approval - all permitted actions can be executed directly
   return false
 }
 

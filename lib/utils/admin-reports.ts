@@ -60,10 +60,17 @@ export async function getReportsData(
       } else if (report.report_type === 'review') {
         const { data: review } = await supabase
           .from('reviews')
-          .select('id, rating, comment, product_id')
+          .select('id, rating, comment, product_id, buyer_id')
           .eq('id', report.reported_item_id)
           .single()
         reportedItem = review
+      } else if (report.report_type === 'message') {
+        const { data: message } = await supabase
+          .from('messages')
+          .select('id, sender_id')
+          .eq('id', report.reported_item_id)
+          .single()
+        reportedItem = message ? { id: message.id, sender_id: message.sender_id } : null
       }
       return { ...report, reportedItem }
     })

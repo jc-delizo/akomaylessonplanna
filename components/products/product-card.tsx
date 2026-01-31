@@ -41,6 +41,8 @@ interface Product {
   subject_ids?: string[]
   quarter?: number
   weeks?: number[]
+  wishlist_count?: number
+  computed_badge?: string | null
 }
 
 interface ProductCardProps {
@@ -96,29 +98,11 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
   const supabase = createClient()
   const contextLine = productContextLine(product)
   const quarterWeeksLine = formatQuarterWeeks(product.quarter, product.weeks)
+  const validBadges = ['new', 'trending', 'bestseller', 'popular'] as const
+  const displayBadge = product.computed_badge && validBadges.includes(product.computed_badge as typeof validBadges[number]) ? product.computed_badge as typeof validBadges[number] : badge
   const sellerName = product.seller?.name ?? (
     [product.seller?.first_name, product.seller?.last_name].filter(Boolean).join(' ').trim() || ''
   )
-  const infoSectionRef = React.useRef<HTMLDivElement>(null)
-
-  // #region agent log
-  useEffect(() => {
-    const el = infoSectionRef.current
-    if (!el) return
-    const title = el.querySelector('h3')
-    const seller = showSeller && sellerName ? el.querySelector('p') : null
-    if (title) {
-      const s = getComputedStyle(title)
-      const rect = title.getBoundingClientRect()
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'product-card.tsx:title-spacing',message:'Title computed spacing',data:{marginBottom:s.marginBottom,lineHeight:s.lineHeight,minHeight:s.minHeight,heightPx:rect.height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{})
-    }
-    if (seller) {
-      const s = getComputedStyle(seller)
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'product-card.tsx:seller-spacing',message:'Seller computed spacing',data:{marginTop:s.marginTop,marginBottom:s.marginBottom,lineHeight:s.lineHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{})
-    }
-  }, [product.id, showSeller, sellerName])
-  // #endregion
-
   useEffect(() => {
     let cancelled = false
     let abortController: AbortController | null = null
@@ -171,16 +155,20 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
         abortController.abort()
       }
     }
-  }, [product.id])
+  }, [product.id, product.computed_badge])
 
   const calculateBadge = () => {
+    if (product.computed_badge && ['new', 'trending', 'bestseller', 'popular'].includes(product.computed_badge)) {
+      setBadge(product.computed_badge as 'new' | 'trending' | 'bestseller' | 'popular')
+      return
+    }
     try {
       const calculatedBadge = calculateProductBadgeClient({
         id: product.id,
         created_at: product.created_at,
         views_count: product.views_count,
         sales_count: product.sales_count,
-        wishlist_count: 0, // Would need to fetch this separately
+        wishlist_count: product.wishlist_count ?? 0,
       })
       setBadge(calculatedBadge)
     } catch (error) {
@@ -276,10 +264,10 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
             </div>
           )}
 
-          {/* Single trust badge: calculated badge over Featured */}
+          {/* Single trust badge: prefer cron-computed, else client-calculated, else Featured */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-            {badge ? (
-              <ProductBadge badge={badge} />
+            {displayBadge ? (
+              <ProductBadge badge={displayBadge} />
             ) : product.badges && product.badges.includes('featured') ? (
               <Badge className="bg-purple-600 text-white text-xs font-semibold px-2 py-0.5 border-0 shadow-sm">
                 FEATURED
@@ -307,7 +295,7 @@ export function ProductCard({ product, showSeller = true, searchQuery }: Product
         </div>
 
         {/* Info Section - Clean Typography Hierarchy */}
-        <div ref={infoSectionRef} className="px-4 pt-0 pb-4 flex-1 flex flex-col bg-white">
+        <div className="px-4 pt-0 pb-4 flex-1 flex flex-col bg-white">
           {/* Product Title - Large and Bold (Primary Focus) - no margin/min-height to remove gap above seller */}
           <h3 className="font-bold text-base leading-tight mb-0 line-clamp-2 text-gray-900">
             {product.title}

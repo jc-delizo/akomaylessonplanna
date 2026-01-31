@@ -77,6 +77,8 @@ interface Product {
   reviews_count?: number
   sales_count?: number
   views_count?: number
+  wishlist_count?: number
+  computed_badge?: string | null
   badges?: string[]
   language?: string
   curriculum?: string | null
@@ -136,11 +138,14 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
     ...(product.preview_images || []),
   ].filter(Boolean) as string[]
 
+  const validBadges = ['new', 'trending', 'bestseller', 'popular'] as const
+  const displayBadge = product.computed_badge && validBadges.includes(product.computed_badge as typeof validBadges[number]) ? product.computed_badge as typeof validBadges[number] : badge
+
   useEffect(() => {
     checkWishlistStatus()
     trackProductView()
     calculateBadge()
-  }, [product.id])
+  }, [product.id, product.computed_badge])
 
   const trackProductView = async () => {
     try {
@@ -159,13 +164,17 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
   }
 
   const calculateBadge = () => {
+    if (product.computed_badge && validBadges.includes(product.computed_badge as typeof validBadges[number])) {
+      setBadge(product.computed_badge as typeof validBadges[number])
+      return
+    }
     try {
       const calculatedBadge = calculateProductBadgeClient({
         id: product.id,
         created_at: product.created_at,
         views_count: product.views_count,
         sales_count: product.sales_count,
-        wishlist_count: 0, // Would need to fetch this
+        wishlist_count: product.wishlist_count ?? 0,
       })
       setBadge(calculatedBadge)
     } catch (error) {
@@ -380,7 +389,7 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
           {/* Product Name + social-proof badges beside title */}
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-3xl font-bold">{product.title}</h1>
-            {badge && <ProductBadge badge={badge} />}
+            {displayBadge && <ProductBadge badge={displayBadge} />}
             {product.badges && product.badges.includes('featured') && (
               <Badge className="bg-purple-600 text-white">FEATURED</Badge>
             )}
@@ -542,6 +551,16 @@ export function ProductDetailLayout({ product }: ProductDetailLayoutProps) {
               <ShoppingBag className="h-4 w-4" />
               <span>
                 {product.sales_count} {product.sales_count === 1 ? 'sale' : 'sales'}
+              </span>
+            </div>
+          )}
+
+          {/* 6b. Wishlist count — when cron has populated wishlist_count */}
+          {(product.wishlist_count ?? 0) > 0 && (
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <Heart className="h-4 w-4" />
+              <span>
+                {product.wishlist_count} {product.wishlist_count === 1 ? 'person' : 'people'} wishlisted
               </span>
             </div>
           )}

@@ -47,7 +47,7 @@ Feature 06 brings community engagement and social interaction to AKOMAYLESSONPLA
 - Share tracking analytics
 
 ✅ **Recently Viewed Items**
-- Homepage section, product page sidebar, dedicated page
+- Product page sidebar, dedicated page (no homepage section)
 - Tracks last 20 items for 30 days
 - Logged-in users only
 
@@ -452,10 +452,6 @@ Questions? Contact us at support@akomaylessonplanna.com
 - "Share profile" button
 - Helps promote favorite sellers
 
-**3. Order Confirmation / Thank You Page**
-- "Share your purchase" (optional)
-- "Tell friends about AKOMAYLESSONPLANNA"
-
 ### Share Button UI
 
 **Desktop:** Icon buttons with tooltips
@@ -526,27 +522,12 @@ https://akomaylessonplanna.com/products/123?ref=teacher_maria
 
 ### Where Recently Viewed Appears
 
-**1. Homepage Section**
-```
-┌──────────────────────────────────────┐
-│ Recently Viewed                      │
-│                                      │
-│ [Product Card] [Product Card] [Prod] │
-│ [Product Card] [Product Card] [Prod] │
-│                                      │
-│ [See all recently viewed →]          │
-└──────────────────────────────────────┘
-```
-- Shows 6 most recent items
-- Appears below "New Arrivals" section
-- Only shows if user has viewed 3+ products
-
-**2. Product Detail Page Sidebar**
+**1. Product Detail Page Sidebar**
 - "You recently viewed:" (horizontal scroll)
 - Shows 4 items on desktop, 2 on mobile
 - Appears below product description
 
-**3. Dedicated Page**
+**2. Dedicated Page**
 - Route: `/recently-viewed`
 - Full grid of all viewed items (paginated, 20 per page)
 - Filter: All time | This week | This month
@@ -566,16 +547,6 @@ https://akomaylessonplanna.com/products/123?ref=teacher_maria
 2. If yes: Update `viewed_at` timestamp (move to top)
 3. If no: Insert new row
 4. If user has 20+ items: Delete oldest (keep newest 20)
-
-**Query for homepage:**
-```sql
-SELECT p.*, rv.viewed_at
-FROM recently_viewed rv
-JOIN products p ON rv.product_id = p.id
-WHERE rv.user_id = [current_user]
-ORDER BY rv.viewed_at DESC
-LIMIT 6;
-```
 
 ---
 
@@ -835,17 +806,12 @@ CREATE INDEX idx_product_shares_user ON product_shares(shared_by, created_at);
 
 ### Recently Viewed Components
 
-**1. Homepage Section Component**
-- Grid of 6 product cards
-- "See all recently viewed →" link
-- Hidden if < 3 items
-
-**2. Product Page Sidebar Component**
+**1. Product Page Sidebar Component**
 - Horizontal scroll
 - 4 items desktop, 2 items mobile
 - Label: "You recently viewed"
 
-**3. Recently Viewed Page Component**
+**2. Recently Viewed Page Component**
 - Route: `/recently-viewed`
 - Full grid with pagination
 - Filter tabs: All time | This week | This month
@@ -864,6 +830,19 @@ CREATE INDEX idx_product_shares_user ON product_shares(shared_by, created_at);
 ---
 
 ## Implementation Notes
+
+### Social Proof: Cron vs Client-Side (Implemented)
+
+**Status: Implemented.** A cron-based pipeline refreshes `products.wishlist_count` and `products.computed_badge` (New, Trending, Bestseller, Popular). The UI prefers these when present and falls back to client-side calculation when null (e.g. before first run or for drafts).
+
+**Implementation:**
+- **Migration 030** (`030_product_social_proof_cache.sql`): Added `products.wishlist_count` (default 0) and `products.computed_badge` (nullable). Index on `computed_badge` for published products. PostgreSQL function `refresh_product_social_proof()`: (1) refreshes `wishlist_count` from `wishlist` aggregate; (2) computes badges (New: last 30 days; Trending: top 20 by views_7d + sales_7d; Bestseller: top 10% in grade+subject, min 10 sales; Popular: wishlist_count ≥ 50 or views_count ≥ 100) with priority New > Trending > Bestseller > Popular.
+- **Cron route** `POST /api/cron/update-social-proof`: Calls `supabase.rpc('refresh_product_social_proof')`. Secured with `CRON_SECRET` in production.
+- **Vercel Cron** (`vercel.json`): Schedule `0 2 * * *` (daily 2 AM) so it works on Hobby; can be changed to `0 * * * *` (hourly) on Pro.
+- **APIs:** Product selects use `*` or explicitly include `wishlist_count` and `computed_badge` (e.g. recently-viewed). No new endpoints.
+- **UI:** ProductCard and ProductDetailLayout use `product.computed_badge` when present and valid, else `calculateProductBadgeClient(product)` with `product.wishlist_count`. Product detail shows "X people wishlisted" when `product.wishlist_count` > 0.
+
+---
 
 ### Tech Stack Considerations
 
@@ -892,7 +871,7 @@ CREATE INDEX idx_product_shares_user ON product_shares(shared_by, created_at);
 **Recently Viewed:**
 - Limit to 20 items per user
 - Auto-delete old entries (cron job)
-- Consider caching for homepage
+- Consider caching where needed
 
 **Share Tracking:**
 - Don't block UI on share tracking (fire and forget)
@@ -947,7 +926,7 @@ Post-launch, measure:
 
 **Recently Viewed:**
 - Percentage of users who revisit recently viewed items
-- Click-through rate from recently viewed section
+- Click-through rate from recently viewed (sidebar and dedicated page)
 - Impact on discoverability
 
 **Social Proof:**

@@ -23,8 +23,8 @@ export async function GET(
       .from('admin_notes')
       .select(`
         *,
-        admin:users!admin_notes_admin_id_fkey(id, name, email, avatar_url),
-        mentioned_admin:users!admin_notes_mentioned_admin_fkey(id, name, email)
+        admin:users!admin_notes_admin_id_fkey(id, first_name, last_name, email, avatar_url),
+        mentioned_admin:users!admin_notes_mentioned_admin_fkey(id, first_name, last_name, email)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -88,7 +88,7 @@ export async function POST(
       })
       .select(`
         *,
-        admin:users!admin_notes_admin_id_fkey(id, name, email, avatar_url)
+        admin:users!admin_notes_admin_id_fkey(id, first_name, last_name, email, avatar_url)
       `)
       .single()
 

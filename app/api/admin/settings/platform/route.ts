@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { getPlatformSettingsData } from '@/lib/utils/admin-platform-settings'
+import { getMarketplaceClosed } from '@/lib/utils/marketplace-status'
 
 /**
  * GET /api/admin/settings/platform
- * Get platform settings (Super Admin only)
+ * Get platform settings (Super Admin only). Includes marketplaceClosed from DB.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    return NextResponse.json(getPlatformSettingsData())
+    const supabase = await createClient()
+    const staticSettings = getPlatformSettingsData()
+    const marketplaceClosed = await getMarketplaceClosed(supabase)
+    return NextResponse.json({ ...staticSettings, marketplaceClosed })
   } catch (error) {
     console.error('Error in GET /api/admin/settings/platform:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -33,11 +37,26 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
+    const supabase = await createClient()
 
-    // TODO: Store settings in database (create settings table if needed)
-    // For now, log the changes
+    if (typeof body.marketplaceClosed === 'boolean') {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert(
+          {
+            key: 'marketplace_closed',
+            value: body.marketplaceClosed,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'key' }
+        )
 
-    // Log action
+      if (error) {
+        console.error('Error upserting platform_settings:', error)
+        return NextResponse.json({ error: 'Failed to update marketplace setting' }, { status: 500 })
+      }
+    }
+
     await logAdminAction(
       authResult.admin.userId,
       'platform_settings_updated',
@@ -47,10 +66,12 @@ export async function PUT(request: NextRequest) {
       'Platform settings updated'
     )
 
+    const staticSettings = getPlatformSettingsData()
+    const marketplaceClosed = await getMarketplaceClosed(supabase)
     return NextResponse.json({
       success: true,
       message: 'Platform settings updated',
-      settings: body,
+      settings: { ...staticSettings, marketplaceClosed },
     })
   } catch (error) {
     console.error('Error in PUT /api/admin/settings/platform:', error)
