@@ -69,6 +69,16 @@ No pagination or filters in this pass.
 
 ---
 
+### 5. My Library page UI update (Jan 2026)
+
+**File:** `app/library/page.tsx`
+
+- **Empty state:** "Browse Products" CTA wrapped in a centered flex container so the button stays content-sized (no full-width appearance). Icon and description use `text-muted-foreground`. Button has `shrink-0`.
+- **Library grid:** Download button no longer full-width (`flex-1` removed); uses `size="sm"` for a compact look. Filter buttons (All, Recently Purchased, Most Downloaded) use `size="sm"`.
+- **Design tokens:** All muted copy (loading text, empty state, seller, purchase date, download count, search icon, placeholder, no-results message) uses `text-muted-foreground` instead of raw `text-gray-*`.
+
+---
+
 ## Summary table
 
 | Item | Action |
@@ -78,7 +88,7 @@ No pagination or filters in this pass.
 | `app/api/orders/route.ts` | **New:** GET list of orders for current buyer |
 | `app/orders/layout.tsx` | **New:** Auth + MainNav + Footer (same pattern as library) |
 | `app/orders/page.tsx` | **New:** Buyer orders list UI, links to `/orders/[orderId]/success` |
-| `app/library/page.tsx` | "Preparing your download" toast in `handleDownload`; error toast on failure |
+| `app/library/page.tsx` | "Preparing your download" toast; My Library UI refresh: compact CTAs, design tokens, no full-width buttons |
 
 ---
 

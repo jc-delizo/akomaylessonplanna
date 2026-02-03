@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import { DashboardBottomNav } from '@/components/dashboard/dashboard-bottom-nav'
 import { MainNav } from '@/components/navigation/main-nav'
-import { Footer } from '@/components/layout/footer'
 
 export default async function DashboardLayout({
   children,
@@ -69,9 +68,6 @@ export default async function DashboardLayout({
         {/* Mobile Bottom Navigation - Hidden on desktop */}
         <DashboardBottomNav />
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

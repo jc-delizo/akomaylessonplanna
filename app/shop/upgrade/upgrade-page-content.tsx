@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Check, Sparkles, Crown, Zap } from 'lucide-react'
+import { Check, Sparkles, Crown, Zap, Minus, BarChart3, FileSpreadsheet, Palette, Headphones } from 'lucide-react'
 
 interface UpgradePageContentProps {
   subscriptionTier: 'free' | 'pro' | 'pioneer'
@@ -15,26 +15,26 @@ export function UpgradePageContent({ subscriptionTier }: UpgradePageContentProps
   if (subscriptionTier === 'pioneer') {
     return (
       <div className="max-w-2xl mx-auto py-8">
-        <Card className="border-2 border-amber-200 bg-amber-50/50">
+        <Card className="border border-amber-400/30 bg-amber-500/10 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100">
-                <Crown className="h-8 w-8 text-amber-600" />
+              <div className="p-2 rounded-lg bg-amber-400/20">
+                <Crown className="h-8 w-8 text-amber-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">You&apos;re on Pioneer — no upgrade needed</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-white">You&apos;re on Pioneer — no upgrade needed</CardTitle>
+                <CardDescription className="text-white/80">
                   You already have all Pro features and enjoy 15% commission on every sale.
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/70">
               Keep selling and growing. If you have questions, visit Settings or contact support.
             </p>
             <Link href="/shop" className="inline-block mt-4">
-              <Button variant="outline">Back to Dashboard</Button>
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">Back to Dashboard</Button>
             </Link>
           </CardContent>
         </Card>
@@ -45,15 +45,15 @@ export function UpgradePageContent({ subscriptionTier }: UpgradePageContentProps
   if (subscriptionTier === 'pro') {
     return (
       <div className="max-w-2xl mx-auto py-8">
-        <Card className="border-2 border-[#ff7200]/30 bg-[#ff7200]/5">
+        <Card className="border border-[#ff7200]/40 bg-[#ff7200]/10 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[#ff7200]/20">
                 <Zap className="h-8 w-8 text-[#ff7200]" />
               </div>
               <div>
-                <CardTitle className="text-xl">You&apos;re already on Pro</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-white">You&apos;re already on Pro</CardTitle>
+                <CardDescription className="text-white/80">
                   You have access to advanced analytics, Excel/PDF export, custom profile, and more.
                 </CardDescription>
               </div>
@@ -61,7 +61,7 @@ export function UpgradePageContent({ subscriptionTier }: UpgradePageContentProps
           </CardHeader>
           <CardContent>
             <Link href="/shop" className="inline-block">
-              <Button variant="outline">Back to Dashboard</Button>
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">Back to Dashboard</Button>
             </Link>
           </CardContent>
         </Card>
@@ -70,44 +70,57 @@ export function UpgradePageContent({ subscriptionTier }: UpgradePageContentProps
   }
 
   // Free tier: show upgrade content
+  const comparisonRows: { feature: string; free: string; pro: string }[] = [
+    { feature: 'Commission', free: '20%', pro: '20%' },
+    { feature: 'Dashboard', free: 'Basic metrics, 7-day chart', pro: 'Charts, 30-day trends' },
+    { feature: 'Export', free: 'CSV only', pro: 'CSV, Excel, PDF' },
+    { feature: 'Analytics', free: 'Product table, sparklines', pro: 'Revenue, top products, recommendations' },
+    { feature: 'Profile', free: 'Avatar, bio', pro: 'Custom banner, accent, Pro badge' },
+    { feature: 'Earnings', free: 'Balance, withdrawal history', pro: 'Projected earnings, charts, PDF' },
+    { feature: 'Messaging', free: 'System templates only', pro: 'Custom quick-reply templates' },
+    { feature: 'Support', free: 'Email, 48-hour response', pro: 'Priority, 12-hour response' },
+  ]
+
+  const cardClass = 'border border-white/10 bg-white/10 backdrop-blur-sm'
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-6">
+    <div className="max-w-4xl mx-auto space-y-8 py-2">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Upgrade to Pro</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-3xl font-bold text-white">Upgrade to Pro</h1>
+        <p className="text-white/90 mt-1">
           Get advanced analytics, Excel & PDF export, custom profile, and grow your sales.
         </p>
       </div>
 
       {/* Pricing */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="relative">
+        <Card className={`relative ${cardClass}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-white">
               Monthly
-              <Badge variant="secondary" className="text-xs">Billed monthly</Badge>
+              <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">Billed monthly</Badge>
             </CardTitle>
-            <CardDescription>Cancel anytime</CardDescription>
+            <CardDescription className="text-white/80">Cancel anytime</CardDescription>
             <div className="mt-2">
-              <span className="text-3xl font-bold">₱249</span>
-              <span className="text-muted-foreground">/month</span>
+              <span className="text-3xl font-bold text-white">₱249</span>
+              <span className="text-white/70">/month</span>
             </div>
           </CardHeader>
           <CardContent>
             <UpgradeCtaButton plan="monthly" label="Subscribe — ₱249/month" />
           </CardContent>
         </Card>
-        <Card className="relative border-[#ff7200] border-2">
-          <div className="absolute -top-2.5 right-4">
-            <Badge className="bg-[#ff7200] text-white">Save 17%</Badge>
-          </div>
-          <CardHeader>
-            <CardTitle>Annual</CardTitle>
-            <CardDescription>Best value — one payment per year</CardDescription>
-            <div className="mt-2">
-              <span className="text-3xl font-bold">₱2,490</span>
-              <span className="text-muted-foreground">/year</span>
+        <Card className="border-[#ff7200] border-2 bg-[#ff7200]/10 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-white">Annual</CardTitle>
+              <CardDescription className="text-white/80">Best value — one payment per year</CardDescription>
+              <div className="mt-2">
+                <span className="text-3xl font-bold text-white">₱2,490</span>
+                <span className="text-white/70">/year</span>
+              </div>
             </div>
+            <Badge className="bg-[#ff7200] text-white shrink-0">Save 17%</Badge>
           </CardHeader>
           <CardContent>
             <UpgradeCtaButton plan="annual" label="Get Pro yearly — ₱2,490/year" primary />
@@ -116,79 +129,90 @@ export function UpgradePageContent({ subscriptionTier }: UpgradePageContentProps
       </div>
 
       {/* Trust line */}
-      <p className="text-sm text-muted-foreground text-center">
+      <p className="text-sm text-white/80 text-center">
         Same 20% commission as Free. Cancel anytime.
       </p>
 
-      {/* Comparison */}
-      <Card>
+      {/* Why Pro */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+          <div className="p-1.5 rounded-md bg-[#ff7200]/20">
+            <BarChart3 className="h-5 w-5 text-[#ff7200]" />
+          </div>
+          <div>
+            <p className="font-medium text-white text-sm">Better analytics</p>
+            <p className="text-white/70 text-xs mt-0.5">30-day trends and interactive charts</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+          <div className="p-1.5 rounded-md bg-[#ff7200]/20">
+            <FileSpreadsheet className="h-5 w-5 text-[#ff7200]" />
+          </div>
+          <div>
+            <p className="font-medium text-white text-sm">Excel & PDF export</p>
+            <p className="text-white/70 text-xs mt-0.5">Reports for orders and earnings</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+          <div className="p-1.5 rounded-md bg-[#ff7200]/20">
+            <Palette className="h-5 w-5 text-[#ff7200]" />
+          </div>
+          <div>
+            <p className="font-medium text-white text-sm">Custom profile</p>
+            <p className="text-white/70 text-xs mt-0.5">Banner, accent color, Pro badge</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+          <div className="p-1.5 rounded-md bg-[#ff7200]/20">
+            <Headphones className="h-5 w-5 text-[#ff7200]" />
+          </div>
+          <div>
+            <p className="font-medium text-white text-sm">Priority support</p>
+            <p className="text-white/70 text-xs mt-0.5">12-hour response time</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Free vs Pro comparison */}
+      <Card className={cardClass}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Sparkles className="h-5 w-5 text-[#ff7200]" />
             Free vs Pro
           </CardTitle>
-          <CardDescription>What you get with Pro</CardDescription>
+          <CardDescription className="text-white/80">What you get with Pro</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 font-medium">Feature</th>
-                  <th className="text-left py-2 font-medium">Free</th>
-                  <th className="text-left py-2 font-medium">Pro</th>
-                </tr>
-              </thead>
-              <tbody className="text-muted-foreground">
-                <tr className="border-b">
-                  <td className="py-2">Commission</td>
-                  <td className="py-2">20%</td>
-                  <td className="py-2">20%</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Dashboard</td>
-                  <td className="py-2">Basic metrics, 7-day chart</td>
-                  <td className="py-2">Interactive charts, 30-day trends</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Export</td>
-                  <td className="py-2">CSV only</td>
-                  <td className="py-2">CSV, Excel, PDF</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Analytics</td>
-                  <td className="py-2">Product table, sparklines</td>
-                  <td className="py-2">Revenue over time, top products, recommendations</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Profile</td>
-                  <td className="py-2">Avatar, bio</td>
-                  <td className="py-2">Custom banner, accent color, Pro badge</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Earnings</td>
-                  <td className="py-2">Balance, withdrawal history</td>
-                  <td className="py-2">+ Projected earnings, charts, PDF reports</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2">Messaging</td>
-                  <td className="py-2">System templates only</td>
-                  <td className="py-2">Custom quick-reply templates</td>
-                </tr>
-                <tr>
-                  <td className="py-2">Support</td>
-                  <td className="py-2">Email, 48-hour response</td>
-                  <td className="py-2">Priority, 12-hour response</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="space-y-0">
+            <div className="grid grid-cols-[1fr_1fr_1fr] gap-4 py-3 px-2 border-b border-white/10 text-sm font-medium text-white/90">
+              <span>Feature</span>
+              <span>Free</span>
+              <span>Pro</span>
+            </div>
+            {comparisonRows.map((row, i) => (
+              <div
+                key={row.feature}
+                className={`grid grid-cols-[1fr_1fr_1fr] gap-4 py-3 px-2 text-sm items-center ${i % 2 === 1 ? 'bg-white/5' : ''} ${i < comparisonRows.length - 1 ? 'border-b border-white/10' : ''}`}
+              >
+                <span className="text-white/90">{row.feature}</span>
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <Minus className="h-4 w-4 shrink-0 text-white/50" />
+                  {row.free}
+                </span>
+                <span className="flex items-center gap-1.5 text-white/90">
+                  <Check className="h-4 w-4 shrink-0 text-[#ff7200]" />
+                  {row.pro}
+                </span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-center gap-4">
-        <UpgradeCtaButton plan="monthly" label="Upgrade to Pro — ₱249/month" />
-        <UpgradeCtaButton plan="annual" label="Upgrade to Pro — ₱2,490/year" primary />
+      {/* Single CTA row: primary + secondary */}
+      <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+        <UpgradeCtaButton plan="annual" label="Get Pro yearly — ₱2,490/year" primary />
+        <UpgradeCtaButton plan="monthly" label="Subscribe monthly — ₱249/month" />
       </div>
     </div>
   )
@@ -237,7 +261,7 @@ function UpgradeCtaButton({
     <Button
       onClick={handleClick}
       disabled={loading}
-      className={primary ? 'bg-[#ff7200] hover:bg-[#e66800]' : ''}
+      className={primary ? 'bg-[#ff7200] hover:bg-[#e66800]' : 'border-white/40 text-white hover:bg-white/15 hover:text-white'}
       variant={primary ? 'default' : 'outline'}
     >
       {loading ? 'Redirecting…' : label}

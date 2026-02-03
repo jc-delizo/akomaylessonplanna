@@ -98,6 +98,7 @@
 - Download library
 - Refund system (7-day window)
 - **My Library & My Orders UX (Jan 2026):** Library API seller field fixed (first_name/last_name); My Library and My Orders in main nav (desktop dropdown + mobile); buyer orders list at `/orders` (GET /api/orders, layout + page); "Preparing your download" toast on library page. See [FEATURE-04-LIBRARY-ORDERS-UX-SUMMARY.md](FEATURE-04-LIBRARY-ORDERS-UX-SUMMARY.md).
+- **My Library page UI refresh (Jan 2026):** Aesthetic, simple layout; compact CTAs (no full-width Browse Products or Download buttons); design tokens (`text-muted-foreground`) throughout; filter and Download buttons use `size="sm"`.
 
 **Database Tables:**
 - `cart_items` - Shopping cart
@@ -501,6 +502,7 @@ Improvements to Tier 2 pages (About, How it works, For teachers, Contact, Become
 - **Become a seller:** Intro copy and short benefits list (earn from materials, reach teachers, simple upload/withdraw); form unchanged; Input/Label follow [UI-FIELD-STYLING.md](docs/implementationplan/UI-FIELD-STYLING.md).
 - **Category pages:** [app/categories/[categorySlug]/layout.tsx](app/categories/[categorySlug]/layout.tsx) with `generateMetadata` by slug (lesson-plans, exams, rpms, posters, tarpaulins) for unique title/description per category.
 - **Category hero:** [components/categories/category-hero.tsx](components/categories/category-hero.tsx) gradient aligned with brand (from-primary to-orange-800); subtitle uses `text-white/90`.
+- **Shop Upgrade Page (Jan 2026):** Starry night background (same as Become a seller) via segment layout and ParticlesBackground; simplified Free vs Pro comparison with icons; “Why Pro?” section; design tokens and hierarchy; primary CTA (Get Pro yearly) and secondary (Subscribe monthly). See [SHOP-UPGRADE-PAGE-IMPLEMENTATION-SUMMARY.md](SHOP-UPGRADE-PAGE-IMPLEMENTATION-SUMMARY.md).
 
 **Summary**: [FEATURE-12-TIER2-PAGES-IMPLEMENTATION-SUMMARY.md](FEATURE-12-TIER2-PAGES-IMPLEMENTATION-SUMMARY.md)
 

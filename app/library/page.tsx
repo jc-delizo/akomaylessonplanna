@@ -144,7 +144,7 @@ export default function LibraryPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your library...</p>
+            <p className="text-muted-foreground">Loading your library...</p>
           </div>
         </div>
       </div>
@@ -156,14 +156,16 @@ export default function LibraryPage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">My Library</h1>
         <Card className="p-12 text-center">
-          <ShoppingBag className="w-24 h-24 mx-auto mb-4 text-gray-400" />
+          <ShoppingBag className="w-24 h-24 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-semibold mb-2">You haven't purchased anything yet</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             Start browsing our collection of quality lesson plans and resources!
           </p>
-          <Button asChild>
-            <Link href="/marketplace">Browse Products</Link>
-          </Button>
+          <div className="flex justify-center">
+            <Button asChild className="shrink-0">
+              <Link href="/marketplace">Browse Products</Link>
+            </Button>
+          </div>
         </Card>
       </div>
     )
@@ -178,7 +180,7 @@ export default function LibraryPage() {
       {/* Search and Filter */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             placeholder="Search your library..."
             value={searchQuery}
@@ -188,18 +190,21 @@ export default function LibraryPage() {
         </div>
         <div className="flex gap-2">
           <Button
+            size="sm"
             variant={filter === 'all' ? 'default' : 'outline'}
             onClick={() => setFilter('all')}
           >
             All
           </Button>
           <Button
+            size="sm"
             variant={filter === 'recent' ? 'default' : 'outline'}
             onClick={() => setFilter('recent')}
           >
             Recently Purchased
           </Button>
           <Button
+            size="sm"
             variant={filter === 'downloaded' ? 'default' : 'outline'}
             onClick={() => setFilter('downloaded')}
           >
@@ -221,7 +226,7 @@ export default function LibraryPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <svg
                     className="w-16 h-16"
                     fill="none"
@@ -246,10 +251,10 @@ export default function LibraryPage() {
                   {item.product.title}
                 </h3>
               </Link>
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-muted-foreground mb-2">
                 Seller: {getFullName(item.product.seller)}
               </p>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-muted-foreground mb-4">
                 Purchased: {new Date(item.purchased_at).toLocaleDateString()}
               </p>
 
@@ -279,7 +284,7 @@ export default function LibraryPage() {
               {/* Actions */}
               <div className="flex gap-2 mt-auto">
                 <Button
-                  className="flex-1"
+                  size="sm"
                   onClick={() => handleDownload(item.product.id)}
                   disabled={downloading === item.product.id}
                 >
@@ -290,7 +295,7 @@ export default function LibraryPage() {
 
               {/* Download Count */}
               {item.download_count > 0 && (
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs text-muted-foreground mt-2 text-center">
                   Downloaded {item.download_count} {item.download_count === 1 ? 'time' : 'times'}
                 </p>
               )}
@@ -301,7 +306,7 @@ export default function LibraryPage() {
 
       {filteredItems.length === 0 && searchQuery && (
         <Card className="p-12 text-center mt-8">
-          <p className="text-gray-600">No items found matching your search.</p>
+          <p className="text-muted-foreground">No items found matching your search.</p>
         </Card>
       )}
     </div>
