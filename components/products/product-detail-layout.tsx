@@ -20,15 +20,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/a
 import { MessageSquare, Heart, Star, ShoppingBag, CheckCircle2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  getLanguageLabel,
-  getCurriculumLabel,
-  getModalityLabel,
-  getTeachingFrameworkLabel,
-  getClassTypeLabel,
-  getLearnerPathLabel,
-  getDocumentTypeLabel,
-} from '@/lib/config/lesson-plan-config'
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -158,9 +149,7 @@ interface Product {
   grade?: { id: string; name: string } | null
   subject?: { id: string; name: string; code?: string } | null
   class_type?: string | null
-  learner_path?: string | null
   strand?: { id: string; name: string; code?: string } | null
-  sped_level?: { id: string; name: string } | null
   quarter?: number
   weeks?: number[]
   product_subjects?: ProductSubjectRow[] | null
@@ -184,6 +173,32 @@ export function ProductDetailLayout({ product, trafficSource }: ProductDetailLay
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
   const [badge, setBadge] = useState<'new' | 'trending' | 'bestseller' | 'popular' | null>(null)
   const [filesModalOpen, setFilesModalOpen] = useState(false)
+  const [catalogConfig, setCatalogConfig] = useState<{
+    productTypes: { slug: string; label: string }[]
+    specificTypesByProductType: Record<string, { value: string; label: string }[]>
+    curricula: { value: string; label: string }[]
+    modalities: { value: string; label: string }[]
+    languages: { value: string; label: string }[]
+    teachingFrameworks: { value: string; label: string }[]
+  } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/lesson-plan-config')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) {
+          setCatalogConfig({
+            productTypes: data.productTypes ?? [],
+            specificTypesByProductType: data.specificTypesByProductType ?? {},
+            curricula: data.curricula ?? [],
+            modalities: data.modalities ?? [],
+            languages: data.languages ?? [],
+            teachingFrameworks: data.teachingFrameworks ?? [],
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const images = [
     product.cover_image_url,
@@ -371,15 +386,26 @@ export function ProductDetailLayout({ product, trafficSource }: ProductDetailLay
     })
   }
 
-  const formatProductType = (productType: string) => {
-    // Convert to display format: lesson_plans -> LESSON PLAN (singular)
-    let formatted = productType.replace('_', ' ').toUpperCase()
-    // Convert plural to singular for lesson plans
-    if (productType === 'lesson_plans') {
-      formatted = formatted.replace(/S$/, '')
-    }
-    return formatted
+  const getProductTypeLabel = (productType: string) =>
+    catalogConfig?.productTypes.find((pt) => pt.slug === productType)?.label ??
+    productType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+
+  const getSpecificTypeLabel = (value: string) => {
+    const specificTypes = catalogConfig?.specificTypesByProductType[product.product_type] ?? []
+    return specificTypes.find((s) => s.value === value)?.label ?? value.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
   }
+
+  const getLanguageLabel = (value: string | null | undefined) =>
+    !value ? null : (catalogConfig?.languages.find((l) => l.value === value)?.label ?? value.replace(/_/g, ' '))
+
+  const getCurriculumLabel = (value: string | null | undefined) =>
+    !value ? null : (catalogConfig?.curricula.find((c) => c.value === value)?.label ?? value.replace(/_/g, ' '))
+
+  const getModalityLabel = (value: string | null | undefined) =>
+    !value ? null : (catalogConfig?.modalities.find((m) => m.value === value)?.label ?? value.replace(/_/g, ' '))
+
+  const getTeachingFrameworkLabel = (value: string | null | undefined) =>
+    !value ? null : (catalogConfig?.teachingFrameworks.find((t) => t.value === value)?.label ?? value.replace(/_/g, ' '))
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -468,29 +494,15 @@ export function ProductDetailLayout({ product, trafficSource }: ProductDetailLay
                 label: 'Product',
                 content: (
                   <>
-                    <Badge variant="outline">{formatProductType(product.product_type)}</Badge>
+                    <Badge variant="outline">{getProductTypeLabel(product.product_type)}</Badge>
                     {product.specific_type && (
                       <Badge variant="outline">
-                        {getDocumentTypeLabel(product.specific_type) ?? product.specific_type.replace(/_/g, ' ').toUpperCase()}
+                        {getSpecificTypeLabel(product.specific_type)}
                       </Badge>
                     )}
                   </>
                 ),
               })
-              // Class: Class Type — only show when SPED (hide when Regular)
-              if (product.class_type === 'sped') {
-                groups.push({
-                  label: 'Class',
-                  content: (
-                    <Badge variant="outline">
-                      {getClassTypeLabel(product.class_type)}
-                      {product.learner_path
-                        ? ` (${getLearnerPathLabel(product.learner_path) ?? product.learner_path})`
-                        : ''}
-                    </Badge>
-                  ),
-                })
-              }
               // Grade & Subjects
               if (hasGradeOrSubjects) {
                 groups.push({

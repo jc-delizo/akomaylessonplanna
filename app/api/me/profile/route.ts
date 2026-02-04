@@ -79,9 +79,7 @@ export async function PUT(request: NextRequest) {
       subjects_taught,
       grade_levels_taught,
       teaching_class_types,
-      teaching_learner_paths,
       teaching_strand_ids,
-      teaching_sped_level_ids,
       location_city,
       location_region,
       social_links,
@@ -150,35 +148,11 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         )
       }
-      const validClassTypes = ['regular', 'sped']
+      const validClassTypes = ['regular']
       const invalidTypes = teaching_class_types.filter((t: string) => !validClassTypes.includes(t))
       if (invalidTypes.length > 0) {
         return NextResponse.json(
           { error: `Invalid class types: ${invalidTypes.join(', ')}` },
-          { status: 400 }
-        )
-      }
-    }
-
-    if (teaching_learner_paths !== undefined) {
-      if (!Array.isArray(teaching_learner_paths)) {
-        return NextResponse.json(
-          { error: 'teaching_learner_paths must be an array' },
-          { status: 400 }
-        )
-      }
-      const validPaths = ['graded', 'non_graded']
-      const invalidPaths = teaching_learner_paths.filter((p: string) => !validPaths.includes(p))
-      if (invalidPaths.length > 0) {
-        return NextResponse.json(
-          { error: `Invalid learner paths: ${invalidPaths.join(', ')}` },
-          { status: 400 }
-        )
-      }
-      // Validate that SPED is selected if learner paths are provided
-      if (teaching_learner_paths.length > 0 && teaching_class_types !== undefined && !teaching_class_types.includes('sped')) {
-        return NextResponse.json(
-          { error: 'Learner paths can only be set when SPED class type is selected' },
           { status: 400 }
         )
       }
@@ -217,39 +191,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    if (teaching_sped_level_ids !== undefined) {
-      if (!Array.isArray(teaching_sped_level_ids)) {
-        return NextResponse.json(
-          { error: 'teaching_sped_level_ids must be an array' },
-          { status: 400 }
-        )
-      }
-      // Validate UUIDs format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      const invalidUuids = teaching_sped_level_ids.filter((id: string) => !uuidRegex.test(id))
-      if (invalidUuids.length > 0) {
-        return NextResponse.json(
-          { error: 'Invalid SPED level UUID format' },
-          { status: 400 }
-        )
-      }
-      // Validate that SPED levels exist in database
-      if (teaching_sped_level_ids.length > 0) {
-        const { data: existingLevels } = await supabase
-          .from('sped_levels')
-          .select('id')
-          .in('id', teaching_sped_level_ids)
-        const existingIds = (existingLevels || []).map((l: { id: string }) => l.id)
-        const missingIds = teaching_sped_level_ids.filter((id: string) => !existingIds.includes(id))
-        if (missingIds.length > 0) {
-          return NextResponse.json(
-            { error: `Invalid SPED level IDs: ${missingIds.join(', ')}` },
-            { status: 400 }
-          )
-        }
-      }
-    }
-
     // Build update object (only include provided fields)
     const updateData: any = {}
     if (first_name !== undefined) updateData.first_name = first_name
@@ -262,10 +203,15 @@ export async function PUT(request: NextRequest) {
     if (bio !== undefined) updateData.bio = bio
     if (subjects_taught !== undefined) updateData.subjects_taught = subjects_taught
     if (grade_levels_taught !== undefined) updateData.grade_levels_taught = grade_levels_taught
-    if (teaching_class_types !== undefined) updateData.teaching_class_types = teaching_class_types
-    if (teaching_learner_paths !== undefined) updateData.teaching_learner_paths = teaching_learner_paths
+    // Class type is Regular only; default to ['regular'] when undefined or empty
+    if (teaching_class_types !== undefined) {
+      const effective =
+        Array.isArray(teaching_class_types) && teaching_class_types.length > 0
+          ? teaching_class_types
+          : ['regular']
+      updateData.teaching_class_types = effective
+    }
     if (teaching_strand_ids !== undefined) updateData.teaching_strand_ids = teaching_strand_ids
-    if (teaching_sped_level_ids !== undefined) updateData.teaching_sped_level_ids = teaching_sped_level_ids
     if (location_city !== undefined) updateData.location_city = location_city
     if (location_region !== undefined) updateData.location_region = location_region
     if (social_links !== undefined) updateData.social_links = social_links

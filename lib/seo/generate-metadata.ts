@@ -78,20 +78,17 @@ export function generateProductMetadata(product: {
     name: string
   }
   strand?: { id: string; name: string; code?: string } | null
-  sped_level?: { id: string; name: string } | null
   class_type?: string | null
 }): Metadata {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
   const url = `${baseUrl}/products/${product.slug}`
   const gradeName = product.grade?.name ?? ''
   const subjectName = product.subject?.name ?? ''
-  // Phase 2: context line — "Level • Subject" or "Grade • Strand • Subject" or "Grade • Subject"
+  // Phase 2: context line — "Grade • Strand • Subject" or "Grade • Subject"
   let contextLine = gradeName && subjectName ? `${gradeName} ${subjectName}` : subjectName || gradeName
-  if (product.class_type === 'sped' && product.sped_level?.name) {
-    contextLine = `${product.sped_level.name} ${subjectName}`.trim() || contextLine
-  } else if (product.class_type === 'regular' && product.strand?.name && gradeName) {
+  if (product.strand?.name && gradeName) {
     contextLine = `${gradeName} ${product.strand.name} ${subjectName}`.trim() || contextLine
-  } else if (product.class_type === 'regular' && product.strand?.name) {
+  } else if (product.strand?.name) {
     contextLine = `${product.strand.name} ${subjectName}`.trim() || contextLine
   }
   const description = `${product.description.substring(0, 155)}... ${contextLine || 'K-12'} lesson plan by ${getFullName(product.seller)}.`

@@ -22,7 +22,6 @@ interface RecentlyViewedItem {
     subject?: { id: string; name: string } | null
     class_type?: string | null
     strand?: { id: string; name: string; code?: string } | null
-    sped_level?: { id: string; name: string } | null
     subject_ids?: string[]
     quarter?: number
     weeks?: number[]
@@ -118,7 +117,6 @@ export function RecentlyViewedPageContent() {
                 subject: item.product.subject ?? null,
                 class_type: item.product.class_type ?? null,
                 strand: item.product.strand ?? null,
-                sped_level: item.product.sped_level ?? null,
                 subject_ids: item.product.subject_ids,
                 quarter: item.product.quarter,
                 weeks: item.product.weeks,

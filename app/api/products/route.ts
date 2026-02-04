@@ -234,7 +234,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const isSpedNonGraded = body.class_type === 'sped' && body.learner_path === 'non_graded'
     // Phase B: accept subject_ids[] or legacy subject_id; at least one subject required
     const subjectIds = Array.isArray(body.subject_ids) && body.subject_ids.length > 0
       ? body.subject_ids.filter((s: string) => typeof s === 'string' && s)
@@ -247,9 +246,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    if (!isSpedNonGraded && !body.grade_id) {
+    if (!body.grade_id) {
       return NextResponse.json(
-        { error: 'Grade level is required when not SPED Non-Graded' },
+        { error: 'Grade level is required' },
         { status: 400 }
       )
     }
@@ -310,7 +309,7 @@ export async function POST(request: NextRequest) {
     const publishedCount = publishedProducts?.length || 0
     const initialStatus = publishedCount < 3 ? 'pending_review' : 'published'
 
-    // Insert product (grade_id nullable for SPED non_graded). subject_id = first of subject_ids for backward compat.
+    // Insert product. subject_id = first of subject_ids for backward compat.
     const { data: product, error: insertError } = await supabase
       .from('products')
       .insert({
@@ -333,10 +332,8 @@ export async function POST(request: NextRequest) {
         curriculum: body.curriculum || null,
         modalities: Array.isArray(body.modalities) && body.modalities.length > 0 ? body.modalities : null,
         teaching_framework: body.teaching_framework || null,
-        class_type: body.class_type || null,
-        learner_path: body.learner_path || null,
+        class_type: 'regular',
         strand_id: body.strand_id || null,
-        sped_level_id: body.sped_level_id || null,
         file_urls: body.file_urls,
         cover_image_url: body.cover_image_url || null,
         preview_images: body.preview_images || null,

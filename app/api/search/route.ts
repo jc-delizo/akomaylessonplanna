@@ -69,8 +69,6 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'relevance'
     const classType = searchParams.get('class_type')
     const strandId = searchParams.get('strand_id')
-    const learnerPath = searchParams.get('learner_path')
-    const spedLevelId = searchParams.get('sped_level_id')
 
     // Check cache first
     const cacheKey = generateSearchCacheKey(query, {
@@ -89,8 +87,6 @@ export async function GET(request: NextRequest) {
       dateAdded,
       classType,
       strandId,
-      learnerPath,
-      spedLevelId,
     }, sort)
 
     const cachedResult = await getCachedSearchResults<any>(cacheKey)
@@ -129,10 +125,6 @@ export async function GET(request: NextRequest) {
           id,
           name,
           code
-        ),
-        sped_level:sped_levels!products_sped_level_id_fkey(
-          id,
-          name
         )
       `, { count: 'exact' })
 
@@ -212,12 +204,6 @@ export async function GET(request: NextRequest) {
     }
     if (strandId) {
       dbQuery = dbQuery.eq('strand_id', strandId)
-    }
-    if (learnerPath) {
-      dbQuery = dbQuery.eq('learner_path', learnerPath)
-    }
-    if (spedLevelId) {
-      dbQuery = dbQuery.eq('sped_level_id', spedLevelId)
     }
 
     // Verified seller filter - filter by seller's is_verified_teacher

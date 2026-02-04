@@ -68,10 +68,6 @@ export default async function MarketplacePage() {
         id,
         name,
         code
-      ),
-      sped_level:sped_levels!products_sped_level_id_fkey(
-        id,
-        name
       )
     `
   const { data: featuredProducts } = await supabase
@@ -116,21 +112,20 @@ export default async function MarketplacePage() {
     const { data: userProfile } = await supabase
       .from('users')
       .select(
-        'subscription_tier, grade_levels_taught, subjects_taught, teaching_class_types, teaching_learner_paths, teaching_strand_ids, teaching_sped_level_ids'
+        'subscription_tier, grade_levels_taught, subjects_taught, teaching_class_types, teaching_strand_ids'
       )
       .eq('id', user.id)
       .single()
 
-    // Teaching complete = same rule as profile edit (at least one teaching preference set)
+    // Teaching complete = same rule as profile edit (Class type is Regular only; treat empty as ['regular'])
     const teachingClassTypes = (userProfile?.teaching_class_types as string[] | null) ?? []
+    const effectiveClassTypes = teachingClassTypes.length > 0 ? teachingClassTypes : ['regular']
     const teachingStrandIds = (userProfile?.teaching_strand_ids as string[] | null) ?? []
-    const teachingSpedLevelIds = (userProfile?.teaching_sped_level_ids as string[] | null) ?? []
     const gradeLevelsTaught = (userProfile?.grade_levels_taught as string[] | null) ?? []
     const subjectsTaught = (userProfile?.subjects_taught as string[] | null) ?? []
     teachingComplete =
-      teachingClassTypes.length > 0 ||
+      effectiveClassTypes.length > 0 ||
       teachingStrandIds.length > 0 ||
-      teachingSpedLevelIds.length > 0 ||
       (subjectsTaught.length > 0 && gradeLevelsTaught.length > 0)
 
     const isProOrPioneer = userProfile?.subscription_tier === 'pro' || userProfile?.subscription_tier === 'pioneer'

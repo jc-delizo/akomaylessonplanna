@@ -33,7 +33,6 @@ import { ProfileCompletionIndicator } from '@/components/profiles/profile-comple
 import { Avatar, AvatarImage, AvatarFallback } from '@/registry/default/avatar/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/registry/default/tabs/tabs'
 import { Checkbox } from '@/registry/default/checkbox/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/registry/default/radio-group/radio-group'
 import { Separator } from '@/registry/default/separator/separator'
 import { Alert, AlertTitle, AlertDescription } from '@/registry/default/alert/alert'
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/registry/default/tooltip/tooltip'
@@ -53,7 +52,6 @@ import {
   findRegionByCode,
 } from '@/lib/utils/location'
 import type { Region, City } from '@/lib/data/philippines-locations'
-import { CLASS_TYPES, LEARNER_PATHS } from '@/lib/config/lesson-plan-config'
 
 /**
  * Profile Edit Page
@@ -89,14 +87,10 @@ export default function ProfileEditPage() {
   const [bio, setBio] = useState('')
   const [subjectsTaught, setSubjectsTaught] = useState<string[]>([])
   const [gradeLevelsTaught, setGradeLevelsTaught] = useState<string[]>([])
-  // Phase 2 teaching preferences
-  const [teachingClassTypes, setTeachingClassTypes] = useState<string[]>([])
-  const [teachingLearnerPaths, setTeachingLearnerPaths] = useState<string[]>([])
+  // Phase 2 teaching preferences (Class type is Regular only; no UI for it)
   const [teachingStrandIds, setTeachingStrandIds] = useState<string[]>([])
-  const [teachingSpedLevelIds, setTeachingSpedLevelIds] = useState<string[]>([])
   const [hierarchy, setHierarchy] = useState<{
     regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
-    sped: { paths: ['graded', 'non_graded']; levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
   } | null>(null)
   const [locationCity, setLocationCity] = useState('')
   const [locationRegion, setLocationRegion] = useState('')
@@ -123,7 +117,7 @@ export default function ProfileEditPage() {
         const response = await fetch('/api/lesson-plan-config')
         if (response.ok) {
           const data = await response.json()
-          setHierarchy(data)
+          setHierarchy({ regular: data.regular })
           // Set available grades from hierarchy
           if (data.regular?.grades) {
             setAvailableGrades(data.regular.grades.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })))
@@ -157,11 +151,8 @@ export default function ProfileEditPage() {
         setBio(profileData.bio || '')
         setSubjectsTaught(profileData.subjects_taught || [])
         setGradeLevelsTaught(profileData.grade_levels_taught || [])
-        // Phase 2 teaching preferences
-        setTeachingClassTypes(profileData.teaching_class_types || [])
-        setTeachingLearnerPaths(profileData.teaching_learner_paths || [])
+        // Phase 2 teaching preferences (Class type is Regular only)
         setTeachingStrandIds(profileData.teaching_strand_ids || [])
-        setTeachingSpedLevelIds(profileData.teaching_sped_level_ids || [])
         // Handle location data - try to match existing free-text data to structured data
         const existingRegion = profileData.location_region || ''
         const existingCity = profileData.location_city || ''
@@ -238,10 +229,8 @@ export default function ProfileEditPage() {
           bio,
           subjects_taught: subjectsTaught,
           grade_levels_taught: gradeLevelsTaught,
-          teaching_class_types: teachingClassTypes,
-          teaching_learner_paths: teachingLearnerPaths,
+          teaching_class_types: ['regular'],
           teaching_strand_ids: teachingStrandIds,
-          teaching_sped_level_ids: teachingSpedLevelIds,
           location_city: locationCity,
           location_region: locationRegion,
           social_links: socialLinks,
@@ -354,21 +343,13 @@ export default function ProfileEditPage() {
 
   // Check if Teaching section is complete
   const isTeachingComplete = () => {
-    // At least one teaching preference must be set (Phase 2 OR existing subjects/grades)
+    // At least one teaching preference must be set (strands or subjects+grades)
     return (
-      teachingClassTypes.length > 0 ||
       teachingStrandIds.length > 0 ||
-      teachingSpedLevelIds.length > 0 ||
       (subjectsTaught.length > 0 && gradeLevelsTaught.length > 0)
     )
   }
 
-  // Helper: Check if Regular is selected
-  const isRegularSelected = teachingClassTypes.includes('regular')
-  // Helper: Check if SPED is selected
-  const isSpedSelected = teachingClassTypes.includes('sped')
-  // Helper: Check if SPED Non-Graded is selected
-  const isSpedNonGradedSelected = teachingLearnerPaths.includes('non_graded')
   // Helper: Check if Grade 11/12 is selected
   const isGrade11Or12Selected = gradeLevelsTaught.some((g) => g === 'Grade 11' || g === 'Grade 12')
 
@@ -378,12 +359,8 @@ export default function ProfileEditPage() {
 
     const subjects: { id: string; name: string }[] = []
 
-    // SPED Non-Graded: show SPED subjects
-    if (isSpedNonGradedSelected && hierarchy.sped?.spedSubjects) {
-      subjects.push(...hierarchy.sped.spedSubjects)
-    }
-    // Regular or SPED Graded: show subjects based on selected grades
-    else if (gradeLevelsTaught.length > 0 && hierarchy.regular?.grades) {
+    // Show subjects based on selected grades
+    if (gradeLevelsTaught.length > 0 && hierarchy.regular?.grades) {
       // Get grade IDs for selected grade names
       const selectedGradeIds = hierarchy.regular.grades
         .filter((g) => gradeLevelsTaught.includes(g.name))
@@ -414,7 +391,6 @@ export default function ProfileEditPage() {
     hierarchy,
     gradeLevelsTaught,
     teachingStrandIds,
-    isSpedNonGradedSelected,
     isGrade11Or12Selected,
   ])
 
@@ -691,139 +667,8 @@ export default function ProfileEditPage() {
                   Phase 2 Preferences
                 </h3>
 
-                {/* Phase 2: Class Type (single-select) */}
-                <Card>
-                  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      <CardTitle>Class Type</CardTitle>
-                    </div>
-                    <CardDescription>Select the class type you teach (optional)</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4 pb-4 px-6 space-y-2">
-                    <RadioGroup
-                      value={teachingClassTypes[0] ?? ''}
-                      onValueChange={(value) => {
-                        if (value && typeof value === 'string') {
-                          setTeachingClassTypes([value])
-                          if (value === 'sped') {
-                            setTeachingLearnerPaths([])
-                            setTeachingSpedLevelIds([])
-                          } else {
-                            setTeachingStrandIds([])
-                          }
-                        } else {
-                          setTeachingClassTypes([])
-                          setTeachingLearnerPaths([])
-                          setTeachingSpedLevelIds([])
-                          setTeachingStrandIds([])
-                        }
-                      }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                    >
-                      {CLASS_TYPES.map((classType) => (
-                        <div key={classType.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <RadioGroupItem
-                            id={`class-type-${classType.value}`}
-                            value={classType.value}
-                          />
-                          <Label
-                            htmlFor={`class-type-${classType.value}`}
-                            className={`flex-1 cursor-pointer text-sm ${teachingClassTypes.includes(classType.value) ? 'font-medium' : 'font-normal'}`}
-                          >
-                            {classType.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </CardContent>
-                </Card>
-
-                {/* Phase 2: Learner Path (conditional on SPED, single-select) */}
-                {isSpedSelected && (
-                  <Card className="border-l-4 border-purple-200 dark:border-purple-800">
-                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <CardTitle>SPED Learner Path</CardTitle>
-                      </div>
-                      <CardDescription>Select the SPED learner path you teach (optional)</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-4 pb-4 px-6 space-y-2">
-                      <RadioGroup
-                        value={teachingLearnerPaths[0] ?? ''}
-                        onValueChange={(value) => {
-                          if (value && typeof value === 'string') {
-                            setTeachingLearnerPaths([value])
-                            if (value !== 'non_graded') {
-                              setTeachingSpedLevelIds([])
-                            }
-                          } else {
-                            setTeachingLearnerPaths([])
-                            setTeachingSpedLevelIds([])
-                          }
-                        }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                      >
-                        {LEARNER_PATHS.map((path) => (
-                          <div key={path.value} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <RadioGroupItem
-                              id={`learner-path-${path.value}`}
-                              value={path.value}
-                            />
-                            <Label
-                              htmlFor={`learner-path-${path.value}`}
-                              className={`flex-1 cursor-pointer text-sm ${teachingLearnerPaths.includes(path.value) ? 'font-medium' : 'font-normal'}`}
-                            >
-                              {path.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Phase 2: SPED Levels (conditional on SPED Non-Graded) */}
-                {isSpedNonGradedSelected && hierarchy?.sped?.levels && (
-                  <Card className="border-l-4 border-purple-200 dark:border-purple-800">
-                    <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <CardTitle>SPED Levels</CardTitle>
-                      </div>
-                      <CardDescription>Select the SPED levels you teach (optional)</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {hierarchy.sped.levels.map((level) => (
-                          <div key={level.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <Checkbox
-                              id={`sped-level-${level.id}`}
-                              checked={teachingSpedLevelIds.includes(level.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setTeachingSpedLevelIds([...teachingSpedLevelIds, level.id])
-                                } else {
-                                  setTeachingSpedLevelIds(teachingSpedLevelIds.filter((id) => id !== level.id))
-                                }
-                              }}
-                            />
-                            <Label
-                              htmlFor={`sped-level-${level.id}`}
-                              className={`flex-1 cursor-pointer text-sm ${teachingSpedLevelIds.includes(level.id) ? 'font-medium' : 'font-normal'}`}
-                            >
-                              {level.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Phase 2: Strand (conditional on Regular + G11/12) */}
-                {isRegularSelected && isGrade11Or12Selected && hierarchy?.regular?.strands && (
+                {/* Phase 2: Strand (conditional on G11/12) */}
+                {isGrade11Or12Selected && hierarchy?.regular?.strands && (
                   <Card className="border-l-4 border-purple-200 dark:border-purple-800">
                     <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
                       <div className="flex items-center gap-2">
@@ -870,9 +715,8 @@ export default function ProfileEditPage() {
                   Teaching Assignments
                 </h3>
 
-                {/* Grade Levels Taught (hidden when SPED Non-Graded selected) */}
-                {!isSpedNonGradedSelected && (
-                  <Card>
+                {/* Grade Levels Taught */}
+                <Card>
                     <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b">
                       <div className="flex items-center gap-2">
                         <GraduationCap className="h-4 w-4" />
@@ -912,8 +756,7 @@ export default function ProfileEditPage() {
                         ))}
                       </div>
                     </CardContent>
-                  </Card>
-                )}
+                </Card>
 
                 {/* Subjects Taught */}
                 <Card>

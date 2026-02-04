@@ -13,7 +13,6 @@ type RecentlyViewedProduct = {
   grade: unknown
   subject: unknown
   strand: unknown
-  sped_level: unknown
   subject_id?: string
 }
 
@@ -54,7 +53,7 @@ export async function GET(request: NextRequest) {
       dateFilter = new Date(0) // Beginning of time
     }
 
-    // Get recently viewed items with product details (Phase 2: strand, sped_level for ProductCard)
+    // Get recently viewed items with product details
     let query = supabase
       .from('recently_viewed')
       .select(
@@ -91,10 +90,6 @@ export async function GET(request: NextRequest) {
             id,
             name,
             code
-          ),
-          sped_level:sped_levels!products_sped_level_id_fkey(
-            id,
-            name
           )
         )
       `

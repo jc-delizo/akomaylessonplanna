@@ -54,10 +54,6 @@ export default async function ProductDetailPage({ params, searchParams }: PagePr
         name,
         code
       ),
-      sped_level:sped_levels!products_sped_level_id_fkey(
-        id,
-        name
-      ),
       product_subjects(
         subject_id,
         subject:subjects(id, name, code)
@@ -160,10 +156,6 @@ export async function generateMetadata({ params }: PageProps) {
         id,
         name,
         code
-      ),
-      sped_level:sped_levels!products_sped_level_id_fkey(
-        id,
-        name
       )
     `)
     .eq('id', id)
@@ -202,7 +194,6 @@ export async function generateMetadata({ params }: PageProps) {
       name: (Array.isArray(product.subject) ? product.subject[0] : product.subject)?.name || ''
     },
     strand: (Array.isArray(product.strand) ? product.strand[0] : product.strand) ?? null,
-    sped_level: (Array.isArray(product.sped_level) ? product.sped_level[0] : product.sped_level) ?? null,
     class_type: product.class_type ?? null,
   })
 }

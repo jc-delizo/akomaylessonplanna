@@ -54,10 +54,6 @@ export async function GET(
           id,
           name,
           code
-        ),
-        sped_level:sped_levels!products_sped_level_id_fkey(
-          id,
-          name
         )
       `
     // Strategy: 70% same grade/subject, 30% same seller

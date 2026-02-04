@@ -19,11 +19,29 @@ export async function GET(
     let categoryType: 'product_type' | 'grade' | 'subject' | null = null
     let categoryValue: string | null = null
 
-    // Check if it's a product type
-    const productTypes = ['lesson-plans', 'exams', 'rpms', 'posters', 'tarpaulins']
-    if (productTypes.includes(slug)) {
+    // Check if it's a product type - resolve from product_types table (dynamic) or fallback
+    const slugAsProductType = slug.replace(/-/g, '_')
+    const fallbackTypes: Record<string, string> = {
+      'lesson-plans': 'lesson_plans',
+      'exams': 'exams',
+      'rpms': 'rpms',
+      'posters': 'posters',
+      'tarpaulins': 'tarpaulins',
+    }
+
+    const { data: ptRow, error: ptError } = await supabase
+      .from('product_types')
+      .select('slug, label')
+      .eq('slug', slugAsProductType)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (!ptError && ptRow) {
       categoryType = 'product_type'
-      categoryValue = slug.replace('-', '_')
+      categoryValue = ptRow.slug
+    } else if (fallbackTypes[slug]) {
+      categoryType = 'product_type'
+      categoryValue = fallbackTypes[slug]
     } else if (slug.startsWith('grade-')) {
       // It's a grade
       categoryType = 'grade'
@@ -68,7 +86,7 @@ export async function GET(
     // Get category name
     let categoryName = ''
     if (categoryType === 'product_type') {
-      categoryName = categoryValue.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+      categoryName = ptRow?.label ?? categoryValue.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     } else if (categoryType === 'grade') {
       const { data: grade } = await supabase
         .from('grades')

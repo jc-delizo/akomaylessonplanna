@@ -41,6 +41,7 @@ export type Permission =
   | 'manage_admins'
   | 'view_audit_log'
   | 'view_all_audit_logs'
+  | 'view_catalog'
 
 /**
  * Permission matrix based on design document
@@ -102,6 +103,9 @@ const PERMISSIONS: Record<AdminRole, Set<Permission>> = {
     // Audit
     'view_audit_log',
     'view_all_audit_logs',
+
+    // Catalog (Super Admin only)
+    'view_catalog',
   ]),
   
   moderator: new Set([

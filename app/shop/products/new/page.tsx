@@ -48,41 +48,8 @@ import {
 } from 'lucide-react'
 import {
   WEEKS_OPTIONS,
-  MODALITIES,
-  LANGUAGES,
-  CURRICULA,
-  TEACHING_FRAMEWORKS,
-  CLASS_TYPES,
-  LEARNER_PATHS,
   SUBJECT_SELECTION,
 } from '@/lib/config/lesson-plan-config'
-
-// Product types as per design
-const PRODUCT_TYPES = [
-  { value: 'exams', label: 'Exams' },
-  { value: 'lesson_plans', label: 'Lesson Plans' },
-  { value: 'rpms', label: 'RPMS' },
-  { value: 'posters', label: 'Posters' },
-  { value: 'tarpaulins', label: 'Tarpaulins' },
-]
-
-const SPECIFIC_TYPES: Record<string, Array<{ value: string; label: string }>> = {
-  exams: [
-    { value: 'periodical_exam', label: 'Periodical Exam' },
-    { value: 'summative_test', label: 'Summative Test' },
-  ],
-  lesson_plans: [
-    { value: 'dll', label: 'DLL (Daily Lesson Log)' },
-    { value: 'dlp', label: 'DLP (Detailed Lesson Plan)' },
-  ],
-}
-
-const QUARTERS = [
-  { value: '1', label: 'Quarter 1' },
-  { value: '2', label: 'Quarter 2' },
-  { value: '3', label: 'Quarter 3' },
-  { value: '4', label: 'Quarter 4' },
-]
 
 const WEEKS = [...WEEKS_OPTIONS]
 
@@ -176,14 +143,11 @@ interface FormData {
   specific_type: string
   description: string
 
-  // Step 2: Categorization (Phase 2 hierarchy)
-  class_type?: string
-  learner_path?: string
+  // Step 2: Categorization (SPED removed)
   grade_id: string
   subject_id: string
   subject_ids: string[]
   strand_id?: string
-  sped_level_id?: string
   quarter: string
   weeks: number[]
   language?: string
@@ -211,8 +175,14 @@ export default function NewProductPage() {
   const [error, setError] = useState<string | null>(null)
   const [hierarchy, setHierarchy] = useState<{
     regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
-    sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
   } | null>(null)
+  const [productTypes, setProductTypes] = useState<{ id: string; slug: string; label: string; sortOrder: number }[]>([])
+  const [specificTypesByProductType, setSpecificTypesByProductType] = useState<Record<string, { value: string; label: string; sortOrder: number }[]>>({})
+  const [curricula, setCurricula] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [modalities, setModalities] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [languages, setLanguages] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [quarters, setQuarters] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [teachingFrameworks, setTeachingFrameworks] = useState<{ value: string; label: string; sortOrder: number }[]>([])
   const [canSell, setCanSell] = useState<boolean | null>(null)
 
   const [formData, setFormData] = useState<FormData>({
@@ -263,7 +233,7 @@ export default function NewProductPage() {
     checkPermissions()
   }, [router])
 
-  // Fetch lesson-plan hierarchy from config API
+  // Fetch lesson-plan hierarchy and catalog from config API
   useEffect(() => {
     async function fetchHierarchy() {
       try {
@@ -272,8 +242,14 @@ export default function NewProductPage() {
           const data = await response.json()
           setHierarchy({
             regular: { grades: data.regular.grades, strands: data.regular.strands, subjectsByGrade: data.regular.subjectsByGrade || {}, subjectsByStrand: data.regular.subjectsByStrand || {} },
-            sped: { levels: data.sped.levels, spedSubjects: data.sped.spedSubjects || [] },
           })
+          setProductTypes(data.productTypes ?? [])
+          setSpecificTypesByProductType(data.specificTypesByProductType ?? {})
+          setCurricula(data.curricula ?? [])
+          setModalities(data.modalities ?? [])
+          setLanguages(data.languages ?? [])
+          setQuarters(data.quarters ?? [])
+          setTeachingFrameworks(data.teachingFrameworks ?? [])
         }
       } catch (err) {
         console.error('Error fetching lesson-plan config:', err)
@@ -284,17 +260,14 @@ export default function NewProductPage() {
 
   const grades = hierarchy?.regular?.grades ?? []
   const strands = hierarchy?.regular?.strands ?? []
-  const isSpedNonGraded = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
   const selectedGrade = grades.find((g) => g.id === formData.grade_id)
   const isGrade11Or12 = selectedGrade && (selectedGrade.name === 'Grade 11' || selectedGrade.name === 'Grade 12')
-  const subjects = isSpedNonGraded
-    ? (hierarchy?.sped?.spedSubjects ?? [])
-    : formData.grade_id
-      ? [
-          ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
-          ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
-        ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
-      : []
+  const subjects = formData.grade_id
+    ? [
+        ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
+        ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
+      ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+    : []
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -330,7 +303,6 @@ export default function NewProductPage() {
     }
 
     if (step === 2) {
-      const isSpedNonGradedVal = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
       const selectedGradeVal = grades.find((g) => g.id === formData.grade_id)
       const isG11Or12 = selectedGradeVal && (selectedGradeVal.name === 'Grade 11' || selectedGradeVal.name === 'Grade 12')
 
@@ -338,13 +310,9 @@ export default function NewProductPage() {
       if (sidCount === 0 && !formData.subject_id) {
         errors.subject_ids = 'At least one subject is required'
       }
-      if (isSpedNonGradedVal) {
-        if (!formData.sped_level_id) errors.sped_level_id = 'Level is required for SPED Non-Graded'
-      } else {
-        if (!formData.grade_id) errors.grade_id = 'Grade level is required'
-        if (formData.class_type === 'regular' && isG11Or12 && !formData.strand_id) {
-          errors.strand_id = 'Strand is required for Grade 11/12'
-        }
+      if (!formData.grade_id) errors.grade_id = 'Grade level is required'
+      if (isG11Or12 && !formData.strand_id) {
+        errors.strand_id = 'Strand is required for Grade 11/12'
       }
       if (!formData.quarter) {
         errors.quarter = 'Quarter is required'
@@ -772,8 +740,8 @@ export default function NewProductPage() {
                   <SelectValue placeholder="Select product type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRODUCT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
+                  {productTypes.map((type) => (
+                    <SelectItem key={type.slug} value={type.slug}>
                       {type.label}
                     </SelectItem>
                   ))}
@@ -787,7 +755,7 @@ export default function NewProductPage() {
               )}
             </div>
 
-            {formData.product_type && SPECIFIC_TYPES[formData.product_type] && (
+            {formData.product_type && (specificTypesByProductType[formData.product_type]?.length ?? 0) > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -803,7 +771,7 @@ export default function NewProductPage() {
                       <SelectValue placeholder="Select specific type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SPECIFIC_TYPES[formData.product_type].map((type) => (
+                      {specificTypesByProductType[formData.product_type].map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
@@ -882,105 +850,8 @@ export default function NewProductPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Class type — Regular | SPED */}
+            {/* Grade Level */}
             <div className="space-y-2">
-              <Label htmlFor="class_type" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Class type
-              </Label>
-              <Select
-                value={formData.class_type || ''}
-                onValueChange={(v) => {
-                  updateField('class_type', v)
-                  updateField('learner_path', '')
-                  updateField('strand_id', '')
-                  updateField('sped_level_id', '')
-                  updateField('subject_ids', [])
-                  updateField('subject_id', '')
-                  updateField('grade_id', '')
-                }}
-              >
-                <SelectTrigger id="class_type" className="w-full">
-                  <SelectValue placeholder="Select class type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CLASS_TYPES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* SPED: Learner path */}
-            {formData.class_type === 'sped' && (
-              <div className="space-y-2">
-                <Label htmlFor="learner_path" className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Learner path
-                </Label>
-                <Select
-                  value={formData.learner_path || ''}
-                  onValueChange={(v) => {
-                    updateField('learner_path', v)
-                    updateField('sped_level_id', '')
-                    updateField('grade_id', '')
-                    updateField('subject_ids', []); updateField('subject_id', '')
-                    if (v === 'graded') updateField('strand_id', '')
-                  }}
-                >
-                  <SelectTrigger id="learner_path" className="w-full">
-                    <SelectValue placeholder="Select path" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEARNER_PATHS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* SPED Non-Graded: Level */}
-            {isSpedNonGraded && (
-              <div className="space-y-2">
-                <Label htmlFor="sped_level_id" className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Level *
-                </Label>
-                <Select
-                  value={formData.sped_level_id || ''}
-                  onValueChange={(v) => updateField('sped_level_id', v)}
-                >
-                  <SelectTrigger
-                    id="sped_level_id"
-                    className={`w-full ${validation.sped_level_id ? 'border-destructive' : ''}`}
-                  >
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(hierarchy?.sped?.levels ?? []).map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {validation.sped_level_id && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <X className="h-3 w-3" />
-                    {validation.sped_level_id}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Grade Level — when Regular or SPED Graded */}
-            {!isSpedNonGraded && (
-              <div className="space-y-2">
                 <Label htmlFor="grade_id" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
                   Grade Level *
@@ -1016,11 +887,10 @@ export default function NewProductPage() {
                     {validation.grade_id}
                   </p>
                 )}
-              </div>
-            )}
+            </div>
 
-            {/* Strand — when Regular and Grade 11 or 12 */}
-            {formData.class_type === 'regular' && isGrade11Or12 && (
+            {/* Strand — when Grade 11 or 12 */}
+            {isGrade11Or12 && (
               <div className="space-y-2">
                 <Label htmlFor="strand_id" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
@@ -1068,7 +938,7 @@ export default function NewProductPage() {
               >
                 {subjects.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    {isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}
+                    Select grade and strand first
                   </p>
                 ) : (
                   subjects.map((subject) => {
@@ -1125,7 +995,7 @@ export default function NewProductPage() {
                   <SelectValue placeholder="Select quarter" />
                 </SelectTrigger>
                 <SelectContent>
-                  {QUARTERS.map((q) => (
+                  {quarters.map((q) => (
                     <SelectItem key={q.value} value={q.value}>
                       {q.label}
                     </SelectItem>
@@ -1201,7 +1071,7 @@ export default function NewProductPage() {
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LANGUAGES.map((lang) => (
+                  {languages.map((lang) => (
                     <SelectItem key={lang.value} value={lang.value}>
                       {lang.label}
                     </SelectItem>
@@ -1225,7 +1095,7 @@ export default function NewProductPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
-                  {CURRICULA.map((c) => (
+                  {curricula.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
                       {c.label}
                     </SelectItem>
@@ -1238,7 +1108,7 @@ export default function NewProductPage() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">Modality (optional)</Label>
               <div className="flex flex-wrap gap-2">
-                {MODALITIES.map((mod) => {
+                {modalities.map((mod) => {
                   const selected = formData.modalities ?? []
                   const isSelected = selected.includes(mod.value)
                   return (
@@ -1281,7 +1151,7 @@ export default function NewProductPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">None</SelectItem>
-                      {TEACHING_FRAMEWORKS.map((f) => (
+                      {teachingFrameworks.map((f) => (
                         <SelectItem key={f.value} value={f.value}>
                           {f.label}
                         </SelectItem>
@@ -1754,12 +1624,12 @@ export default function NewProductPage() {
                     <Label className="text-xs text-muted-foreground">Type</Label>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
-                        {PRODUCT_TYPES.find((t) => t.value === formData.product_type)
+                        {productTypes.find((t) => t.slug === formData.product_type)
                           ?.label || formData.product_type}
                       </Badge>
                       {formData.specific_type && (
                         <Badge variant="outline">
-                          {SPECIFIC_TYPES[formData.product_type]?.find(
+                          {specificTypesByProductType[formData.product_type]?.find(
                             (t) => t.value === formData.specific_type
                           )?.label || formData.specific_type}
                         </Badge>
@@ -1785,38 +1655,14 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Categorization — Phase 2: Class type, Learner path, Level, Strand, N/A Grade for SPED non-graded */}
+            {/* Categorization */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Categorization</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formData.class_type && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Class type</Label>
-                      <p className="text-sm font-medium">
-                        {CLASS_TYPES.find((c) => c.value === formData.class_type)?.label ?? formData.class_type}
-                      </p>
-                    </div>
-                  )}
-                  {formData.class_type === 'sped' && formData.learner_path && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Learner path</Label>
-                      <p className="text-sm font-medium">
-                        {LEARNER_PATHS.find((l) => l.value === formData.learner_path)?.label ?? formData.learner_path}
-                      </p>
-                    </div>
-                  )}
-                  {isSpedNonGraded && formData.sped_level_id && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Level</Label>
-                      <p className="text-sm font-medium">
-                        {hierarchy?.sped?.levels.find((l) => l.id === formData.sped_level_id)?.name ?? '—'}
-                      </p>
-                    </div>
-                  )}
-                  {formData.class_type === 'regular' && isGrade11Or12 && formData.strand_id && (
+                  {isGrade11Or12 && formData.strand_id && (
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Strand</Label>
                       <p className="text-sm font-medium">
@@ -1827,7 +1673,7 @@ export default function NewProductPage() {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Grade</Label>
                     <p className="text-sm font-medium">
-                      {isSpedNonGraded ? 'N/A' : (grades.find((g) => g.id === formData.grade_id)?.name ?? 'N/A')}
+                      {grades.find((g) => g.id === formData.grade_id)?.name ?? 'N/A'}
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -1844,7 +1690,7 @@ export default function NewProductPage() {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Quarter</Label>
                     <p className="text-sm font-medium">
-                      {QUARTERS.find((q) => q.value === formData.quarter)?.label ||
+                      {quarters.find((q) => q.value === formData.quarter)?.label ||
                         'N/A'}
                     </p>
                   </div>
@@ -1862,7 +1708,7 @@ export default function NewProductPage() {
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Language</Label>
                       <p className="text-sm font-medium">
-                        {LANGUAGES.find((l) => l.value === formData.language)?.label || formData.language}
+                        {languages.find((l) => l.value === formData.language)?.label || formData.language}
                       </p>
                     </div>
                   )}
@@ -1870,7 +1716,7 @@ export default function NewProductPage() {
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Curriculum</Label>
                       <p className="text-sm font-medium">
-                        {CURRICULA.find((c) => c.value === formData.curriculum)?.label || formData.curriculum}
+                        {curricula.find((c) => c.value === formData.curriculum)?.label || formData.curriculum}
                       </p>
                     </div>
                   )}
@@ -1880,7 +1726,7 @@ export default function NewProductPage() {
                       <div className="flex flex-wrap gap-1">
                         {formData.modalities.map((mod) => (
                           <Badge key={mod} variant="secondary">
-                            {MODALITIES.find((m) => m.value === mod)?.label || mod}
+                            {modalities.find((m) => m.value === mod)?.label || mod}
                           </Badge>
                         ))}
                       </div>
@@ -1890,7 +1736,7 @@ export default function NewProductPage() {
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Teaching Framework</Label>
                       <p className="text-sm font-medium">
-                        {TEACHING_FRAMEWORKS.find((f) => f.value === formData.teaching_framework)?.label || formData.teaching_framework}
+                        {teachingFrameworks.find((f) => f.value === formData.teaching_framework)?.label || formData.teaching_framework}
                       </p>
                     </div>
                   )}

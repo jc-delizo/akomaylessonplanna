@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { X, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MODALITIES, LANGUAGES, CURRICULA, DOCUMENT_TYPES, CLASS_TYPES, LEARNER_PATHS } from '@/lib/config/lesson-plan-config'
 
 interface FilterChip {
   key: string
@@ -23,9 +22,13 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
   const [grades, setGrades] = useState<{ id: string; name: string }[]>([])
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([])
   const [strands, setStrands] = useState<{ id: string; name: string }[]>([])
-  const [spedLevels, setSpedLevels] = useState<{ id: string; name: string }[]>([])
+  const [productTypes, setProductTypes] = useState<{ slug: string; label: string }[]>([])
+  const [specificTypesByProductType, setSpecificTypesByProductType] = useState<Record<string, { value: string; label: string }[]>>({})
+  const [curricula, setCurricula] = useState<{ value: string; label: string }[]>([])
+  const [modalities, setModalities] = useState<{ value: string; label: string }[]>([])
+  const [languages, setLanguages] = useState<{ value: string; label: string }[]>([])
 
-  // Fetch lesson-plan config once (grades, strands, levels, subjectsByGrade)
+  // Fetch lesson-plan config once (grades, strands, subjectsByGrade, productTypes, curricula, modalities, languages)
   useEffect(() => {
     async function fetchConfig() {
       try {
@@ -34,7 +37,11 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
           const data = await response.json()
           setGrades(data.regular?.grades ?? [])
           setStrands(data.regular?.strands ?? [])
-          setSpedLevels(data.sped?.levels ?? [])
+          setProductTypes(data.productTypes ?? [])
+          setSpecificTypesByProductType(data.specificTypesByProductType ?? {})
+          setCurricula(data.curricula ?? [])
+          setModalities(data.modalities ?? [])
+          setLanguages(data.languages ?? [])
         }
       } catch (err) {
         console.error('Error fetching lesson-plan config:', err)
@@ -43,7 +50,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
     fetchConfig()
   }, [])
 
-  // Resolve subjects from config when grade_id or SPED (subject_id in spedSubjects)
+  // Resolve subjects from config when grade_id
   useEffect(() => {
     if (!filters.grade_id && !filters.subject_id) {
       setSubjects([])
@@ -60,7 +67,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
             const byStrand = strandId ? ((data.regular?.subjectsByStrand ?? {})[strandId] ?? []) : []
             setSubjects([...byGrade, ...byStrand].filter((s: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex((x) => x.id === s.id) === i))
           } else {
-            setSubjects(data.sped?.spedSubjects ?? [])
+            setSubjects([])
           }
         }
       } catch (err) {
@@ -91,28 +98,10 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
   // Convert filters to chips
   const chips: FilterChip[] = []
 
-  // Class type filter
-  if (filters.class_type) {
-    const label = CLASS_TYPES.find((c) => c.value === filters.class_type)?.label ?? filters.class_type
-    chips.push({ key: 'class_type', label: 'Class type', value: label })
-  }
-
-  // SPED Path (Learner path) filter
-  if (filters.class_type === 'sped' && filters.learner_path) {
-    const pathLabel = LEARNER_PATHS.find((p) => p.value === filters.learner_path)?.label ?? filters.learner_path
-    chips.push({ key: 'learner_path', label: 'Path', value: pathLabel })
-  }
-
   // Strand filter
   if (filters.strand_id) {
     const strandName = strands.find((s) => s.id === filters.strand_id)?.name ?? filters.strand_id
     chips.push({ key: 'strand_id', label: 'Strand', value: strandName })
-  }
-
-  // SPED Level filter
-  if (filters.sped_level_id) {
-    const levelName = spedLevels.find((l) => l.id === filters.sped_level_id)?.name ?? filters.sped_level_id
-    chips.push({ key: 'sped_level_id', label: 'Level', value: levelName })
   }
 
   // Grade filter
@@ -137,17 +126,20 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
 
   // Product type filter
   if (filters.product_type) {
+    const ptLabel = productTypes.find((pt) => pt.slug === filters.product_type)?.label ?? filters.product_type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     chips.push({
       key: 'product_type',
       label: 'Type',
-      value: filters.product_type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+      value: ptLabel
     })
   }
 
-  // Document type / specific type (lesson plans)
+  // Document type / specific type (any product type with specific types)
   const documentType = filters.document_type || filters.specific_type
   if (documentType) {
-    const docLabel = DOCUMENT_TYPES.find((d) => d.value === documentType)?.label ?? documentType
+    const productTypeSlug = filters.product_type || 'lesson_plans'
+    const specificTypes = specificTypesByProductType[productTypeSlug] ?? []
+    const docLabel = specificTypes.find((d) => d.value === documentType)?.label ?? documentType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     chips.push({
       key: 'document_type',
       label: 'Document type',
@@ -176,7 +168,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
   // Modalities filter (array of values -> labels)
   if (filters.modalities && Array.isArray(filters.modalities) && filters.modalities.length > 0) {
     const labels = filters.modalities
-      .map((v: string) => MODALITIES.find((m) => m.value === v)?.label ?? v)
+      .map((v: string) => modalities.find((m) => m.value === v)?.label ?? v)
       .join(', ')
     chips.push({
       key: 'modalities',
@@ -187,7 +179,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
 
   // Curriculum filter
   if (filters.curriculum) {
-    const curLabel = CURRICULA.find((c) => c.value === filters.curriculum)?.label ?? filters.curriculum
+    const curLabel = curricula.find((c) => c.value === filters.curriculum)?.label ?? filters.curriculum
     chips.push({
       key: 'curriculum',
       label: 'Curriculum',
@@ -208,7 +200,7 @@ export function FilterChips({ filters, onRemove, onClearAll, resultCount }: Filt
 
   // Language filter
   if (filters.language) {
-    const langLabel = LANGUAGES.find((l) => l.value === filters.language)?.label ?? filters.language
+    const langLabel = languages.find((l) => l.value === filters.language)?.label ?? filters.language
     chips.push({
       key: 'language',
       label: 'Language',

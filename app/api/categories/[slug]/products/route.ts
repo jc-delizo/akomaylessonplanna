@@ -27,18 +27,29 @@ export async function GET(
     let categoryType: 'product_type' | 'grade' | null = null
     let categoryValue: string | null = null
 
-    // Check if it's a product type
-    const productTypes: Record<string, string> = {
+    // Check if it's a product type - resolve from product_types table (dynamic) or fallback
+    const slugAsProductType = slug.replace(/-/g, '_')
+    const fallbackTypes: Record<string, string> = {
       'lesson-plans': 'lesson_plans',
       'exams': 'exams',
       'rpms': 'rpms',
       'posters': 'posters',
-      'tarpaulins': 'tarpaulins'
+      'tarpaulins': 'tarpaulins',
     }
-    
-    if (productTypes[slug]) {
+
+    const { data: ptRow } = await supabase
+      .from('product_types')
+      .select('slug')
+      .eq('slug', slugAsProductType)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (ptRow) {
       categoryType = 'product_type'
-      categoryValue = productTypes[slug]
+      categoryValue = ptRow.slug
+    } else if (fallbackTypes[slug]) {
+      categoryType = 'product_type'
+      categoryValue = fallbackTypes[slug]
     } else if (slug.startsWith('grade-')) {
       // It's a grade
       categoryType = 'grade'

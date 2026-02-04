@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      // Anonymous user - return trending products (Phase 2: strand, sped_level)
+      // Anonymous user - return trending products
       const anonSelect = `
           *,
           seller:users!products_seller_id_fkey(
@@ -40,10 +40,6 @@ export async function GET(request: NextRequest) {
             id,
             name,
             code
-          ),
-          sped_level:sped_levels!products_sped_level_id_fkey(
-            id,
-            name
           )
         `
       const { data: trending } = await supabase
@@ -112,10 +108,6 @@ export async function GET(request: NextRequest) {
               id,
               name,
               code
-            ),
-            sped_level:sped_levels!products_sped_level_id_fkey(
-              id,
-              name
             )
           `
         let query = supabase
@@ -185,10 +177,6 @@ export async function GET(request: NextRequest) {
                 id,
                 name,
                 code
-              ),
-              sped_level:sped_levels!products_sped_level_id_fkey(
-                id,
-                name
               )
             `
           const { data: sameGradeProducts } = await supabase
@@ -230,10 +218,6 @@ export async function GET(request: NextRequest) {
             id,
             name,
             code
-          ),
-          sped_level:sped_levels!products_sped_level_id_fkey(
-            id,
-            name
           )
         `
       const { data: trending } = await supabase

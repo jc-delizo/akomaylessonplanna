@@ -1,6 +1,6 @@
 # AKOMAYLESSONPLANNA - Implementation Status
 
-**Last Updated**: January 31, 2026  
+**Last Updated**: February 3, 2026  
 **Overall Progress**: 5 of 11 features complete (45%)
 
 ---
@@ -51,7 +51,7 @@
 **Status**: In Progress (January 2026)
 
 **Implemented:**
-- Profile edit Basic Info layout (Jan 2026): Single Profile card with Row 1 = Avatar left + First Name + Last Name; Row 2 = Username left + Bio; Teaching tab Grade Levels Taught before Subjects Taught; Class Type and SPED Learner Path single-select (radio) with tighter spacing; Grade Levels Taught hidden when SPED Non-Graded selected; all "Selected …" badge areas removed
+- Profile edit Basic Info layout (Jan 2026): Single Profile card with Row 1 = Avatar left + First Name + Last Name; Row 2 = Username left + Bio; Teaching tab Grade Levels Taught before Subjects Taught; Class Type card removed (Regular implicit; SPED removed Feb 2026); all "Selected …" badge areas removed
 - Profile edit UX (Jan 2026): Customization tab hidden when user role is buyer; Location accordion controlled value (no uncontrolled/controlled switch), auto-close after region selection
 
 **Summary**: [FEATURE-02-IMPLEMENTATION-SUMMARY.md](FEATURE-02-IMPLEMENTATION-SUMMARY.md)
@@ -206,7 +206,25 @@
 
 **Migration**: `012_feature_09_admin_panel.sql`
 
-**Summary**: [FEATURE-09-IMPLEMENTATION-SUMMARY.md](FEATURE-09-IMPLEMENTATION-SUMMARY.md) \| [Admin User Management](ADMIN-USER-MANAGEMENT-IMPLEMENTATION-SUMMARY.md)
+**Summary**: [FEATURE-09-IMPLEMENTATION-SUMMARY.md](FEATURE-09-IMPLEMENTATION-SUMMARY.md) \| [Admin User Management](ADMIN-USER-MANAGEMENT-IMPLEMENTATION-SUMMARY.md) \| [Dynamic Filters Admin](DYNAMIC-FILTERS-ADMIN-IMPLEMENTATION-SUMMARY.md)
+
+---
+
+### ✅ Dynamic Filters Admin (Platform Enhancement)
+
+**Status:** Consumer Updates Complete (February 2026)
+
+**Implemented:**
+- Migration 035: `product_types`, `product_type_specific_types`, `curricula`, `modalities`, `languages`, `teaching_frameworks`, `quarters` tables + seed
+- Extended `GET /api/lesson-plan-config` with full catalog (product types, specific types, curricula, modalities, languages, teaching frameworks, quarters)
+- Admin Catalog section (Super Admin only): CRUD for all dimensions, grade-subject and strand-subjects mappings
+- **Nested hierarchy mappings (Feb 2026):** Unified Hierarchy Mappings page at `/admin/catalog/hierarchy-mappings`; Grades 1–10 show subjects directly; Grades 11–12 expand to Core + Strands (STEM, HUMSS, etc.); expand/collapse all; per-section save. See [Tree View Mappings](TREE-VIEW-MAPPINGS-IMPLEMENTATION-SUMMARY.md).
+- Category API resolves product-type slugs from `product_types` table
+- **Consumer updates (Feb 2026):** Filter sidebar (already used API), filter chips, product new/edit forms, product detail layout now use config from API instead of hardcoded values
+
+**Remaining:** Deprecate hardcoded options in `lesson-plan-config.ts`; add cache invalidation on admin save
+
+**Summary**: [DYNAMIC-FILTERS-ADMIN-IMPLEMENTATION-SUMMARY.md](DYNAMIC-FILTERS-ADMIN-IMPLEMENTATION-SUMMARY.md) \| [Tree View Mappings](TREE-VIEW-MAPPINGS-IMPLEMENTATION-SUMMARY.md)
 
 ---
 
@@ -256,7 +274,7 @@
 
 ## Database Migrations Status
 
-**Total Migrations**: 33
+**Total Migrations**: 37
 
 | Migration # | Filename | Status | Feature |
 |-------------|----------|--------|---------|
@@ -293,6 +311,10 @@
 | 031 | `031_seller_analytics_cart_events.sql` | ✅ Applied | Feature 07 (Conversion Funnel – cart_add_events) |
 | 032 | `032_analytics_product_views_source.sql` | ✅ Applied | Feature 07 (Traffic Sources – product_views.source) |
 | 033 | `033_conversations_seller_create_policy.sql` | 🟡 Pending | Feature 11 (Messaging – sellers can create conversations) |
+| 034 | `034_remove_sped_from_database.sql` | 🟡 Pending | SPED removal – drop products.learner_path, products.sped_level_id, users.teaching_learner_paths, users.teaching_sped_level_ids, sped_levels table |
+| 035 | `035_dynamic_catalog.sql` | 🟡 Pending | Dynamic Filters Admin – product_types, product_type_specific_types, curricula, modalities, languages, teaching_frameworks, quarters |
+| 036 | `036_deped_curriculum_alignment.sql` | 🟡 Pending | DepEd MATATAG (K-8), K to 12 (9-10), SHS 2025-2026 (11-12); delete orphaned subjects |
+| 037 | `037_deped_curriculum_fix.sql` | 🟡 Pending | Fix for 036 if applied before curriculum correction |
 
 **Note**: Migrations are applied but not all features are fully implemented. See [DATABASE-MIGRATIONS-INDEX.md](docs/DATABASE-MIGRATIONS-INDEX.md) for details.
 
@@ -417,21 +439,18 @@
 
 ## Lesson Plan Phase 2 (Hierarchy) — Verification Checklist
 
-Phase 2 adds Class type (Regular/SPED), SPED path/level, SHS strand–subject mapping. See [LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md](docs/implementationplan/LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md) and [LESSON-PLAN-HIERARCHY-SPEC.md](docs/implementationplan/LESSON-PLAN-HIERARCHY-SPEC.md).
+Phase 2 adds SHS strand–subject mapping. **SPED removed (Feb 2026)** — only Regular class type supported. See [LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md](docs/implementationplan/LESSON-PLAN-PHASE-2-IMPLEMENTATION-GUIDE.md) and [LESSON-PLAN-HIERARCHY-SPEC.md](docs/implementationplan/LESSON-PLAN-HIERARCHY-SPEC.md).
 
-**Completed (Jan 2026):**
-- [x] Migration 022 applied; `sped_levels`, `sped_level_id`, nullable `grade_id`, SPED subjects, `strand_subjects` present.
+**Completed (Jan 2026, SPED removed Feb 2026):**
+- [x] Migration 022 applied; `strand_subjects` present. Migration 034 removes SPED: drops products.learner_path, products.sped_level_id, users.teaching_learner_paths, users.teaching_sped_level_ids, sped_levels table.
 - [x] All subject codes used in 022’s strand_subjects seed exist in `subjects` (see [supabase/scripts/verify_strand_subject_codes.sql](supabase/scripts/verify_strand_subject_codes.sql)).
 - [x] `/api/lesson-plan-config` documents response shape and references LESSON-PLAN-HIERARCHY-SPEC.md for the SHS rule.
-- [x] Filter sidebar: Class type → SPED path → Level / Strand → Grade → Subject; SHS specialized subjects only after strand (code verified).
-- [x] Browse: URL and search use `class_type`, `strand_id`, `learner_path`, `sped_level_id`; filters restore from URL.
-- [x] Product new/edit: hierarchy fields loaded and persisted; validation and clearing behavior match spec.
-- [x] Filter chips and search API include hierarchy params.
+- [x] Filter sidebar: Grade → Strand (G11/12) → Subject; SHS specialized subjects only after strand.
+- [x] Browse: URL and search use `grade_id`, `strand_id`, `subject_ids`; filters restore from URL.
+- [x] Product new/edit: grade_id required; strand required for G11/12; no SPED fields.
+- [x] Filter chips and search API include grade, strand, subject params.
 
-**Manual QA (when testing UI):**
-- Filter sidebar: SPED → Non-Graded → Level + SPED subject; Regular → G11/12 → Strand → core+specialized subjects (specialized only after strand).
-- Browse: Load with `?class_type=sped&learner_path=non_graded&sped_level_id=<id>` and confirm filters/results match.
-- Edit product: Confirm class_type, strand_id, learner_path, sped_level_id load and save; clearing class_type clears dependents.
+**Summary**: [SPED-REMOVAL-IMPLEMENTATION-SUMMARY.md](SPED-REMOVAL-IMPLEMENTATION-SUMMARY.md)
 
 ---
 
@@ -444,7 +463,7 @@ Phase B adds subject multiselect via `product_subjects` and `subject_ids`. See T
 - [x] Products API: POST/GET/PUT accept and return `subject_ids`; product_subjects written/replaced; `products.subject_id` = first of subject_ids.
 - [x] Search API: accepts `subject_ids` (comma-separated) or `subject_id`, filters by product_subjects and primary subject_id; cache key includes subjectIds.
 - [x] Product forms (new + edit): subject multiselect (checkboxes), `subject_ids` + `subject_id`, validation at least one, clear on hierarchy change, submit `subject_ids`.
-- [x] Filter sidebar: subject multiselect (checkboxes), `filters.subject_ids`; clear subject_ids/subject_id on class_type, grade_id, strand_id, learner_path change.
+- [x] Filter sidebar: subject multiselect (checkboxes), `filters.subject_ids`; clear subject_ids/subject_id on grade_id, strand_id change.
 - [x] Browse: parse `subject_ids` from URL (comma-separated), pass to search; on subject chip remove, clear subject_ids and subject_id.
 - [x] Filter chips: show "Subject(s)" chip when subject_ids/subject_id set; on remove clear both.
 - [x] Config: `SUBJECT_SELECTION === 'multi'` used in filter sidebar and product form labels.
@@ -455,13 +474,13 @@ Phase B adds subject multiselect via `product_subjects` and `subject_ids`. See T
 
 Aligns product loading and display with Phase 1/2 hierarchy so Regular and SPED products (including SPED non-graded with null `grade_id`) render correctly everywhere. Plan: Phase 1/2 Product Display Alignment (see PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md).
 
-**Completed (Jan 2026):**
-- [x] **APIs**: Search, product detail page fetch, product GET by ID, marketplace page (all product queries), related recommendations, personalized recommendations, recently-viewed — all include optional `strand` and `sped_level` joins. Products may have `grade === null`.
-- [x] **ProductCard**: `grade`/`subject` optional; `class_type`, `strand`, `sped_level` supported. Display line: "Level • Subject" (SPED), "Grade • Strand • Subject" (Regular G11/12), or "Grade • Subject"; null-safe. Alt text and seller name (first_name + last_name) handled.
-- [x] **ProductDetailLayout**: Breadcrumb and metadata bullets null-safe; SPED non-graded breadcrumb (Marketplace / SPED / Level / Subject / Title); Regular+strand shows Grade / Strand / Subject; metadata shows Learner path, Level, Strand where applicable.
-- [x] **Product detail page + generateMetadata**: `generateProductMetadata` accepts optional `strand`, `sped_level`, `class_type`; description uses "Level • Subject" or "Grade • Strand • Subject" when grade is null.
-- [x] **Step 5 (Review & Confirm)**: Categorization summary shows Class type, Learner path, Level (SPED non-graded), Strand (G11/12), and "N/A" for Grade when SPED non-graded.
-- [x] **Related / personalized / recently-viewed**: Product types relaxed (grade optional, strand/sped_level/class_type, seller first_name/last_name); APIs return strand/sped_level; components pass through to ProductCard.
+**Completed (Jan 2026, SPED removed Feb 2026):**
+- [x] **APIs**: Search, product detail page fetch, product GET by ID, marketplace page (all product queries), related recommendations, personalized recommendations, recently-viewed — all include optional `strand` join (sped_level removed).
+- [x] **ProductCard**: `grade`/`subject` optional; `strand` supported. Display line: "Grade • Strand • Subject" (G11/12) or "Grade • Subject"; null-safe. Alt text and seller name (first_name + last_name) handled.
+- [x] **ProductDetailLayout**: Breadcrumb and metadata bullets null-safe; Grade / Strand / Subject display; SPED removed.
+- [x] **Product detail page + generateMetadata**: `generateProductMetadata` accepts optional `strand`, `class_type`; description uses "Grade • Strand • Subject" or "Grade • Subject".
+- [x] **Step 5 (Review & Confirm)**: Categorization summary shows Grade, Strand (G11/12), Subjects.
+- [x] **Related / personalized / recently-viewed**: Product types relaxed (grade optional, strand/class_type, seller first_name/last_name); APIs return strand; components pass through to ProductCard.
 - [x] **Profile Teaching tab**: Unchanged (Option A per plan).
 
 **Summary**: [PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md](PHASE-1-2-PRODUCT-DISPLAY-ALIGNMENT-SUMMARY.md)

@@ -11,16 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
-import {
-  WEEKS_OPTIONS,
-  MODALITIES,
-  LANGUAGES,
-  CURRICULA,
-  DOCUMENT_TYPES,
-  CLASS_TYPES,
-  LEARNER_PATHS,
-  SUBJECT_SELECTION,
-} from '@/lib/config/lesson-plan-config'
+import { WEEKS_OPTIONS, SUBJECT_SELECTION } from '@/lib/config/lesson-plan-config'
 
 interface FilterSidebarProps {
   onFilterChange: (filters: Record<string, any>) => void
@@ -29,21 +20,6 @@ interface FilterSidebarProps {
   onClose?: () => void
   resultCount?: number
 }
-
-const PRODUCT_TYPES = [
-  { value: 'exams', label: 'Exams' },
-  { value: 'lesson_plans', label: 'Lesson Plans' },
-  { value: 'rpms', label: 'RPMS' },
-  { value: 'posters', label: 'Posters' },
-  { value: 'tarpaulins', label: 'Tarpaulins' },
-]
-
-const QUARTERS = [
-  { value: '1', label: 'Quarter 1' },
-  { value: '2', label: 'Quarter 2' },
-  { value: '3', label: 'Quarter 3' },
-  { value: '4', label: 'Quarter 4' },
-]
 
 const SORT_OPTIONS = [
   { value: 'relevance', label: 'Most Relevant' },
@@ -64,15 +40,20 @@ export function FilterSidebar({
   const [filters, setFilters] = useState<Record<string, any>>(initialFilters || {})
   const [hierarchy, setHierarchy] = useState<{
     regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
-    sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
   } | null>(null)
+  const [productTypes, setProductTypes] = useState<{ id: string; slug: string; label: string; sortOrder: number }[]>([])
+  const [specificTypesByProductType, setSpecificTypesByProductType] = useState<Record<string, { value: string; label: string; sortOrder: number }[]>>({})
+  const [curricula, setCurricula] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [modalities, setModalities] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [languages, setLanguages] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [quarters, setQuarters] = useState<{ value: string; label: string; sortOrder: number }[]>([])
 
   // Sync from URL/parent when initialFilters changes
   useEffect(() => {
     setFilters(initialFilters || {})
   }, [initialFilters])
 
-  // Fetch full hierarchy from lesson-plan-config
+  // Fetch full hierarchy and catalog from lesson-plan-config
   useEffect(() => {
     async function fetchHierarchy() {
       try {
@@ -81,8 +62,13 @@ export function FilterSidebar({
           const data = await response.json()
           setHierarchy({
             regular: { grades: data.regular.grades, strands: data.regular.strands, subjectsByGrade: data.regular.subjectsByGrade || {}, subjectsByStrand: data.regular.subjectsByStrand || {} },
-            sped: { levels: data.sped.levels, spedSubjects: data.sped.spedSubjects || [] },
           })
+          setProductTypes(data.productTypes || [])
+          setSpecificTypesByProductType(data.specificTypesByProductType || {})
+          setCurricula(data.curricula || [])
+          setModalities(data.modalities || [])
+          setLanguages(data.languages || [])
+          setQuarters(data.quarters || [])
         }
       } catch (err) {
         console.error('Error fetching lesson-plan config:', err)
@@ -93,17 +79,14 @@ export function FilterSidebar({
 
   const grades = hierarchy?.regular?.grades ?? []
   const strands = hierarchy?.regular?.strands ?? []
-  const isSpedNonGraded = filters.class_type === 'sped' && filters.learner_path === 'non_graded'
   const selectedGrade = grades.find((g) => g.id === filters.grade_id)
   const isGrade11Or12 = selectedGrade && (selectedGrade.name === 'Grade 11' || selectedGrade.name === 'Grade 12')
-  const subjects = isSpedNonGraded
-    ? (hierarchy?.sped?.spedSubjects ?? [])
-    : filters.grade_id
-      ? [
-          ...(hierarchy?.regular?.subjectsByGrade?.[filters.grade_id] ?? []),
-          ...(isGrade11Or12 && filters.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[filters.strand_id] ?? []) : []),
-        ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
-      : []
+  const subjects = filters.grade_id
+    ? [
+        ...(hierarchy?.regular?.subjectsByGrade?.[filters.grade_id] ?? []),
+        ...(isGrade11Or12 && filters.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[filters.strand_id] ?? []) : []),
+      ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+    : []
 
   const updateFilter = (key: string, value: any) => {
     const newFilters = { ...filters }
@@ -115,30 +98,6 @@ export function FilterSidebar({
       newFilters[key] = value
     }
 
-    if (key === 'class_type') {
-      delete newFilters.learner_path
-      delete newFilters.strand_id
-      delete newFilters.sped_level_id
-      delete newFilters.subject_id
-      delete newFilters.subject_ids
-      if (value === 'regular') {
-        delete newFilters.sped_level_id
-      }
-      if (value === 'sped') {
-        delete newFilters.strand_id
-      }
-    }
-    if (key === 'learner_path') {
-      if (value === 'graded') {
-        delete newFilters.sped_level_id
-        delete newFilters.subject_id
-        delete newFilters.subject_ids
-      } else if (value === 'non_graded') {
-        delete newFilters.grade_id
-        delete newFilters.subject_id
-        delete newFilters.subject_ids
-      }
-    }
     if (key === 'grade_id') {
       delete newFilters.subject_id
       delete newFilters.subject_ids
@@ -209,79 +168,6 @@ export function FilterSidebar({
       )}
 
       <div className="space-y-4">
-        {/* Class type (entry point) — Regular | SPED */}
-        <div>
-          <Label htmlFor="class_type" className="text-sm font-medium text-gray-700 mb-2 block">
-            Class type
-          </Label>
-          <Select
-            value={filters.class_type || 'all'}
-            onValueChange={(v) => updateFilter('class_type', v === 'all' ? null : v)}
-          >
-            <SelectTrigger id="class_type">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              {CLASS_TYPES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* SPED: Learner path — Graded (Inclusive) | Non-Graded (Transition) */}
-        {filters.class_type === 'sped' && (
-          <div>
-            <Label htmlFor="learner_path" className="text-sm font-medium text-gray-700 mb-2 block">
-              Learner path
-            </Label>
-            <Select
-              value={filters.learner_path || 'all'}
-              onValueChange={(v) => updateFilter('learner_path', v === 'all' ? null : v)}
-            >
-              <SelectTrigger id="learner_path">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                {LEARNER_PATHS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* SPED Non-Graded: Level */}
-        {isSpedNonGraded && (
-          <div>
-            <Label htmlFor="sped_level_id" className="text-sm font-medium text-gray-700 mb-2 block">
-              Level
-            </Label>
-            <Select
-              value={filters.sped_level_id || 'all'}
-              onValueChange={(v) => updateFilter('sped_level_id', v === 'all' ? null : v)}
-            >
-              <SelectTrigger id="sped_level_id">
-                <SelectValue placeholder="All levels" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All levels</SelectItem>
-                {(hierarchy?.sped?.levels ?? []).map((l) => (
-                  <SelectItem key={l.id} value={l.id}>
-                    {l.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
         {/* Product Type */}
         <div>
           <Label htmlFor="product_type" className="text-sm font-medium text-gray-700 mb-2 block">
@@ -299,8 +185,8 @@ export function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {PRODUCT_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
+              {productTypes.map((type) => (
+                <SelectItem key={type.slug} value={type.slug}>
                   {type.label}
                 </SelectItem>
               ))}
@@ -323,7 +209,7 @@ export function FilterSidebar({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All (DLL / DLP)</SelectItem>
-                {DOCUMENT_TYPES.map((d) => (
+                {(specificTypesByProductType['lesson_plans'] || []).map((d) => (
                   <SelectItem key={d.value} value={d.value}>
                     {d.label}
                   </SelectItem>
@@ -347,7 +233,7 @@ export function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All curricula</SelectItem>
-              {CURRICULA.map((c) => (
+              {curricula.map((c) => (
                 <SelectItem key={c.value} value={c.value}>
                   {c.label}
                 </SelectItem>
@@ -356,12 +242,11 @@ export function FilterSidebar({
           </Select>
         </div>
 
-        {/* Grade Level — when Regular or SPED Graded */}
-        {!isSpedNonGraded && (
-          <div>
-            <Label htmlFor="grade_id" className="text-sm font-medium text-gray-700 mb-2 block">
-              Grade Level
-            </Label>
+        {/* Grade Level */}
+        <div>
+          <Label htmlFor="grade_id" className="text-sm font-medium text-gray-700 mb-2 block">
+            Grade Level
+          </Label>
             <Select
               value={filters.grade_id || 'all'}
               onValueChange={(value) => updateFilter('grade_id', value === 'all' ? null : value)}
@@ -378,11 +263,10 @@ export function FilterSidebar({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        )}
+        </div>
 
-        {/* Strand — when Regular and Grade 11 or 12 */}
-        {filters.class_type === 'regular' && isGrade11Or12 && (
+        {/* Strand — when Grade 11 or 12 */}
+        {isGrade11Or12 && (
           <div>
             <Label htmlFor="strand_id" className="text-sm font-medium text-gray-700 mb-2 block">
               Strand
@@ -413,7 +297,7 @@ export function FilterSidebar({
           </Label>
           <div className="max-h-40 overflow-y-auto rounded-md border p-2 space-y-1.5">
             {subjects.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}</p>
+              <p className="text-xs text-muted-foreground">Select grade and strand first</p>
             ) : (
               subjects.map((subject) => {
                 const sidList = Array.isArray(filters.subject_ids) ? filters.subject_ids : (filters.subject_id ? [filters.subject_id] : [])
@@ -463,7 +347,7 @@ export function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Quarters</SelectItem>
-              {QUARTERS.map((q) => (
+              {quarters.map((q) => (
                 <SelectItem key={q.value} value={q.value}>
                   {q.label}
                 </SelectItem>
@@ -486,7 +370,7 @@ export function FilterSidebar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All languages</SelectItem>
-              {LANGUAGES.map((lang) => (
+              {languages.map((lang) => (
                 <SelectItem key={lang.value} value={lang.value}>
                   {lang.label}
                 </SelectItem>
@@ -501,7 +385,7 @@ export function FilterSidebar({
             Modality
           </Label>
           <div className="flex flex-wrap gap-2">
-            {MODALITIES.map((mod) => {
+            {modalities.map((mod) => {
               const selected = getSelectedModalities()
               const isSelected = selected.includes(mod.value)
               return (

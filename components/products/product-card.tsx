@@ -37,7 +37,6 @@ interface Product {
   subject?: { id: string; name: string; code?: string } | null
   class_type?: string | null
   strand?: { id: string; name: string; code?: string } | null
-  sped_level?: { id: string; name: string } | null
   subject_ids?: string[]
   quarter?: number
   weeks?: number[]
@@ -64,10 +63,7 @@ function productContextLine(product: Product): string {
     product.subject_ids && product.subject_ids.length > 1
       ? 'Multiple Subjects'
       : (product.subject?.name ?? '')
-  if (product.class_type === 'sped' && product.sped_level?.name) {
-    return [product.sped_level.name, subjectName].filter(Boolean).join(' • ')
-  }
-  if (product.class_type === 'regular' && product.strand?.name) {
+  if (product.strand?.name) {
     const gradeName = abbreviateGradeName(product.grade?.name ?? '')
     return [gradeName, product.strand.name, subjectName].filter(Boolean).join(' • ')
   }

@@ -180,11 +180,6 @@ export default function BrowseProductsPage() {
     delete newFilters[key]
     if (key === 'document_type') delete newFilters.specific_type
     if (key === 'subject_ids') delete newFilters.subject_id
-    if (key === 'class_type') {
-      delete newFilters.learner_path
-      delete newFilters.strand_id
-      delete newFilters.sped_level_id
-    }
     handleFilterChange(newFilters)
   }
 

@@ -29,7 +29,6 @@ interface Product {
   subject?: { id: string; name: string; code?: string } | null
   class_type?: string | null
   strand?: { id: string; name: string; code?: string } | null
-  sped_level?: { id: string; name: string } | null
 }
 
 interface PersonalizedRecommendationsProps {

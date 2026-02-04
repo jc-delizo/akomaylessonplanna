@@ -42,41 +42,7 @@ import {
   Calendar,
   FileCheck,
 } from 'lucide-react'
-import {
-  WEEKS_OPTIONS,
-  MODALITIES,
-  LANGUAGES,
-  CURRICULA,
-  TEACHING_FRAMEWORKS,
-  CLASS_TYPES,
-  LEARNER_PATHS,
-} from '@/lib/config/lesson-plan-config'
-
-const PRODUCT_TYPES = [
-  { value: 'exams', label: 'Exams' },
-  { value: 'lesson_plans', label: 'Lesson Plans' },
-  { value: 'rpms', label: 'RPMS' },
-  { value: 'posters', label: 'Posters' },
-  { value: 'tarpaulins', label: 'Tarpaulins' },
-]
-
-const SPECIFIC_TYPES: Record<string, Array<{ value: string; label: string }>> = {
-  exams: [
-    { value: 'periodical_exam', label: 'Periodical Exam' },
-    { value: 'summative_test', label: 'Summative Test' },
-  ],
-  lesson_plans: [
-    { value: 'dll', label: 'DLL (Daily Lesson Log)' },
-    { value: 'dlp', label: 'DLP (Detailed Lesson Plan)' },
-  ],
-}
-
-const QUARTERS = [
-  { value: '1', label: 'Quarter 1' },
-  { value: '2', label: 'Quarter 2' },
-  { value: '3', label: 'Quarter 3' },
-  { value: '4', label: 'Quarter 4' },
-]
+import { WEEKS_OPTIONS } from '@/lib/config/lesson-plan-config'
 
 const WEEKS = [...WEEKS_OPTIONS]
 
@@ -160,13 +126,10 @@ interface FormData {
   product_type: string
   specific_type: string
   description: string
-  class_type?: string
-  learner_path?: string
   grade_id: string
   subject_id: string
   subject_ids: string[]
   strand_id?: string
-  sped_level_id?: string
   quarter: string
   weeks: number[]
   language?: string
@@ -197,8 +160,14 @@ export default function EditProductPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null)
   const [hierarchy, setHierarchy] = useState<{
     regular: { grades: { id: string; name: string; sortOrder: number }[]; strands: { id: string; name: string; code: string }[]; subjectsByGrade: Record<string, { id: string; name: string; code: string }[]>; subjectsByStrand: Record<string, { id: string; name: string; code: string }[]> }
-    sped: { levels: { id: string; name: string; sortOrder: number }[]; spedSubjects: { id: string; name: string; code: string }[] }
   } | null>(null)
+  const [productTypes, setProductTypes] = useState<{ id: string; slug: string; label: string; sortOrder: number }[]>([])
+  const [specificTypesByProductType, setSpecificTypesByProductType] = useState<Record<string, { value: string; label: string; sortOrder: number }[]>>({})
+  const [curricula, setCurricula] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [modalities, setModalities] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [languages, setLanguages] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [quarters, setQuarters] = useState<{ value: string; label: string; sortOrder: number }[]>([])
+  const [teachingFrameworks, setTeachingFrameworks] = useState<{ value: string; label: string; sortOrder: number }[]>([])
   const [originalProduct, setOriginalProduct] = useState<any>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
@@ -258,13 +227,10 @@ export default function EditProductPage({ params }: PageProps) {
           product_type: product.product_type,
           specific_type: product.specific_type || '',
           description: product.description,
-          class_type: product.class_type || undefined,
-          learner_path: product.learner_path || undefined,
           grade_id: product.grade_id || '',
           subject_id: product.subject_id || '',
           subject_ids: Array.isArray(product.subject_ids) && product.subject_ids.length > 0 ? product.subject_ids : (product.subject_id ? [product.subject_id] : []),
           strand_id: product.strand_id || undefined,
-          sped_level_id: product.sped_level_id || undefined,
           quarter: product.quarter?.toString() || '',
           weeks: product.weeks || [],
           language: product.language || '',
@@ -292,7 +258,7 @@ export default function EditProductPage({ params }: PageProps) {
     fetchProduct()
   }, [productId])
 
-  // Fetch lesson-plan hierarchy
+  // Fetch lesson-plan hierarchy and catalog
   useEffect(() => {
     async function fetchHierarchy() {
       try {
@@ -301,8 +267,14 @@ export default function EditProductPage({ params }: PageProps) {
           const data = await response.json()
           setHierarchy({
             regular: { grades: data.regular.grades, strands: data.regular.strands, subjectsByGrade: data.regular.subjectsByGrade || {}, subjectsByStrand: data.regular.subjectsByStrand || {} },
-            sped: { levels: data.sped.levels, spedSubjects: data.sped.spedSubjects || [] },
           })
+          setProductTypes(data.productTypes ?? [])
+          setSpecificTypesByProductType(data.specificTypesByProductType ?? {})
+          setCurricula(data.curricula ?? [])
+          setModalities(data.modalities ?? [])
+          setLanguages(data.languages ?? [])
+          setQuarters(data.quarters ?? [])
+          setTeachingFrameworks(data.teachingFrameworks ?? [])
         }
       } catch (err) {
         console.error('Error fetching lesson-plan config:', err)
@@ -313,17 +285,14 @@ export default function EditProductPage({ params }: PageProps) {
 
   const grades = hierarchy?.regular?.grades ?? []
   const strands = hierarchy?.regular?.strands ?? []
-  const isSpedNonGraded = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
   const selectedGrade = grades.find((g) => g.id === formData.grade_id)
   const isGrade11Or12 = selectedGrade && (selectedGrade.name === 'Grade 11' || selectedGrade.name === 'Grade 12')
-  const subjects = isSpedNonGraded
-    ? (hierarchy?.sped?.spedSubjects ?? [])
-    : formData.grade_id
-      ? [
-          ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
-          ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
-        ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
-      : []
+  const subjects = formData.grade_id
+    ? [
+        ...(hierarchy?.regular?.subjectsByGrade?.[formData.grade_id] ?? []),
+        ...(isGrade11Or12 && formData.strand_id ? (hierarchy?.regular?.subjectsByStrand?.[formData.strand_id] ?? []) : []),
+      ].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i)
+    : []
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -348,20 +317,15 @@ export default function EditProductPage({ params }: PageProps) {
     if (!formData.price || formData.price < 50) {
       errors.price = 'Price must be at least ₱50'
     }
-    const isSpedNonGradedVal = formData.class_type === 'sped' && formData.learner_path === 'non_graded'
     const selectedGradeVal = grades.find((g) => g.id === formData.grade_id)
     const isG11Or12 = selectedGradeVal && (selectedGradeVal.name === 'Grade 11' || selectedGradeVal.name === 'Grade 12')
     const sidCount = (formData.subject_ids ?? []).length
     if (sidCount === 0 && !formData.subject_id) {
       errors.subject_ids = 'At least one subject is required'
     }
-    if (isSpedNonGradedVal) {
-      if (!formData.sped_level_id) errors.sped_level_id = 'Level is required for SPED Non-Graded'
-    } else {
-      if (!formData.grade_id) errors.grade_id = 'Grade level is required'
-      if (formData.class_type === 'regular' && isG11Or12 && !formData.strand_id) {
-        errors.strand_id = 'Strand is required for Grade 11/12'
-      }
+    if (!formData.grade_id) errors.grade_id = 'Grade level is required'
+    if (isG11Or12 && !formData.strand_id) {
+      errors.strand_id = 'Strand is required for Grade 11/12'
     }
     if (formData.file_urls.length === 0) {
       errors.file_urls = 'At least one file is required'
@@ -890,8 +854,8 @@ export default function EditProductPage({ params }: PageProps) {
                     <SelectValue placeholder="Select product type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRODUCT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
+                    {productTypes.map((type) => (
+                      <SelectItem key={type.slug} value={type.slug}>
                         {type.label}
                       </SelectItem>
                     ))}
@@ -899,7 +863,7 @@ export default function EditProductPage({ params }: PageProps) {
                 </Select>
               </div>
 
-              {formData.product_type && SPECIFIC_TYPES[formData.product_type] && (
+              {formData.product_type && (specificTypesByProductType[formData.product_type]?.length ?? 0) > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="specific_type" className="flex items-center gap-2">
                     <FileCheck className="h-4 w-4" />
@@ -913,7 +877,7 @@ export default function EditProductPage({ params }: PageProps) {
                       <SelectValue placeholder="Select specific type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SPECIFIC_TYPES[formData.product_type].map((type) => (
+                      {specificTypesByProductType[formData.product_type].map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
@@ -958,37 +922,6 @@ export default function EditProductPage({ params }: PageProps) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="class_type" className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Class type
-                </Label>
-                <Select
-                  value={formData.class_type || ''}
-                  onValueChange={(v) => {
-                    updateField('class_type', v || undefined)
-                    updateField('learner_path', undefined)
-                    updateField('strand_id', undefined)
-                    updateField('sped_level_id', undefined)
-                    updateField('grade_id', '')
-                    updateField('subject_ids', [])
-                    updateField('subject_id', '')
-                  }}
-                >
-                  <SelectTrigger id="class_type" className="w-full">
-                    <SelectValue placeholder="Select class type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CLASS_TYPES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {!isSpedNonGraded && (
-                <div className="space-y-2">
                   <Label htmlFor="grade_id" className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
                     Grade Level *
@@ -1020,68 +953,9 @@ export default function EditProductPage({ params }: PageProps) {
                     <p className="text-sm text-destructive">{validation.grade_id}</p>
                   )}
                 </div>
-              )}
             </div>
 
-            {formData.class_type === 'sped' && (
-              <div className="space-y-2">
-                <Label htmlFor="learner_path" className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Learner path
-                </Label>
-                <Select
-                  value={formData.learner_path || ''}
-                  onValueChange={(v) => {
-                    updateField('learner_path', v || undefined)
-                    updateField('sped_level_id', undefined)
-                    updateField('grade_id', '')
-                    updateField('subject_ids', [])
-                    updateField('subject_id', '')
-                    if (v === 'graded') updateField('strand_id', undefined)
-                  }}
-                >
-                  <SelectTrigger id="learner_path" className="w-full">
-                    <SelectValue placeholder="Select path" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEARNER_PATHS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {isSpedNonGraded && (
-              <div className="space-y-2">
-                <Label htmlFor="sped_level_id" className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Level *
-                </Label>
-                <Select
-                  value={formData.sped_level_id || ''}
-                  onValueChange={(v) => updateField('sped_level_id', v || undefined)}
-                >
-                  <SelectTrigger id="sped_level_id" className={`w-full ${validation.sped_level_id ? 'border-destructive' : ''}`}>
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(hierarchy?.sped?.levels ?? []).map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {validation.sped_level_id && (
-                  <p className="text-sm text-destructive">{validation.sped_level_id}</p>
-                )}
-              </div>
-            )}
-
-            {formData.class_type === 'regular' && isGrade11Or12 && (
+            {isGrade11Or12 && (
               <div className="space-y-2">
                 <Label htmlFor="strand_id" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
@@ -1120,7 +994,7 @@ export default function EditProductPage({ params }: PageProps) {
               <div id="subject_ids" className={`max-h-48 overflow-y-auto rounded-md border p-3 space-y-2 ${validation.subject_ids ? 'border-destructive' : ''}`}>
                 {subjects.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    {isSpedNonGraded ? 'Select level first' : 'Select grade and strand first'}
+                    Select grade and strand first
                   </p>
                 ) : (
                   subjects.map((subject) => {
@@ -1166,7 +1040,7 @@ export default function EditProductPage({ params }: PageProps) {
                   <SelectValue placeholder="Select quarter" />
                 </SelectTrigger>
                 <SelectContent>
-                  {QUARTERS.map((q) => (
+                  {quarters.map((q) => (
                     <SelectItem key={q.value} value={q.value}>
                       {q.label}
                     </SelectItem>
@@ -1226,7 +1100,7 @@ export default function EditProductPage({ params }: PageProps) {
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LANGUAGES.map((lang) => (
+                  {languages.map((lang) => (
                     <SelectItem key={lang.value} value={lang.value}>
                       {lang.label}
                     </SelectItem>
@@ -1249,7 +1123,7 @@ export default function EditProductPage({ params }: PageProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
-                  {CURRICULA.map((c) => (
+                  {curricula.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
                       {c.label}
                     </SelectItem>
@@ -1261,7 +1135,7 @@ export default function EditProductPage({ params }: PageProps) {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">Modality (optional)</Label>
               <div className="flex flex-wrap gap-2">
-                {MODALITIES.map((mod) => {
+                {modalities.map((mod) => {
                   const selected = formData.modalities ?? []
                   const isSelected = selected.includes(mod.value)
                   return (
@@ -1302,7 +1176,7 @@ export default function EditProductPage({ params }: PageProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">None</SelectItem>
-                    {TEACHING_FRAMEWORKS.map((f) => (
+                    {teachingFrameworks.map((f) => (
                       <SelectItem key={f.value} value={f.value}>
                         {f.label}
                       </SelectItem>

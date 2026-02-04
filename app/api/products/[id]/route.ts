@@ -65,10 +65,6 @@ export async function GET(
           id,
           name,
           code
-        ),
-        sped_level:sped_levels!products_sped_level_id_fkey(
-          id,
-          name
         )
       `)
       .eq('id', id)
@@ -279,10 +275,7 @@ export async function PUT(
     if (body.curriculum !== undefined) updateData.curriculum = body.curriculum || null
     if (body.modalities !== undefined) updateData.modalities = Array.isArray(body.modalities) && body.modalities.length > 0 ? body.modalities : null
     if (body.teaching_framework !== undefined) updateData.teaching_framework = body.teaching_framework || null
-    if (body.class_type !== undefined) updateData.class_type = body.class_type ?? null
-    if (body.learner_path !== undefined) updateData.learner_path = body.learner_path ?? null
     if (body.strand_id !== undefined) updateData.strand_id = body.strand_id ?? null
-    if (body.sped_level_id !== undefined) updateData.sped_level_id = body.sped_level_id ?? null
     if (body.grade_id !== undefined) updateData.grade_id = body.grade_id ?? null
     if (body.file_urls) updateData.file_urls = body.file_urls
     if (body.cover_image_url !== undefined) updateData.cover_image_url = body.cover_image_url
@@ -319,10 +312,6 @@ export async function PUT(
           id,
           name,
           code
-        ),
-        sped_level:sped_levels!products_sped_level_id_fkey(
-          id,
-          name
         )
       `)
       .single()

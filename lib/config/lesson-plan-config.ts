@@ -89,16 +89,9 @@ export const LESSON_PLAN_INVARIANTS = {
   quarter_is_single_select: true,
 } as const
 
-/** Class type (Regular vs SPED) — entry point for Phase 2 hierarchy */
+/** Class type — Regular only (SPED removed) */
 export const CLASS_TYPES = [
   { value: 'regular', label: 'Regular' },
-  { value: 'sped', label: 'SPED' },
-] as const
-
-/** SPED learner path: Graded (Inclusive) vs Non-Graded (Transition) */
-export const LEARNER_PATHS = [
-  { value: 'graded', label: 'Graded (Inclusive)' },
-  { value: 'non_graded', label: 'Non-Graded (Transition)' },
 ] as const
 
 export type DocumentTypeValue = (typeof DOCUMENT_TYPES)[number]['value']
@@ -107,12 +100,6 @@ export type ModalityValue = (typeof MODALITIES)[number]['value']
 export type TeachingFrameworkValue = (typeof TEACHING_FRAMEWORKS)[number]['value']
 export type LanguageValue = (typeof LANGUAGES)[number]['value']
 export type ClassTypeValue = (typeof CLASS_TYPES)[number]['value']
-export type LearnerPathValue = (typeof LEARNER_PATHS)[number]['value']
-
-/** SPED subject codes (Non-Graded); used by config API to identify SPED-only subjects */
-export const SPED_SUBJECT_CODES = [
-  'SPED_FA', 'SPED_DLS', 'SPED_SOCEM', 'SPED_MOTOR', 'SPED_COMM', 'SPED_VOC', 'SPED_ORIENT', 'SPED_REC',
-] as const
 
 /** Resolve value to label for product detail badges */
 export function getLanguageLabel(value: string | null | undefined): string | null {
@@ -144,12 +131,6 @@ export function getClassTypeLabel(value: string | null | undefined): string | nu
   if (!value) return null
   const found = CLASS_TYPES.find((c) => c.value === value)
   return found ? found.label : value
-}
-
-export function getLearnerPathLabel(value: string | null | undefined): string | null {
-  if (!value) return null
-  const found = LEARNER_PATHS.find((l) => l.value === value)
-  return found ? found.label : value.replace(/_/g, ' ')
 }
 
 export function getDocumentTypeLabel(value: string | null | undefined): string | null {

@@ -17,6 +17,7 @@ import {
   Settings,
   Menu,
   X,
+  FolderTree,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminAuth } from '@/lib/hooks/useAdminAuth'
@@ -88,6 +89,24 @@ const navItems: NavItem[] = [
     href: '/admin/financials',
     icon: DollarSign,
     permission: 'view_financials',
+  },
+  {
+    label: 'Catalog',
+    href: '/admin/catalog',
+    icon: FolderTree,
+    permission: 'view_catalog',
+    children: [
+      { label: 'Product Types', href: '/admin/catalog/product-types', icon: FolderTree },
+      { label: 'Grades', href: '/admin/catalog/grades', icon: FolderTree },
+      { label: 'Strands', href: '/admin/catalog/strands', icon: FolderTree },
+      { label: 'Subjects', href: '/admin/catalog/subjects', icon: FolderTree },
+      { label: 'Hierarchy Mappings', href: '/admin/catalog/hierarchy-mappings', icon: FolderTree },
+      { label: 'Curricula', href: '/admin/catalog/curricula', icon: FolderTree },
+      { label: 'Modalities', href: '/admin/catalog/modalities', icon: FolderTree },
+      { label: 'Languages', href: '/admin/catalog/languages', icon: FolderTree },
+      { label: 'Teaching Frameworks', href: '/admin/catalog/teaching-frameworks', icon: FolderTree },
+      { label: 'Quarters', href: '/admin/catalog/quarters', icon: FolderTree },
+    ],
   },
   {
     label: 'Announcements',
