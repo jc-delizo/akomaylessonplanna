@@ -13,6 +13,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "catalog:plan": "node scripts/seed-marketplace-catalog.mjs",
+    "catalog:seed": "node scripts/seed-marketplace-catalog.mjs --apply",
+    "catalog:verify": "node scripts/seed-marketplace-catalog.mjs --verify-only",
+    "catalog:verify-live": "node scripts/verify-live-marketplace.mjs",
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {

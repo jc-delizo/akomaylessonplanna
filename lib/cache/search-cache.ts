@@ -22,10 +22,11 @@ const CACHE_TTL_MS = 60 * 1000
 export function generateSearchCacheKey(
   query: string,
   filters: Record<string, any>,
-  sort: string
+  sort: string,
+  pagination: { page: number; limit: number }
 ): string {
   const filterString = JSON.stringify(filters)
-  return `search:${query}:${filterString}:${sort}`
+  return `search:${query}:${filterString}:${sort}:page=${pagination.page}:limit=${pagination.limit}`
 }
 
 /**

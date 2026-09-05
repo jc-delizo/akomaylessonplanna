@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       dateAdded,
       classType,
       strandId,
-    }, sort)
+    }, sort, { page, limit })
 
     const cachedResult = await getCachedSearchResults<any>(cacheKey)
     if (cachedResult) {
