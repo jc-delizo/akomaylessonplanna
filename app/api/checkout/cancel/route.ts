@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
     const body = await request.json()
     const { order_id } = body
 
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     // Verify order belongs to user
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('id, buyer_id, payment_status')
       .eq('id', order_id)
@@ -42,13 +44,14 @@ export async function POST(request: Request) {
     }
 
     // Update order status to failed
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from('orders')
       .update({
         payment_status: 'failed',
         updated_at: new Date().toISOString(),
       })
       .eq('id', order_id)
+      .eq('payment_status', 'pending')
 
     if (updateError) {
       console.error('Error cancelling order:', updateError)

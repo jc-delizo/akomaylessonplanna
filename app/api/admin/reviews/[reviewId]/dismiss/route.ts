@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requirePermission, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * PUT /api/admin/reviews/[reviewId]/dismiss
@@ -11,12 +11,12 @@ export async function PUT(
   { params }: { params: Promise<{ reviewId: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'dismiss_review_flags')
     if (!authResult.success) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { reviewId } = await params
 
     // Get review flag
@@ -36,8 +36,8 @@ export async function PUT(
       .from('review_flags')
       .update({
         status: 'dismissed',
-        dismissed_at: new Date().toISOString(),
-        dismissed_by: authResult.admin.userId,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: authResult.admin.userId,
       })
       .eq('id', flag.id)
 

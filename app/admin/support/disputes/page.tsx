@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getDisputesData } from '@/lib/utils/admin-disputes'
@@ -22,7 +23,7 @@ export default async function DisputesPage() {
     redirect('/')
   }
 
-  const { disputes } = await getDisputesData(supabase, { status: 'open' })
+  const { disputes } = await getDisputesData(createAdminClient(), { status: 'open' })
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {

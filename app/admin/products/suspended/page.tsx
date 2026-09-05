@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
@@ -9,7 +10,7 @@ import { Eye, RotateCcw } from 'lucide-react'
 import { getFullName, getInitials } from '@/lib/utils/profile'
 
 async function getSuspendedProducts(
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createAdminClient>
 ) {
   // Query suspended products directly from Supabase
   const { data: products, error } = await supabase
@@ -70,7 +71,7 @@ export default async function SuspendedProductsPage() {
     redirect('/')
   }
 
-  const suspendedProducts = await getSuspendedProducts(supabase)
+  const suspendedProducts = await getSuspendedProducts(createAdminClient())
 
   return (
     <div className="space-y-6">

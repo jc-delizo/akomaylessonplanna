@@ -12,6 +12,7 @@ import { GlareButton } from '@/components/ui/glare-button'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getGuestCartProductIds, clearGuestCart } from '@/lib/utils/guest-cart'
+import { getSafeRedirectPath } from '@/lib/utils/safe-redirect'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
@@ -62,7 +63,7 @@ export function LoginForm() {
       }
       
       // Redirect to return URL or default to marketplace
-      const redirectUrl = searchParams.get('redirect') || '/marketplace'
+      const redirectUrl = getSafeRedirectPath(searchParams.get('redirect'))
       router.push(redirectUrl)
       router.refresh()
     } catch (err: unknown) {

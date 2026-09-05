@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 import { getVerificationQueueData } from '@/lib/utils/admin-verification-queue'
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const result = await getVerificationQueueData(supabase)
     return NextResponse.json(result)
   } catch (error) {

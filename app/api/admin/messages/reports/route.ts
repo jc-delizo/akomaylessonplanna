@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        reporter:reporter_id(id, name, username, email),
-        reported_user:reported_user_id(id, name, username, email),
-        reviewed_by_user:reviewed_by(id, name, username),
+        reporter:reporter_id(id, first_name, last_name, username, email),
+        reported_user:reported_user_id(id, first_name, last_name, username, email),
+        reviewed_by_user:reviewed_by(id, first_name, last_name, username),
         conversation:conversation_id(id, buyer_id, seller_id),
         message:message_id(id, content, sender_id)
       `

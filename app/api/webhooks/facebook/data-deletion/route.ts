@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyFacebookSignedRequest } from '@/lib/security/facebook-signed-request'
+import { hashDeletionConfirmationCode } from '@/lib/security/data-deletion'
 import crypto from 'crypto'
 
 /**
@@ -26,45 +28,6 @@ import crypto from 'crypto'
  */
 
 /**
- * Verify and decode Facebook signed_request
- * This verifies the request is actually from Facebook
- */
-function verifySignedRequest(
-  signedRequest: string,
-  appSecret: string
-): { user_id: string } | null {
-  try {
-    const [signature, payload] = signedRequest.split('.', 2)
-
-    // Decode the payload
-    const decodedPayload = Buffer.from(
-      payload.replace(/-/g, '+').replace(/_/g, '/'),
-      'base64'
-    ).toString('utf-8')
-
-    // Verify the signature
-    const expectedSignature = crypto
-      .createHmac('sha256', appSecret)
-      .update(payload)
-      .digest('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-
-    if (signature !== expectedSignature) {
-      console.error('Invalid Facebook signed_request signature')
-      return null
-    }
-
-    const data = JSON.parse(decodedPayload)
-    return { user_id: data.user_id }
-  } catch (error) {
-    console.error('Error verifying signed_request:', error)
-    return null
-  }
-}
-
-/**
  * Find user by Facebook provider ID
  * 
  * We store the Facebook user ID in user_metadata during OAuth flow.
@@ -74,28 +37,31 @@ async function findUserByFacebookId(
   facebookUserId: string,
   supabase: ReturnType<typeof createAdminClient>
 ): Promise<string | null> {
-  try {
-    // Query auth.users where user_metadata contains the Facebook user ID
-    // We need to use the admin API to search user metadata
-    const { data: users, error } = await supabase.auth.admin.listUsers()
+  let page = 1
 
-    if (error) {
-      console.error('Error listing users:', error)
-      return null
-    }
+  while (page <= 100) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
 
-    // Find user with matching Facebook user ID in metadata
-    const user = users.users.find(
-      (u) => u.user_metadata?.provider_user_id === facebookUserId ||
-             u.user_metadata?.facebook_user_id === facebookUserId ||
-             u.app_metadata?.provider_user_id === facebookUserId
+    if (error) throw error
+
+    const user = data.users.find(
+      (candidate) =>
+        candidate.user_metadata?.provider_user_id === facebookUserId ||
+        candidate.user_metadata?.facebook_user_id === facebookUserId ||
+        candidate.app_metadata?.provider_user_id === facebookUserId ||
+        candidate.identities?.some(
+          (identity) =>
+            identity.provider === 'facebook' &&
+            (identity.id === facebookUserId || identity.identity_data?.sub === facebookUserId)
+        )
     )
 
-    return user?.id || null
-  } catch (error) {
-    console.error('Error finding user by Facebook ID:', error)
-    return null
+    if (user) return user.id
+    if (!data.nextPage) return null
+    page = data.nextPage
   }
+
+  throw new Error('Facebook identity lookup exceeded the pagination limit')
 }
 
 /**
@@ -114,6 +80,7 @@ async function deleteUserData(
 
     if (profileError) {
       console.error('Error deleting user profile:', profileError)
+      return false
     }
 
     // 2. Delete user from Supabase Auth
@@ -123,9 +90,6 @@ async function deleteUserData(
       console.error('Error deleting auth user:', authError)
       return false
     }
-
-    // 3. Note: Related data in other tables will be deleted via CASCADE
-    // (orders, products, messages, etc. should have ON DELETE CASCADE)
 
     return true
   } catch (error) {
@@ -159,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify and decode the signed request
-    const decoded = verifySignedRequest(signedRequest, facebookAppSecret)
+    const decoded = verifyFacebookSignedRequest(signedRequest, facebookAppSecret)
 
     if (!decoded || !decoded.user_id) {
       return NextResponse.json(
@@ -171,35 +135,63 @@ export async function POST(request: NextRequest) {
     const facebookUserId = decoded.user_id
     const supabase = createAdminClient()
 
-    // Find the user in our system by Facebook ID
-    const userId = await findUserByFacebookId(facebookUserId, supabase)
-
     // Generate a confirmation code
     const confirmationCode = crypto.randomBytes(16).toString('hex')
+    const confirmationCodeHash = hashDeletionConfirmationCode(confirmationCode)
 
-    if (userId) {
-      // User found - delete their data
-      const deleted = await deleteUserData(userId, supabase)
+    const { data: deletionRequest, error: requestError } = await supabase
+      .from('data_deletion_requests')
+      .insert({
+        provider: 'facebook',
+        confirmation_code_hash: confirmationCodeHash,
+        status: 'processing',
+      })
+      .select('id')
+      .single()
 
-      if (deleted) {
-        console.log(`Successfully deleted data for user ${userId} (Facebook ID: ${facebookUserId})`)
-      } else {
-        console.error(`Failed to delete data for user ${userId} (Facebook ID: ${facebookUserId})`)
-        // Still return confirmation URL even if deletion partially failed
-        // Facebook requires a confirmation URL regardless
+    if (requestError || !deletionRequest) {
+      console.error('Unable to persist Facebook deletion request:', requestError)
+      return NextResponse.json({ error: 'Unable to process deletion request' }, { status: 500 })
+    }
+
+    let status: 'completed' | 'failed' = 'completed'
+    let failureReason: string | null = null
+    let userId: string | null = null
+
+    try {
+      userId = await findUserByFacebookId(facebookUserId, supabase)
+      if (userId && !(await deleteUserData(userId, supabase))) {
+        status = 'failed'
+        failureReason = 'automatic_deletion_failed'
       }
-    } else {
-      // User not found - they may have already been deleted or never existed
-      console.log(`User not found for Facebook ID: ${facebookUserId}`)
-      // Still return confirmation URL as required by Facebook
+    } catch (error) {
+      console.error('Error resolving Facebook deletion request:', error)
+      status = 'failed'
+      failureReason = 'identity_lookup_failed'
+    }
+
+    const { error: statusError } = await supabase
+      .from('data_deletion_requests')
+      .update({
+        status,
+        failure_reason: failureReason,
+        completed_at: status === 'completed' ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', deletionRequest.id)
+
+    if (statusError) {
+      console.error('Unable to update Facebook deletion status:', statusError)
+      return NextResponse.json({ error: 'Unable to process deletion request' }, { status: 500 })
     }
 
     // Return confirmation URL as required by Facebook
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akomaylessonplanna.com'
-    const confirmationUrl = `${baseUrl}/deletion-status?id=${confirmationCode}`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+    const confirmationUrl = new URL('/deletion-status', baseUrl)
+    confirmationUrl.searchParams.set('id', confirmationCode)
 
     return NextResponse.json({
-      url: confirmationUrl,
+      url: confirmationUrl.toString(),
       confirmation_code: confirmationCode,
     })
   } catch (error) {

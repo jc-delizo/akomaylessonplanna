@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -80,12 +81,6 @@ export async function PUT(
       .eq('id', reviewId)
       .select(`
         *,
-        buyer:users!reviews_buyer_id_fkey(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
         product:products!reviews_product_id_fkey(
           id,
           title
@@ -101,15 +96,24 @@ export async function PUT(
       )
     }
 
+    // Email is private profile data, so fetch it only after ownership has been verified.
+    const { data: buyer } = await createAdminClient()
+      .from('users')
+      .select('id, first_name, last_name, email')
+      .eq('id', updatedReview.buyer_id)
+      .single()
+
+    const responseReview = { ...updatedReview, buyer }
+
     // Send notification to buyer (in-app + email)
     const { sendSellerResponseNotificationEmail } = await import('@/lib/emails/review-notifications')
     
-    if (updatedReview.buyer?.email) {
+    if (buyer?.email) {
       await sendSellerResponseNotificationEmail({
-        buyerName: updatedReview.buyer.first_name && updatedReview.buyer.last_name
-          ? `${updatedReview.buyer.first_name} ${updatedReview.buyer.last_name}`.trim()
-          : updatedReview.buyer.first_name || 'Teacher',
-        buyerEmail: updatedReview.buyer.email,
+        buyerName: buyer.first_name && buyer.last_name
+          ? `${buyer.first_name} ${buyer.last_name}`.trim()
+          : buyer.first_name || 'Teacher',
+        buyerEmail: buyer.email,
         sellerName: (user.user_metadata?.first_name && user.user_metadata?.last_name
           ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`.trim()
           : user.user_metadata?.first_name) || 'Seller',
@@ -120,7 +124,7 @@ export async function PUT(
       })
     }
 
-    return NextResponse.json({ review: updatedReview })
+    return NextResponse.json({ review: responseReview })
   } catch (error) {
     console.error('Error in PUT /api/reviews/[reviewId]/response:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

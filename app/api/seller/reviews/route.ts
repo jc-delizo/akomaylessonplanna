@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { isUuid, parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/seller/reviews
@@ -39,11 +40,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse query parameters
-    const productId = searchParams.get('product_id')
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!, 10) : null
+    const productIdParam = searchParams.get('product_id')
+    const productId = productIdParam && isUuid(productIdParam) ? productIdParam : null
+    const ratingParam = searchParams.get('rating')
+    const rating = ratingParam ? parseBoundedInteger(ratingParam, 0, 0, 5) : null
     const status = searchParams.get('status') || 'all'
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 20, 1, 100)
+    const offset = parseBoundedInteger(searchParams.get('offset'), 0, 0, 1_000_000)
 
     // Build query - first get seller's product IDs
     const { data: sellerProducts } = await supabase
@@ -90,7 +93,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('product_id', productId)
     }
 
-    if (rating) {
+    if (rating && rating >= 1) {
       query = query.eq('rating', rating)
     }
 

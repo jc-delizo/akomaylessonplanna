@@ -30,7 +30,7 @@ export async function GET() {
     // Get all completed order items for this seller
     const { data: orderItems, error: itemsError } = await supabase
       .from('order_items')
-      .select('net_earnings, created_at, product_id, order:orders!order_items_order_id_fkey(payment_status, completed_at)')
+      .select('net_earnings, created_at, product_id, order:orders!order_items_order_id_fkey(payment_status, refund_status, completed_at)')
       .eq('seller_id', user.id)
 
     if (itemsError) {
@@ -45,14 +45,13 @@ export async function GET() {
 
     let availableBalance = 0
     let pendingBalance = 0
-    let totalEarnings = 0
     let thisWeek = 0
     let thisMonth = 0
     let allTime = 0
 
     for (const item of orderItems || []) {
       const order = getRelation(item.order)
-      if (order?.payment_status === 'completed') {
+      if (order?.payment_status === 'completed' && order.refund_status !== 'approved') {
         const earnings = parseFloat(item.net_earnings.toString())
         allTime += earnings
 
@@ -79,11 +78,10 @@ export async function GET() {
       .from('withdrawal_requests')
       .select('amount, status')
       .eq('seller_id', user.id)
-      .in('status', ['processing', 'completed'])
+      .in('status', ['pending', 'processing', 'completed'])
 
     if (withdrawals) {
       const withdrawnAmount = withdrawals
-        .filter((w) => w.status === 'completed')
         .reduce((sum, w) => sum + parseFloat(w.amount.toString()), 0)
 
       availableBalance = Math.max(0, availableBalance - withdrawnAmount)
@@ -112,6 +110,7 @@ export async function GET() {
               (item) => {
                 const order = getRelation(item.order)
                 return order?.payment_status === 'completed' &&
+                  order.refund_status !== 'approved' &&
                   new Date(order.completed_at || item.created_at) >= monthDate &&
                   new Date(order.completed_at || item.created_at) <= monthEnd
               }
@@ -137,7 +136,7 @@ export async function GET() {
       orderItems
         ?.filter((item) => {
           const order = getRelation(item.order)
-          return order?.payment_status === 'completed'
+          return order?.payment_status === 'completed' && order.refund_status !== 'approved'
         })
         .forEach((item) => {
           const product = sellerProducts?.find((p) => p.id === item.product_id)
@@ -160,6 +159,7 @@ export async function GET() {
               (item) => {
                 const order = getRelation(item.order)
                 return order?.payment_status === 'completed' &&
+                  order.refund_status !== 'approved' &&
                   (order.completed_at || item.created_at).startsWith(dateStr)
               }
             )
@@ -184,6 +184,7 @@ export async function GET() {
             (item) => {
               const order = getRelation(item.order)
               return order?.payment_status === 'completed' &&
+                order.refund_status !== 'approved' &&
                 new Date(order.completed_at || item.created_at) >= currentMonthStart
             }
           )
@@ -203,6 +204,7 @@ export async function GET() {
             (item) => {
               const order = getRelation(item.order)
               return order?.payment_status === 'completed' &&
+                order.refund_status !== 'approved' &&
                 new Date(order.completed_at || item.created_at) >= lastMonthStart &&
                 new Date(order.completed_at || item.created_at) <= lastMonthEnd
             }

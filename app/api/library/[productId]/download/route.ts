@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -32,10 +33,18 @@ export async function GET(request: Request, { params }: RouteParams) {
       )
     }
 
-    // Get product file URLs
-    const { data: product, error: productError } = await supabase
+    // Entitlement is verified above; use the service client for product files
+    // so a later moderation status change does not revoke an existing purchase.
+    const adminClient = createAdminClient()
+    const { data: product, error: productError } = await adminClient
       .from('products')
-      .select('file_urls, title, watermark_enabled')
+      .select(`
+        file_urls,
+        title,
+        watermark_enabled,
+        cover_image_url,
+        seller:users!products_seller_id_fkey(first_name, last_name)
+      `)
       .eq('id', productId)
       .single()
 
@@ -48,13 +57,11 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     // Get user data for watermarking and email notifications
-    const { data: userData } = await supabase
+    const { data: userData } = await adminClient
       .from('users')
       .select('email, first_name, last_name')
       .eq('id', user.id)
       .single()
-
-    const userEmail = userData?.email || ''
 
     // TODO: Implement watermarking
     // For now, we'll return the first file URL
@@ -71,104 +78,62 @@ export async function GET(request: Request, { params }: RouteParams) {
     // Extract file path from URL (assuming Supabase Storage URL format)
     // Format: https://[project].supabase.co/storage/v1/object/public/product-files/[path]
     // Or: https://[project].supabase.co/storage/v1/object/sign/product-files/[path]
-    let storagePath = filePath
-    
-    // Try to extract path from URL
-    const urlMatch = filePath.match(/product-files\/(.+)/)
-    if (urlMatch) {
-      storagePath = urlMatch[1]
-    } else if (!filePath.startsWith('/')) {
-      // If it's already a path, use it directly
-      storagePath = filePath
+    let storagePath = filePath.replace(/^\/+/, '')
+    try {
+      const parsedFileUrl = new URL(filePath)
+      const bucketMarker = '/product-files/'
+      const markerIndex = parsedFileUrl.pathname.indexOf(bucketMarker)
+      if (markerIndex === -1) {
+        return NextResponse.json({ error: 'Product file is not configured correctly' }, { status: 500 })
+      }
+      storagePath = decodeURIComponent(
+        parsedFileUrl.pathname.slice(markerIndex + bucketMarker.length)
+      )
+    } catch {
+      // Stored values may already be bucket-relative paths.
     }
 
     // Get signed URL (valid for 1 hour)
     // Note: For private buckets, use createSignedUrl
     // For public buckets, you can use getPublicUrl
-    const { data: signedUrlData, error: urlError } = await supabase.storage
+    const { data: signedUrlData, error: urlError } = await adminClient.storage
       .from('product-files')
       .createSignedUrl(storagePath, 3600)
 
     if (urlError || !signedUrlData) {
       console.error('Error creating signed URL:', urlError)
-      // Fallback: try to use the URL directly if it's already a full URL
-      if (filePath.startsWith('http')) {
-        // Update download count before redirecting
-        await supabase
-          .from('user_library')
-          .update({
-            download_count: (libraryItem.download_count || 0) + 1,
-            last_downloaded_at: new Date().toISOString(),
-          })
-          .eq('id', libraryItem.id)
-
-        return NextResponse.redirect(filePath)
-      }
       return NextResponse.json({ error: 'Failed to generate download link' }, { status: 500 })
     }
 
-    // Update download count
-    await supabase
-      .from('user_library')
-      .update({
-        download_count: (libraryItem.download_count || 0) + 1,
-        last_downloaded_at: new Date().toISOString(),
-      })
-      .eq('id', libraryItem.id)
+    const { data: downloadRecords, error: downloadError } = await adminClient.rpc(
+      'record_library_download',
+      { p_user_id: user.id, p_product_id: productId }
+    )
+    const downloadRecord = Array.isArray(downloadRecords) ? downloadRecords[0] : null
 
-    // Also update order_item download count
-    if (libraryItem.order_item_id) {
-      const { data: orderItem } = await supabase
-        .from('order_items')
-        .select('id, download_count, product_id')
-        .eq('id', libraryItem.order_item_id)
-        .single()
+    if (downloadError || !downloadRecord) {
+      console.error('Error recording library download:', downloadError)
+      return NextResponse.json({ error: 'Failed to record download' }, { status: 500 })
+    }
 
-      if (orderItem) {
-        const newDownloadCount = (orderItem.download_count || 0) + 1
-        await supabase
-          .from('order_items')
-          .update({
-            download_count: newDownloadCount,
-            last_downloaded_at: new Date().toISOString(),
-          })
-          .eq('id', orderItem.id)
-
-        // Schedule review reminder email if this is the first download
-        // (24 hours after download)
-        if (newDownloadCount === 1) {
-          const { sendReviewReminderEmail } = await import('@/lib/emails/review-notifications')
-          
-          // Get product and seller info
-          const { data: productData } = await supabase
-            .from('products')
-            .select(`
-              id,
-              title,
-              cover_image_url,
-              seller:users!products_seller_id_fkey(
-                id,
-                first_name,
-                last_name
-              )
-            `)
-            .eq('id', orderItem.product_id)
-            .single()
-
-          if (productData && userData?.email) {
-            // Schedule email for 24 hours from now
-            // In production, this would be added to email_queue with send_after timestamp
-            const seller = Array.isArray(productData.seller) ? productData.seller[0] : productData.seller
-            await sendReviewReminderEmail({
-              buyerName: userData ? `${userData.first_name} ${userData.last_name || ''}`.trim() || 'Teacher' : 'Teacher',
-              buyerEmail: userData.email,
-              productTitle: productData.title,
-              productCoverImage: productData.cover_image_url || undefined,
-              sellerName: seller ? `${seller.first_name} ${seller.last_name || ''}`.trim() || 'Seller' : 'Seller',
-              reviewLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/library/${orderItem.product_id}/review`,
-            })
-          }
-        }
+    // Send the one-time review reminder without blocking a purchased download
+    // if the email provider is temporarily unavailable.
+    if (downloadRecord.new_download_count === 1 && userData?.email) {
+      try {
+        const { sendReviewReminderEmail } = await import('@/lib/emails/review-notifications')
+        const seller = Array.isArray(product.seller) ? product.seller[0] : product.seller
+        await sendReviewReminderEmail({
+          buyerName: `${userData.first_name} ${userData.last_name || ''}`.trim() || 'Teacher',
+          buyerEmail: userData.email,
+          productTitle: product.title,
+          productCoverImage: product.cover_image_url || undefined,
+          sellerName: seller
+            ? `${seller.first_name} ${seller.last_name || ''}`.trim() || 'Seller'
+            : 'Seller',
+          reviewLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/library/${productId}/review`,
+        })
+      } catch (emailError) {
+        console.error('Error scheduling review reminder:', emailError)
       }
     }
 

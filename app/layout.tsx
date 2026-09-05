@@ -19,8 +19,15 @@ const geistMono = Geist_Mono({
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://akomaylessonplanna.com";
 
 export const metadata: Metadata = {
-  title: "Ako may lesson plan na!",
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: "Ako may lesson plan na!",
+    template: "%s | Ako may lesson plan na!",
+  },
   description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: "Ako may lesson plan na!",
     description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
@@ -30,9 +37,10 @@ export const metadata: Metadata = {
     images: [{ url: `${baseUrl}/akomaylogo.png`, width: 192, height: 192, alt: "Ako may lesson plan na!" }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Ako may lesson plan na!",
     description: "A marketplace for educational resources including lesson plans, exams, RPMS, posters, and tarpaulins for teachers",
+    images: [{ url: '/akomaylogo.png', alt: 'Ako may lesson plan na!' }],
   },
   icons: {
     icon: [

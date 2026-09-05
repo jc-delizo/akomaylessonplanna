@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -17,20 +18,28 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
     const body = await request.json()
     const { reason, description } = body
 
-    if (!reason || !description || description.length < 20) {
+    if (
+      typeof reason !== 'string' ||
+      typeof description !== 'string' ||
+      reason.trim().length === 0 ||
+      reason.length > 100 ||
+      description.trim().length < 20 ||
+      description.length > 2000
+    ) {
       return NextResponse.json(
-        { error: 'Reason and description (minimum 20 characters) are required' },
+        { error: 'Reason and a description between 20 and 2000 characters are required' },
         { status: 400 }
       )
     }
 
     // Get order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
-      .select('id, buyer_id, created_at, refund_status')
+      .select('id, buyer_id, created_at, payment_status, refund_status')
       .eq('id', orderId)
       .single()
 
@@ -41,6 +50,13 @@ export async function POST(request: Request, { params }: RouteParams) {
     // Verify order belongs to user
     if (order.buyer_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (order.payment_status !== 'completed') {
+      return NextResponse.json(
+        { error: 'Only completed orders can be refunded' },
+        { status: 400 }
+      )
     }
 
     // Check if refund already requested
@@ -62,15 +78,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Update order with refund request
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from('orders')
       .update({
         refund_status: 'requested',
-        refund_reason: `${reason}: ${description}`,
+        refund_reason: `${reason.trim()}: ${description.trim()}`,
         refund_requested_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
+      .eq('refund_status', 'none')
 
     if (updateError) {
       console.error('Error updating order:', updateError)
@@ -78,7 +95,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Send notification to seller
-    const { data: orderItems } = await supabase
+    const { data: orderItems } = await adminClient
       .from('order_items')
       .select('seller_id, product_title')
       .eq('order_id', orderId)
@@ -86,13 +103,13 @@ export async function POST(request: Request, { params }: RouteParams) {
       .single()
 
     if (orderItems) {
-      const { data: seller } = await supabase
+      const { data: seller } = await adminClient
         .from('users')
         .select('email')
         .eq('id', orderItems.seller_id)
         .single()
 
-      const { data: buyer } = await supabase
+      const { data: buyer } = await adminClient
         .from('users')
         .select('first_name, last_name')
         .eq('id', user.id)

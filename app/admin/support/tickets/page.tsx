@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getSupportTicketsData } from '@/lib/utils/admin-support-tickets'
@@ -23,7 +24,7 @@ export default async function SupportTicketsPage() {
     redirect('/')
   }
 
-  const { tickets } = await getSupportTicketsData(supabase, { status: 'open' })
+  const { tickets } = await getSupportTicketsData(createAdminClient(), { status: 'open' })
 
   const getStatusBadge = (status: string) => {
     switch (status) {

@@ -189,7 +189,11 @@ export function useAuth() {
     if (!authData.user) throw new Error('Failed to create user')
 
     // Check if profile already exists (Hypothesis A)
-    const existingProfileCheck = await supabase.from('users').select('id,email,username').eq('id', authData.user.id).maybeSingle();
+    const existingProfileCheck = await supabase
+      .from('users')
+      .select('id, username')
+      .eq('id', authData.user.id)
+      .maybeSingle()
 
     // If profile already exists, skip insert (user may have signed up before)
     if (existingProfileCheck.data) {
@@ -208,7 +212,7 @@ export function useAuth() {
         email_verified: false, // No email verification for buyers
       };
 
-      const { data: insertData, error: profileError } = await supabase.from('users').insert(insertPayload).select()
+      const { error: profileError } = await supabase.from('users').insert(insertPayload)
 
       if (profileError) {
         // Check if it's a duplicate key error (profile might have been created by trigger or race condition)

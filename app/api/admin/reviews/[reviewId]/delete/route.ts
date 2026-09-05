@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requirePermission, logAdminAction } from '@/lib/middleware/admin-auth'
+import { hasPermission } from '@/lib/utils/admin-permissions'
 
 /**
  * DELETE /api/admin/reviews/[reviewId]
@@ -15,16 +16,20 @@ export async function DELETE(
   { params }: { params: Promise<{ reviewId: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'delete_reviews')
     if (!authResult.success) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { reviewId } = await params
     const searchParams = request.nextUrl.searchParams
     const banReviewer = searchParams.get('ban_reviewer') === 'true'
     const notifySeller = searchParams.get('notify_seller') !== 'false'
+
+    if (banReviewer && !hasPermission(authResult.admin.adminRole, 'ban_user')) {
+      return NextResponse.json({ error: 'Insufficient permission to ban reviewer' }, { status: 403 })
+    }
 
     // Get review
     const { data: review, error: reviewError } = await supabase
@@ -35,6 +40,21 @@ export async function DELETE(
 
     if (reviewError || !review) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    if (banReviewer) {
+      const { data: reviewer } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', review.buyer_id)
+        .single()
+
+      if (reviewer?.role === 'admin') {
+        return NextResponse.json(
+          { error: 'Administrator accounts cannot be banned through review moderation' },
+          { status: 403 }
+        )
+      }
     }
 
     // Delete review

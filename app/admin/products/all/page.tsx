@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
@@ -9,15 +10,16 @@ import { Search, Filter, Download, Eye } from 'lucide-react'
 import Image from 'next/image'
 import { getFullName, getInitials } from '@/lib/utils/profile'
 import { RefreshSocialProofButton } from '@/components/admin/refresh-social-proof-button'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 async function getAllProducts(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   searchParams: Record<string, string>
 ) {
-  const search = searchParams.search
+  const search = sanitizePostgrestSearchTerm(searchParams.search || '')
   const status = searchParams.status
-  const page = parseInt(searchParams.page || '1', 10)
-  const limit = parseInt(searchParams.limit || '50', 10)
+  const page = parseBoundedInteger(searchParams.page, 1, 1, 10_000)
+  const limit = parseBoundedInteger(searchParams.limit, 50, 1, 100)
   const offset = (page - 1) * limit
 
   // Build query
@@ -136,7 +138,7 @@ export default async function AllProductsPage({
   let products: any[] = []
   let pagination: any = null
   try {
-    const result = await getAllProducts(supabase, params)
+    const result = await getAllProducts(createAdminClient(), params)
     products = result.products || []
     pagination = result.pagination || null
   } catch (error) {

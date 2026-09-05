@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasValidBearerToken } from '@/lib/security/request-security'
 
 /**
  * POST /api/cron/update-social-proof
@@ -7,15 +8,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * Called by Vercel Cron (daily on Hobby, hourly on Pro).
  * Uses DB function refresh_product_social_proof() for a single round-trip.
  */
-export async function POST(request: NextRequest) {
+async function refreshSocialProof(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    if (!cronSecret) {
+      console.error('CRON_SECRET is not configured')
+      return NextResponse.json({ error: 'Cron is not configured' }, { status: 503 })
+    }
+
+    if (!hasValidBearerToken(request.headers.get('authorization'), cronSecret)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -46,32 +49,12 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/cron/update-social-proof
- * Light status check (e.g. last run not stored; returns OK if DB is reachable).
+ * Vercel Cron invokes routes with GET. POST remains available for manual runs.
  */
-export async function GET() {
-  try {
-    const supabase = createAdminClient()
-    const { count } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'published')
-      .not('computed_badge', 'is', null)
-      .limit(1)
+export async function GET(request: NextRequest) {
+  return refreshSocialProof(request)
+}
 
-    return NextResponse.json({
-      ok: true,
-      products_with_badge: count ?? 0,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    console.error('Error in GET /api/cron/update-social-proof:', error)
-    return NextResponse.json(
-      {
-        error: 'Status check failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
-  }
+export async function POST(request: NextRequest) {
+  return refreshSocialProof(request)
 }

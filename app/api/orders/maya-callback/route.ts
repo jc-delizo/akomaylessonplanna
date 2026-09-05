@@ -1,36 +1,54 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
+import {
+  hasValidHmacSha256Signature,
+  parseAmountToCentavos,
+} from '@/lib/security/request-security'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function POST(request: Request) {
   try {
-    // Verify webhook signature
     const signature = request.headers.get('x-maya-signature')
     const body = await request.text()
+    const webhookSecret = process.env.MAYA_WEBHOOK_SECRET
 
-    if (!signature) {
-      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    if (!webhookSecret) {
+      console.error('MAYA_WEBHOOK_SECRET is not configured')
+      return NextResponse.json({ error: 'Webhook is not configured' }, { status: 503 })
     }
 
-    // Verify signature (in production, use actual Maya webhook secret)
-    const webhookSecret = process.env.MAYA_WEBHOOK_SECRET || 'test-secret'
-    const hmac = crypto.createHmac('sha256', webhookSecret)
-    const digest = hmac.update(body).digest('hex')
-
-    // In production, use crypto.timingSafeEqual for constant-time comparison
-    if (signature !== digest) {
+    if (!hasValidHmacSha256Signature(body, signature, webhookSecret)) {
       console.error('Invalid webhook signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const data = JSON.parse(body)
+    let data: Record<string, unknown>
+    try {
+      data = JSON.parse(body) as Record<string, unknown>
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
+
     const { order_id, transaction_id, status, amount } = data
 
-    if (!order_id || !transaction_id || !status) {
+    if (
+      typeof order_id !== 'string' ||
+      !UUID_PATTERN.test(order_id) ||
+      typeof transaction_id !== 'string' ||
+      typeof status !== 'string' ||
+      transaction_id.trim().length === 0 ||
+      transaction_id.length > 100
+    ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const callbackAmount = parseAmountToCentavos(amount)
+    if (callbackAmount === null) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
 
     // Get order
     const { data: order, error: orderError } = await supabase
@@ -43,8 +61,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Verify amount matches
-    if (parseFloat(amount) !== parseFloat(order.total_amount.toString())) {
+    if (order.payment_method !== 'maya') {
+      return NextResponse.json({ error: 'Payment method mismatch' }, { status: 400 })
+    }
+
+    const orderAmount = parseAmountToCentavos(order.total_amount)
+    if (orderAmount === null || callbackAmount !== orderAmount) {
       console.error('Amount mismatch:', amount, order.total_amount)
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 })
     }
@@ -63,20 +85,23 @@ export async function POST(request: Request) {
       .single()
 
     if (status === 'success' || status === 'completed') {
-      // Update order status
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          payment_status: 'completed',
-          payment_reference: transaction_id,
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', order_id)
+      const { data: completed, error: updateError } = await supabase.rpc(
+        'complete_order_payment',
+        {
+          p_order_id: order_id,
+          p_payment_reference: transaction_id.trim(),
+          p_payment_method: 'maya',
+          p_total_amount: callbackAmount / 100,
+        }
+      )
 
       if (updateError) {
         console.error('Error updating order:', updateError)
         return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+      }
+
+      if (!completed) {
+        return NextResponse.json({ success: true, message: 'Already processed' })
       }
 
       // Get order items with IDs
@@ -88,31 +113,7 @@ export async function POST(request: Request) {
       if (itemsError) {
         console.error('Error fetching order items:', itemsError)
       } else if (orderItems && orderItems.length > 0) {
-        // Add products to user library
-        const libraryEntries = orderItems.map((item) => ({
-          user_id: order.buyer_id,
-          product_id: item.product_id,
-          order_item_id: item.id,
-        }))
-
-        const { error: libraryError } = await supabase
-          .from('user_library')
-          .insert(libraryEntries)
-
-        if (libraryError) {
-          console.error('Error adding to library:', libraryError)
-          // Don't fail the webhook, just log
-        }
-
-        // Update product sales counts
         for (const item of orderItems) {
-          const { error: salesError } = await supabase.rpc('increment_product_sales', {
-            product_id: item.product_id,
-          })
-          if (salesError) {
-            console.error('Error incrementing sales:', salesError)
-          }
-
           // Invalidate seller dashboard cache
           const { invalidateSellerDashboardCache } = await import('@/lib/utils/cache-invalidation')
           await invalidateSellerDashboardCache(item.seller_id).catch((err) => {
@@ -211,17 +212,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true })
     } else if (status === 'failed' || status === 'cancelled') {
       // Update order status to failed
-      const { error: updateError } = await supabase
+      const { data: updatedOrder, error: updateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'failed',
           updated_at: new Date().toISOString(),
         })
         .eq('id', order_id)
+        .eq('payment_status', 'pending')
+        .select('id')
+        .maybeSingle()
 
       if (updateError) {
         console.error('Error updating order:', updateError)
         return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+      }
+
+      if (!updatedOrder) {
+        return NextResponse.json({ success: true, message: 'Already processed' })
       }
 
       // Send payment failed email
@@ -237,7 +245,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ success: true, message: 'Status not processed' })
+    return NextResponse.json({ error: 'Unsupported payment status' }, { status: 400 })
   } catch (error) {
     console.error('Error in POST /api/orders/maya-callback:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

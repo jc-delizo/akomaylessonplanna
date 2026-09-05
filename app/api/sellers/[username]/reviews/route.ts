@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/sellers/[username]/reviews
@@ -29,8 +30,7 @@ export async function GET(
     }
 
     // Parse query parameters
-    const limitParam = searchParams.get('limit')
-    const limit = limitParam ? parseInt(limitParam, 10) : null
+    const limit = parseBoundedInteger(searchParams.get('limit'), 50, 1, 100)
 
     // Get products by this seller
     // For now, return empty since products table doesn't exist yet
@@ -73,9 +73,7 @@ export async function GET(
       .eq('is_flagged', false)
       .order('created_at', { ascending: false })
 
-    if (limit) {
-      query = query.limit(limit)
-    }
+    query = query.limit(limit)
 
     const { data: reviews, error: reviewsError } = await query
 

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { toPromise } from '@/lib/utils/supabase-promise'
+import { sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 /**
  * POST /api/search/track
@@ -17,9 +18,12 @@ import { toPromise } from '@/lib/utils/supabase-promise'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { query } = body
+    const { query } = body as Record<string, unknown>
+    const normalizedQuery = typeof query === 'string'
+      ? sanitizePostgrestSearchTerm(query)
+      : ''
 
-    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+    if (!normalizedQuery) {
       return NextResponse.json(
         { error: 'Query is required' },
         { status: 400 }
@@ -32,13 +36,13 @@ export async function POST(request: NextRequest) {
     // Track in search_queries table (for popular searches)
     try {
       await toPromise(adminClient.rpc('upsert_search_query', {
-        p_query_text: query.trim()
+        p_query_text: normalizedQuery
       })).catch(async () => {
         // Fallback: Direct upsert if RPC doesn't exist
         await adminClient
           .from('search_queries')
           .upsert({
-            query_text: query.trim(),
+            query_text: normalizedQuery,
             search_count: 1,
             last_searched_at: new Date().toISOString()
           }, {
@@ -58,14 +62,14 @@ export async function POST(request: NextRequest) {
       if (user) {
         await toPromise(supabase.rpc('upsert_user_search_history', {
           p_user_id: user.id,
-          p_query_text: query.trim()
+          p_query_text: normalizedQuery
         })).catch(async () => {
           // Fallback: Direct upsert if RPC doesn't exist
           await supabase
             .from('user_search_history')
             .upsert({
               user_id: user.id,
-              query_text: query.trim(),
+              query_text: normalizedQuery,
               searched_at: new Date().toISOString()
             }, {
               onConflict: 'user_id,query_text',

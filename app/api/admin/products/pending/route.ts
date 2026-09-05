@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get pending products (oldest first)
     const { data: pendingProducts, error } = await supabase
@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           created_at,

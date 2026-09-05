@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin, requirePermission } from '@/lib/middleware/admin-auth'
 import { createSystemAnnouncement } from '@/lib/notifications/notification-triggers'
 import { getAnnouncementsData } from '@/lib/utils/admin-announcements'
 
@@ -11,27 +12,9 @@ import { getAnnouncementsData } from '@/lib/utils/admin-announcements'
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify user is admin
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (userData?.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden. Admin access required' },
-        { status: 403 }
-      )
+    const authResult = await requirePermission(request, 'create_announcements')
+    if (!authResult.success) {
+      return authResult.response
     }
 
     const body = await request.json()
@@ -73,29 +56,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await requireAdmin(request)
+    if (!authResult.success) {
+      return authResult.response
     }
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (userData?.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden. Admin access required' },
-        { status: 403 }
-      )
-    }
-
-    const result = await getAnnouncementsData(supabase)
+    const result = await getAnnouncementsData(createAdminClient())
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error in GET /api/admin/announcements:', error)

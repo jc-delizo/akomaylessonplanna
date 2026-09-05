@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 /**
  * GET /api/search/suggestions
@@ -18,7 +19,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q') || ''
+    const query = sanitizePostgrestSearchTerm(searchParams.get('q') || '')
 
     if (!query || query.length < 2) {
       return NextResponse.json({ suggestions: [] })

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getWithdrawalsData } from '@/lib/utils/admin-withdrawals'
@@ -23,7 +24,7 @@ export default async function WithdrawalsPage() {
     redirect('/admin')
   }
 
-  const { withdrawals } = await getWithdrawalsData(supabase, { status: 'pending' })
+  const { withdrawals } = await getWithdrawalsData(createAdminClient(), { status: 'pending' })
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-PH', {

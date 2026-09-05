@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { UserProfileCard } from '@/components/profiles/user-profile-card'
 import type { User } from '@/lib/utils/profile'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 interface SearchParams {
   search?: string
@@ -45,22 +46,54 @@ export default async function SellersPage({ searchParams }: PageProps) {
   const tier = params.tier
   const rating = params.rating
   const sort = params.sort || 'relevance'
-  const page = parseInt(params.page || '1', 10)
+  const page = parseBoundedInteger(params.page, 1, 1, 10_000)
   const limit = 24
   const offset = (page - 1) * limit
+  const safeSearch = sanitizePostgrestSearchTerm(search)
+  const safeLocation = sanitizePostgrestSearchTerm(location || '')
 
   // Build query
   let query = supabase
     .from('users')
-    .select('*', { count: 'exact' })
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      display_name,
+      username,
+      avatar_url,
+      bio,
+      subjects_taught,
+      grade_levels_taught,
+      location_city,
+      location_region,
+      social_links,
+      banner_url,
+      custom_accent_color,
+      profile_completion_percent,
+      followers_count,
+      response_time_hours,
+      role,
+      is_verified_teacher,
+      can_sell,
+      subscription_tier,
+      is_pioneer,
+      avg_rating,
+      reviews_count,
+      created_at,
+      updated_at
+      `,
+      { count: 'exact' }
+    )
     .eq('role', 'seller') // Only sellers
     .eq('can_sell', true) // Only those who can sell
 
   // Apply search filter
-  if (search) {
-    // Search in name, username, or bio
+  if (safeSearch) {
+    // Search in public display fields.
     query = query.or(
-      `name.ilike.%${search}%,username.ilike.%${search}%,bio.ilike.%${search}%`
+      `first_name.ilike.%${safeSearch}%,last_name.ilike.%${safeSearch}%,display_name.ilike.%${safeSearch}%,username.ilike.%${safeSearch}%,bio.ilike.%${safeSearch}%`
     )
   }
 
@@ -75,8 +108,10 @@ export default async function SellersPage({ searchParams }: PageProps) {
   }
 
   // Apply location filter
-  if (location) {
-    query = query.or(`location_city.ilike.%${location}%,location_region.ilike.%${location}%`)
+  if (safeLocation) {
+    query = query.or(
+      `location_city.ilike.%${safeLocation}%,location_region.ilike.%${safeLocation}%`
+    )
   }
 
   // Apply tier filter

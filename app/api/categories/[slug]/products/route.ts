@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/categories/[slug]/products
@@ -19,8 +20,8 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const supabase = await createClient()
 
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '24')
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 24, 1, 100)
     const sort = searchParams.get('sort') || 'newest'
 
     // Determine category type from slug
@@ -80,7 +81,8 @@ export async function GET(
         *,
         seller:users!products_seller_id_fkey(
           id,
-          name,
+          first_name,
+          last_name,
           username,
           avatar_url,
           is_verified_teacher

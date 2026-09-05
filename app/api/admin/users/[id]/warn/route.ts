@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { hasPermission } from '@/lib/utils/admin-permissions'

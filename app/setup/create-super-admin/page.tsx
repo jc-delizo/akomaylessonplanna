@@ -165,9 +165,10 @@ export default function CreateSuperAdminPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                minLength={12}
               />
               <p className="text-xs text-muted-foreground">
-                If left blank, a secure random password will be generated
+                Use at least 12 characters, or leave blank to generate a secure password
               </p>
             </div>
 

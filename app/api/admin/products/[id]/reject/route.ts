@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requirePermission, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * POST /api/admin/products/[id]/reject
@@ -15,18 +15,27 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'approve_products')
     if (!authResult.success) {
       return authResult.response
     }
 
     const { id: productId } = await params
-    const supabase = await createClient()
-    const body = await request.json()
-    const { reason, allow_resubmission = true } = body
+    const supabase = createAdminClient()
+    const body: unknown = await request.json()
+    const input = body && typeof body === 'object' ? body as Record<string, unknown> : {}
+    const reason = typeof input.reason === 'string' ? input.reason.trim() : ''
+    const allowResubmission = input.allow_resubmission ?? true
 
-    if (!reason || reason.trim().length === 0) {
+    if (!reason || reason.length > 2000) {
       return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 })
+    }
+
+    if (allowResubmission !== true) {
+      return NextResponse.json(
+        { error: 'Permanent rejection is not supported; suspend the product instead' },
+        { status: 400 }
+      )
     }
 
     // Get current product
@@ -52,26 +61,16 @@ export async function POST(
       .from('products')
       .update({
         status: 'rejected',
-        rejection_reason: reason.trim(),
-        // Note: allow_resubmission is tracked in product_updates table
+        rejection_reason: reason,
       })
       .eq('id', productId)
+      .eq('status', 'pending_review')
       .select()
       .single()
 
     if (updateError) {
       console.error('Error rejecting product:', updateError)
       return NextResponse.json({ error: 'Failed to reject product' }, { status: 500 })
-    }
-
-    // Create product update record for resubmission tracking
-    if (allow_resubmission) {
-      await supabase.from('product_updates').insert({
-        product_id: productId,
-        update_type: 'rejection',
-        notes: reason.trim(),
-        created_by: product.seller_id,
-      })
     }
 
     // Log action
@@ -82,10 +81,10 @@ export async function POST(
       productId,
       {
         status: { from: 'pending_review', to: 'rejected' },
-        reason: reason.trim(),
-        allow_resubmission,
+        reason,
+        allow_resubmission: true,
       },
-      reason.trim()
+      reason
     )
 
     // Send email notification to seller with feedback
@@ -95,7 +94,7 @@ export async function POST(
         product.seller_id,
         productId,
         product.title,
-        reason.trim()
+        reason
       )
     } catch (emailError) {
       console.error('Error sending product rejected email:', emailError)
@@ -105,9 +104,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       product: updatedProduct,
-      message: allow_resubmission
-        ? 'Product rejected. Seller can resubmit.'
-        : 'Product rejected permanently.',
+      message: 'Product rejected. Seller can resubmit.',
     })
   } catch (error) {
     console.error('Error in POST /api/admin/products/[id]/reject:', error)

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { getAdminsData } from '@/lib/utils/admin-admins'
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const result = await getAdminsData(supabase)
     return NextResponse.json(result)
   } catch (error) {
@@ -40,27 +40,48 @@ export async function POST(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
-    const body = await request.json()
-    const { email, name, admin_role, send_invite_email = true } = body
+    const supabase = createAdminClient()
+    const body: unknown = await request.json()
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
 
-    if (!email || !name || !admin_role) {
+    const input = body as Record<string, unknown>
+    const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : ''
+    const name = typeof input.name === 'string' ? input.name.trim() : ''
+    const adminRole = typeof input.admin_role === 'string' ? input.admin_role : ''
+    const sendInviteEmail = input.send_invite_email ?? true
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
       return NextResponse.json(
-        { error: 'Email, name, and admin_role are required' },
+        { error: 'A valid email is required' },
         { status: 400 }
       )
     }
 
-    if (!['super_admin', 'moderator', 'content_manager'].includes(admin_role)) {
+    if (!name || name.length > 200) {
+      return NextResponse.json({ error: 'Name must be between 1 and 200 characters' }, { status: 400 })
+    }
+
+    if (!['super_admin', 'moderator', 'content_manager'].includes(adminRole)) {
       return NextResponse.json({ error: 'Invalid admin role' }, { status: 400 })
     }
 
+    if (typeof sendInviteEmail !== 'boolean') {
+      return NextResponse.json({ error: 'send_invite_email must be a boolean' }, { status: 400 })
+    }
+
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: lookupError } = await supabase
       .from('users')
       .select('id, role')
       .eq('email', email)
-      .single()
+      .maybeSingle()
+
+    if (lookupError) {
+      console.error('Error checking existing admin account:', lookupError)
+      return NextResponse.json({ error: 'Failed to verify admin account' }, { status: 500 })
+    }
 
     if (existingUser) {
       if (existingUser.role === 'admin') {
@@ -71,7 +92,7 @@ export async function POST(request: NextRequest) {
         .from('users')
         .update({
           role: 'admin',
-          admin_role,
+          admin_role: adminRole,
         })
         .eq('id', existingUser.id)
         .select()
@@ -90,37 +111,86 @@ export async function POST(request: NextRequest) {
         existingUser.id,
         {
           role: { from: existingUser.role, to: 'admin' },
-          admin_role,
+          admin_role: adminRole,
         },
-        `Admin account created: ${admin_role}`
+        `Admin account created: ${adminRole}`
       )
 
-      // TODO: Send invite email if send_invite_email is true
-
-      return NextResponse.json({ success: true, admin: updatedUser })
+      return NextResponse.json({
+        success: true,
+        admin: updatedUser,
+        invitation_sent: false,
+        message: 'Existing user promoted to administrator',
+      })
     }
 
-    // Create new admin user (invite-only - they'll need to set password via email)
-    // For now, create user with temporary password that must be changed
-    // In production, use Supabase Auth admin API to send invite
+    if (!sendInviteEmail) {
+      return NextResponse.json(
+        { error: 'New administrators must be provisioned through a verified email invitation' },
+        { status: 400 }
+      )
+    }
 
-    // Log action
+    const [firstName, ...lastNameParts] = name.split(/\s+/)
+    const lastName = lastNameParts.join(' ')
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin).replace(/\/$/, '')
+
+    const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+      email,
+      {
+        redirectTo: `${appUrl}/reset-password`,
+        data: {
+          name,
+          first_name: firstName,
+          last_name: lastName,
+        },
+      }
+    )
+
+    if (inviteError || !invited.user) {
+      console.error('Error inviting administrator:', inviteError)
+      return NextResponse.json(
+        { error: 'Failed to send administrator invitation' },
+        { status: 502 }
+      )
+    }
+
+    const { data: invitedAdmin, error: profileError } = await supabase
+      .from('users')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        role: 'admin',
+        admin_role: adminRole,
+      })
+      .eq('id', invited.user.id)
+      .select('id, first_name, last_name, email, avatar_url, admin_role, created_at, updated_at')
+      .single()
+
+    if (profileError || !invitedAdmin) {
+      console.error('Error promoting invited administrator:', profileError)
+      await supabase.auth.admin.deleteUser(invited.user.id)
+      return NextResponse.json(
+        { error: 'Invitation was rolled back because the administrator profile could not be created' },
+        { status: 500 }
+      )
+    }
+
     await logAdminAction(
       authResult.admin.userId,
       'admin_invited',
       'user',
-      email,
-      { admin_role, email, name },
-      `Admin invitation sent: ${admin_role}`
+      invited.user.id,
+      { admin_role: adminRole, email, name },
+      `Admin invitation sent: ${adminRole}`
     )
-
-    // TODO: Send invite email via Supabase Auth
 
     return NextResponse.json({
       success: true,
       message: 'Admin invitation sent',
-      admin: { email, name, admin_role },
-    })
+      invitation_sent: true,
+      admin: invitedAdmin,
+    }, { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/admin/admins:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

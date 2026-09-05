@@ -19,6 +19,7 @@ const CurvedLoop = ({
   const pathRef = useRef(null);
   const [spacing, setSpacing] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const uid = useId();
   const pathId = `curve-${uid}`;
   const pathD = `M-100,40 Q500,${40 + curveAmount} 1540,40`;
@@ -74,6 +75,7 @@ const CurvedLoop = ({
   const onPointerDown = e => {
     if (!interactive) return;
     dragRef.current = true;
+    setDragging(true);
     lastXRef.current = e.clientX;
     velRef.current = 0;
     e.target.setPointerCapture(e.pointerId);
@@ -99,10 +101,11 @@ const CurvedLoop = ({
   const endDrag = () => {
     if (!interactive) return;
     dragRef.current = false;
+    setDragging(false);
     dirRef.current = velRef.current > 0 ? 'right' : 'left';
   };
 
-  const cursorStyle = interactive ? (dragRef.current ? 'grabbing' : 'grab') : 'auto';
+  const cursorStyle = interactive ? (dragging ? 'grabbing' : 'grab') : 'auto';
 
   return (
     <div

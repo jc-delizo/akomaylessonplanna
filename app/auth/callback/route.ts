@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getSafeRedirectPath } from '@/lib/utils/safe-redirect'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
-  const next = requestUrl.searchParams.get('next') || '/marketplace'
+  const next = getSafeRedirectPath(requestUrl.searchParams.get('next'))
 
   // Handle OAuth errors from provider
   if (error) {

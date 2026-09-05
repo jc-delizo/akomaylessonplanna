@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requirePermission, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * POST /api/admin/products/[id]/approve
@@ -11,13 +11,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'approve_products')
     if (!authResult.success) {
       return authResult.response
     }
 
     const { id: productId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get current product
     const { data: product, error: productError } = await supabase
@@ -45,6 +45,7 @@ export async function POST(
         published_at: new Date().toISOString(),
       })
       .eq('id', productId)
+      .eq('status', 'pending_review')
       .select()
       .single()
 

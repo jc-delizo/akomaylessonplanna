@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * PUT /api/admin/users/[id]/edit
@@ -20,13 +20,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requireSuperAdmin(request)
     if (!authResult.success) {
       return authResult.response
     }
 
     const { id: userId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
 
     // Get current user data for audit log

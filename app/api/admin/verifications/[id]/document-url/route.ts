@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
@@ -19,7 +18,7 @@ export async function GET(
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { id } = await params
     const verificationId = id
 
@@ -45,8 +44,7 @@ export async function GET(
     }
 
     // Use admin client to create signed URL
-    const adminClient = createAdminClient()
-    const { data: signedUrlData, error: urlError } = await adminClient.storage
+    const { data: signedUrlData, error: urlError } = await supabase.storage
       .from('teacher-verifications')
       .createSignedUrl(storagePath, 3600) // Valid for 1 hour
 

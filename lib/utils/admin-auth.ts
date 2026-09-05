@@ -5,10 +5,11 @@
  * for Feature 9: Admin Panel & Content Moderation
  */
 
-import { createClient } from '@/lib/supabase/server'
-import type { User } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { isAdminRole, type AdminRole } from '@/lib/auth/admin-role'
 
-export type AdminRole = 'super_admin' | 'moderator' | 'content_manager'
+export { isAdminRole }
+export type { AdminRole }
 
 export interface AdminUser {
   id: string
@@ -22,85 +23,53 @@ export interface AdminUser {
  * Check if user is an admin (any admin role)
  */
 export async function isAdmin(userId: string): Promise<boolean> {
-  const supabase = await createClient()
-  
-  // Check role first (always exists)
-  const { data: roleData, error: roleError } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single()
-  
-  if (roleError || !roleData || roleData.role !== 'admin') return false
-  
-  // If role is admin, user is admin (admin_role may not exist if migration not applied)
-  return true
+  return (await getAdminRole(userId)) !== null
 }
 
 /**
  * Get admin role for a user
  */
 export async function getAdminRole(userId: string): Promise<AdminRole | null> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
-  // First verify user is admin
-  const { data: roleData } = await supabase
+  const { data, error } = await supabase
     .from('users')
-    .select('role')
+    .select('role, admin_role')
     .eq('id', userId)
     .single()
-  
-  if (!roleData || roleData.role !== 'admin') return null
-  
-  // Try to get admin_role (may not exist if migration not applied)
-  const { data: adminRoleData } = await supabase
-    .from('users')
-    .select('admin_role')
-    .eq('id', userId)
-    .single()
-  
-  // Default to super_admin if column doesn't exist
-  return (adminRoleData?.admin_role || 'super_admin') as AdminRole
+
+  if (error || data?.role !== 'admin' || !isAdminRole(data.admin_role)) return null
+
+  return data.admin_role
 }
 
 /**
  * Get full admin user data
  */
 export async function getAdminUser(userId: string): Promise<AdminUser | null> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
-  // First check if user has admin role
-  const { data: roleData, error: roleError } = await supabase
+  const { data, error } = await supabase
     .from('users')
-    .select('id, email, first_name, last_name, role')
+    .select('id, email, first_name, last_name, role, admin_role')
     .eq('id', userId)
     .eq('role', 'admin')
     .single()
-  
-  if (roleError || !roleData) return null
-  
-  // Try to get admin_role (may not exist if migration not applied)
-  const { data: adminRoleData } = await supabase
-    .from('users')
-    .select('admin_role')
-    .eq('id', userId)
-    .single()
-  
-  // Default to super_admin if admin_role column doesn't exist
-  const adminRole = adminRoleData?.admin_role || 'super_admin'
+
+  if (error || !data || !isAdminRole(data.admin_role)) return null
   
   // Build display name from first_name and last_name
-  const name = [roleData.first_name, roleData.last_name]
+  const name = [data.first_name, data.last_name]
     .filter(Boolean)
     .join(' ')
-    .trim() || roleData.email
+    .trim() || data.email
   
   return {
-    id: roleData.id,
-    email: roleData.email,
+    id: data.id,
+    email: data.email,
     name,
     role: 'admin',
-    admin_role: adminRole as AdminRole,
+    admin_role: data.admin_role,
   }
 }
 

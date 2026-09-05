@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/messages/conversations
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'active' // 'active', 'archived', 'blocked', 'all'
-    const page = parseInt(searchParams.get('page') || '1')
-    const perPage = parseInt(searchParams.get('per_page') || '20')
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const perPage = parseBoundedInteger(searchParams.get('per_page'), 20, 1, 100)
     const offset = (page - 1) * perPage
 
     // Build base query - get conversations where user is buyer or seller

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { sendPioneerWelcomeEmail } from '@/lib/emails/pioneer-emails'
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { user_id } = body
 

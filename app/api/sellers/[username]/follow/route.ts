@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getFullName } from '@/lib/utils/profile'
 
 /**
  * POST /api/sellers/[username]/follow
@@ -79,7 +80,7 @@ export async function POST(
     // Get updated follower count
     const { data: sellerData } = await supabase
       .from('users')
-      .select('followers_count, name')
+      .select('followers_count')
       .eq('id', sellerId)
       .single()
 
@@ -88,7 +89,7 @@ export async function POST(
       const { createNewFollowerNotification } = await import('@/lib/notifications/notification-triggers')
       const { data: followerData } = await supabase
         .from('users')
-        .select('id, name')
+        .select('id, first_name, last_name')
         .eq('id', authUser.id)
         .single()
 
@@ -96,7 +97,7 @@ export async function POST(
         await createNewFollowerNotification(
           sellerId,
           authUser.id,
-          followerData.name
+          getFullName(followerData) || 'A teacher'
         )
       }
     } catch (notificationError) {

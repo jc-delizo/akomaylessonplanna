@@ -1,5 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requirePermission } from '@/lib/middleware/admin-auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/admin/reviews/flagged
@@ -13,35 +15,20 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await requirePermission(request, 'view_flagged_reviews')
+    if (!authResult.success) {
+      return authResult.response
     }
 
-    // Verify user is admin
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || userData.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const supabase = createAdminClient()
 
     // Parse query parameters
     const status = searchParams.get('status') || 'pending'
     const flagType = searchParams.get('flag_type')
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 50, 1, 100)
+    const offset = parseBoundedInteger(searchParams.get('offset'), 0, 0, 1_000_000)
 
     // Build query
     let query = supabase
@@ -52,7 +39,8 @@ export async function GET(request: NextRequest) {
           *,
           buyer:users!reviews_buyer_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             email
           ),
           product:products!reviews_product_id_fkey(
@@ -61,14 +49,16 @@ export async function GET(request: NextRequest) {
             seller_id,
             seller:users!products_seller_id_fkey(
               id,
-              name,
+              first_name,
+              last_name,
               username
             )
           )
         ),
         reporter:users!review_flags_reporter_id_fkey(
           id,
-          name
+          first_name,
+          last_name
         )
       `, { count: 'exact' })
       .eq('status', status)

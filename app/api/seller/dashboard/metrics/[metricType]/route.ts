@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 export async function GET(
   request: Request,
@@ -30,7 +31,7 @@ export async function GET(
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const timePeriod = searchParams.get('time_period') || 'month'
-    const days = parseInt(searchParams.get('days') || '30')
+    const days = parseBoundedInteger(searchParams.get('days'), 30, 1, 365)
 
     // Calculate date range
     const now = new Date()

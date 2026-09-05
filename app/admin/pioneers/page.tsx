@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getPioneersData } from '@/lib/utils/admin-pioneers'
@@ -25,7 +26,9 @@ export default async function PioneersPage() {
     redirect('/')
   }
 
-  const { pioneers, total, maxSlots, availableSlots } = await getPioneersData(supabase)
+  const { pioneers, total, maxSlots, availableSlots } = await getPioneersData(
+    createAdminClient()
+  )
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-PH', {

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { PendingProductCard, type PendingProduct } from '@/components/admin/pending-product-card'
 
 async function getPendingProducts(
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createAdminClient>
 ): Promise<PendingProduct[]> {
   const { data: pendingProducts, error } = await supabase
     .from('products')
@@ -98,7 +99,7 @@ export default async function PendingProductsPage() {
     redirect('/')
   }
 
-  const products = await getPendingProducts(supabase)
+  const products = await getPendingProducts(createAdminClient())
 
   return (
     <div className="space-y-6">

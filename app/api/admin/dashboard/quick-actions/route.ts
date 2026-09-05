@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 import { getQuickActionsCounts } from '@/lib/utils/admin-quick-actions'
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const counts = await getQuickActionsCounts(supabase)
     return NextResponse.json(counts)
   } catch (error) {

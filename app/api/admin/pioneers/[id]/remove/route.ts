@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { sendPioneerRemovedEmail } from '@/lib/emails/pioneer-emails'
@@ -29,7 +29,7 @@ export async function DELETE(
     }
 
     const { id: userId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { reason } = body
 

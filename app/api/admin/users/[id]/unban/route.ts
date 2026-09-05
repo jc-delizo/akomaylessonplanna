@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { hasPermission } from '@/lib/utils/admin-permissions'
@@ -26,19 +26,26 @@ export async function POST(
     }
 
     const { id: userId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json().catch(() => ({}))
     const reason = body?.reason
 
     // Get current ban reason for audit log
     const { data: currentUser } = await supabase
       .from('users')
-      .select('is_banned, ban_reason')
+      .select('role, is_banned, ban_reason')
       .eq('id', userId)
       .single()
 
     if (!currentUser || !currentUser.is_banned) {
       return NextResponse.json({ error: 'User is not banned' }, { status: 400 })
+    }
+
+    if (currentUser.role === 'admin') {
+      return NextResponse.json(
+        { error: 'Administrator accounts cannot be unbanned through this endpoint' },
+        { status: 403 }
+      )
     }
 
     // Update user

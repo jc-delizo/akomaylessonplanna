@@ -37,7 +37,8 @@ export async function GET(
           *,
           buyer:users!orders_buyer_id_fkey(
             id,
-            name,
+            first_name,
+            last_name,
             location_region,
             created_at
           )

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminUser } from '@/lib/utils/admin-auth'
@@ -9,20 +10,21 @@ import { Badge } from '@/components/ui/badge'
 import { Search, Filter, Download } from 'lucide-react'
 import { getFullName, getInitials } from '@/lib/utils/profile'
 import { UsersTableActions } from '@/components/admin/users-table-actions'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 async function getUsers(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   searchParams: Record<string, string>
 ) {
-  const search = searchParams.search
+  const search = sanitizePostgrestSearchTerm(searchParams.search || '')
   const role = searchParams.role
   const verification = searchParams.verification
   const tier = searchParams.tier
   const banned = searchParams.banned
   const signupDateFrom = searchParams.signupDateFrom
   const signupDateTo = searchParams.signupDateTo
-  const page = parseInt(searchParams.page || '1', 10)
-  const limit = parseInt(searchParams.limit || '50', 10)
+  const page = parseBoundedInteger(searchParams.page, 1, 1, 10_000)
+  const limit = parseBoundedInteger(searchParams.limit, 50, 1, 100)
   const offset = (page - 1) * limit
 
   // Build query
@@ -160,7 +162,7 @@ export default async function AdminUsersPage({
   let users: any[] = []
   let pagination: any = null
   try {
-    const result = await getUsers(supabase, params)
+    const result = await getUsers(createAdminClient(), params)
     users = result.users || []
     pagination = result.pagination || null
   } catch (error) {

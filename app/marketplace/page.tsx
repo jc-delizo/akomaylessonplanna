@@ -4,10 +4,14 @@ import { CurvedLoopHero } from '@/components/curved-loop-hero'
 import { getMarketplaceClosed } from '@/lib/utils/marketplace-status'
 import Link from 'next/link'
 
-// Helper: attach subject_ids from product_subjects for each product (for "Multiple Subjects" on cards)
-async function attachSubjectIds(supabase: Awaited<ReturnType<typeof createClient>>, products: any[]): Promise<any[]> {
-  if (!products || products.length === 0) return products || []
-  const productIds = products.map((p: any) => p.id)
+// Attach subject_ids to all product groups in one query (for "Multiple Subjects" on cards).
+async function attachSubjectIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productGroups: any[][]
+): Promise<any[][]> {
+  const productIds = [...new Set(productGroups.flatMap((products) => products.map((product) => product.id)))]
+  if (productIds.length === 0) return productGroups
+
   const productSubjectIds: Record<string, string[]> = {}
   const { data: psRows } = await supabase
     .from('product_subjects')
@@ -18,10 +22,16 @@ async function attachSubjectIds(supabase: Awaited<ReturnType<typeof createClient
     if (!productSubjectIds[row.product_id]) productSubjectIds[row.product_id] = []
     productSubjectIds[row.product_id].push(row.subject_id)
   }
-  return products.map((p: any) => ({
-    ...p,
-    subject_ids: productSubjectIds[p.id]?.length ? productSubjectIds[p.id] : (p.subject_id ? [p.subject_id] : []),
-  }))
+  return productGroups.map((products) =>
+    products.map((product) => ({
+      ...product,
+      subject_ids: productSubjectIds[product.id]?.length
+        ? productSubjectIds[product.id]
+        : product.subject_id
+          ? [product.subject_id]
+          : [],
+    }))
+  )
 }
 
 // Helper function to transform products to add 'name' field for backward compatibility
@@ -31,7 +41,13 @@ function transformProducts(products: any[]): any[] {
     if (p.seller) {
       const firstName = p.seller.first_name || ''
       const lastName = p.seller.last_name || ''
-      p.seller.name = `${firstName} ${lastName}`.trim() || firstName
+      return {
+        ...p,
+        seller: {
+          ...p.seller,
+          name: `${firstName} ${lastName}`.trim() || firstName,
+        },
+      }
     }
     return p
   })
@@ -39,12 +55,7 @@ function transformProducts(products: any[]): any[] {
 
 export default async function MarketplacePage() {
   const supabase = await createClient()
-  const marketplaceClosed = await getMarketplaceClosed(supabase)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  // Fetch featured products
   const productSelect = `
       *,
       seller:users!products_seller_id_fkey(
@@ -70,39 +81,50 @@ export default async function MarketplacePage() {
         code
       )
     `
-  const { data: featuredProducts } = await supabase
-    .from('products')
-    .select(productSelect)
-    .eq('status', 'published')
-    .contains('badges', ['featured'])
-    .order('created_at', { ascending: false })
-    .limit(14)
+  const [
+    marketplaceClosed,
+    authResult,
+    featuredResult,
+    newResult,
+    trendingResult,
+    bestsellerResult,
+  ] = await Promise.all([
+    getMarketplaceClosed(supabase),
+    supabase.auth.getUser(),
+    supabase
+      .from('products')
+      .select(productSelect)
+      .eq('status', 'published')
+      .contains('badges', ['featured'])
+      .order('created_at', { ascending: false })
+      .limit(14),
+    supabase
+      .from('products')
+      .select(productSelect)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(21),
+    supabase
+      .from('products')
+      .select(productSelect)
+      .eq('status', 'published')
+      .order('sales_count', { ascending: false })
+      .limit(14),
+    supabase
+      .from('products')
+      .select(productSelect)
+      .eq('status', 'published')
+      .not('avg_rating', 'is', null)
+      .gte('sales_count', 5)
+      .order('avg_rating', { ascending: false })
+      .limit(14),
+  ])
 
-  // Fetch new products
-  const { data: newProducts } = await supabase
-    .from('products')
-    .select(productSelect)
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .limit(21)
-
-  // Fetch trending products (by sales)
-  const { data: trendingProducts } = await supabase
-    .from('products')
-    .select(productSelect)
-    .eq('status', 'published')
-    .order('sales_count', { ascending: false })
-    .limit(14)
-
-  // Fetch bestsellers (top rated with sales)
-  const { data: bestsellerProducts } = await supabase
-    .from('products')
-    .select(productSelect)
-    .eq('status', 'published')
-    .not('avg_rating', 'is', null)
-    .gte('sales_count', 5)
-    .order('avg_rating', { ascending: false })
-    .limit(14)
+  const user = authResult.data.user
+  const featuredProducts = featuredResult.data || []
+  const newProducts = newResult.data || []
+  const trendingProducts = trendingResult.data || []
+  const bestsellerProducts = bestsellerResult.data || []
 
   // Fetch recommended products and teaching-completion for empty state
   let recommendedProducts: any[] = []
@@ -112,19 +134,16 @@ export default async function MarketplacePage() {
     const { data: userProfile } = await supabase
       .from('users')
       .select(
-        'subscription_tier, grade_levels_taught, subjects_taught, teaching_class_types, teaching_strand_ids'
+        'subscription_tier, grade_levels_taught, subjects_taught, teaching_strand_ids'
       )
       .eq('id', user.id)
       .single()
 
-    // Teaching complete = same rule as profile edit (Class type is Regular only; treat empty as ['regular'])
-    const teachingClassTypes = (userProfile?.teaching_class_types as string[] | null) ?? []
-    const effectiveClassTypes = teachingClassTypes.length > 0 ? teachingClassTypes : ['regular']
+    // Keep this in sync with the Teaching tab completion rule on profile edit.
     const teachingStrandIds = (userProfile?.teaching_strand_ids as string[] | null) ?? []
     const gradeLevelsTaught = (userProfile?.grade_levels_taught as string[] | null) ?? []
     const subjectsTaught = (userProfile?.subjects_taught as string[] | null) ?? []
     teachingComplete =
-      effectiveClassTypes.length > 0 ||
       teachingStrandIds.length > 0 ||
       (subjectsTaught.length > 0 && gradeLevelsTaught.length > 0)
 
@@ -204,33 +223,25 @@ export default async function MarketplacePage() {
 
     // Only fall back to trending when user is logged in AND teaching is complete (so we can show profile prompt when not)
     if (recommendedProducts.length === 0 && teachingComplete) {
-      const { data: trending } = await supabase
-        .from('products')
-        .select(productSelect)
-        .eq('status', 'published')
-        .order('sales_count', { ascending: false })
-        .limit(14)
-
-      recommendedProducts = trending || []
+      recommendedProducts = trendingProducts
     }
   } else {
-    // Not logged in: fill recommended with trending so the tab has content
-    const { data: trending } = await supabase
-      .from('products')
-      .select(productSelect)
-      .eq('status', 'published')
-      .order('sales_count', { ascending: false })
-      .limit(14)
-
-    recommendedProducts = trending || []
+    recommendedProducts = trendingProducts
   }
 
-  // Attach subject_ids for "Multiple Subjects" on cards, then transform (seller name)
-  const withSubjectIdsFeatured = await attachSubjectIds(supabase, featuredProducts || [])
-  const withSubjectIdsNew = await attachSubjectIds(supabase, newProducts || [])
-  const withSubjectIdsTrending = await attachSubjectIds(supabase, trendingProducts || [])
-  const withSubjectIdsBestseller = await attachSubjectIds(supabase, bestsellerProducts || [])
-  const withSubjectIdsRecommended = await attachSubjectIds(supabase, recommendedProducts || [])
+  const [
+    withSubjectIdsFeatured,
+    withSubjectIdsNew,
+    withSubjectIdsTrending,
+    withSubjectIdsBestseller,
+    withSubjectIdsRecommended,
+  ] = await attachSubjectIds(supabase, [
+    featuredProducts,
+    newProducts,
+    trendingProducts,
+    bestsellerProducts,
+    recommendedProducts,
+  ])
 
   const transformedFeaturedProducts = transformProducts(withSubjectIdsFeatured)
   const transformedNewProducts = transformProducts(withSubjectIdsNew)

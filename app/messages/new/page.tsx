@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
+import { sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 import Image from 'next/image'
 import { ArrowLeft, Search } from 'lucide-react'
 import { getFullName, getInitials } from '@/lib/utils/profile'
@@ -89,7 +90,7 @@ export default function NewMessagePage() {
           const supabase = createClient()
           const { data: sellerData } = await supabase
             .from('users')
-            .select('id, name, username, avatar_url, is_verified_teacher')
+            .select('id, first_name, last_name, username, avatar_url, is_verified_teacher')
             .eq('id', data.order.items[0].seller_id)
             .single()
           if (sellerData) {
@@ -133,7 +134,8 @@ export default function NewMessagePage() {
   }
 
   const handleSearchSellers = async () => {
-    if (!searchQuery.trim()) {
+    const safeSearchQuery = sanitizePostgrestSearchTerm(searchQuery)
+    if (!safeSearchQuery) {
       setSearchResults([])
       return
     }
@@ -143,7 +145,7 @@ export default function NewMessagePage() {
       .from('users')
       .select('id, first_name, last_name, username, avatar_url, is_verified_teacher')
       .eq('can_sell', true)
-      .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%`)
+      .or(`first_name.ilike.%${safeSearchQuery}%,last_name.ilike.%${safeSearchQuery}%,username.ilike.%${safeSearchQuery}%`)
       .limit(10)
 
     if (data) {

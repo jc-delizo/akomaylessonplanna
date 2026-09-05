@@ -36,7 +36,7 @@ export async function GET(
     // Get versions
     const { data: versions, error } = await supabase
       .from('email_template_versions')
-      .select('*, created_by:users!email_template_versions_created_by_fkey(id, name, email)')
+      .select('*, created_by:users!email_template_versions_created_by_fkey(id, first_name, last_name, email)')
       .eq('template_id', template.id)
       .order('version', { ascending: false })
 

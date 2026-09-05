@@ -1,6 +1,6 @@
-import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { trackSearchClick } from '@/lib/analytics/track-search-impressions'
+import { isUuid, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 /**
  * POST /api/search/track-click
@@ -13,9 +13,12 @@ import { trackSearchClick } from '@/lib/analytics/track-search-impressions'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { product_id, search_term } = body
+    const { product_id, search_term } = body as Record<string, unknown>
+    const normalizedSearchTerm = typeof search_term === 'string'
+      ? sanitizePostgrestSearchTerm(search_term)
+      : ''
 
-    if (!product_id || !search_term) {
+    if (typeof product_id !== 'string' || !isUuid(product_id) || !normalizedSearchTerm) {
       return NextResponse.json(
         { error: 'product_id and search_term are required' },
         { status: 400 }
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Track the click
-    await trackSearchClick(product_id, search_term)
+    await trackSearchClick(product_id, normalizedSearchTerm)
 
     return NextResponse.json({ success: true })
   } catch (error) {

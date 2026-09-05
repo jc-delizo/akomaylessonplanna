@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 
@@ -21,9 +21,7 @@ export async function POST(
     }
 
     const { id: withdrawalId } = await params
-    const supabase = await createClient()
-    const body = await request.json()
-
+    const supabase = createAdminClient()
     // Get withdrawal request
     const { data: withdrawal, error: withdrawalError } = await supabase
       .from('withdrawal_requests')

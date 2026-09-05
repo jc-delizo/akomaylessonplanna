@@ -34,7 +34,7 @@ export async function getPioneersData(supabase: SupabaseClient) {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const { data: recentSales } = await supabase
         .from('order_items')
-        .select('price, commission')
+        .select('price:price_at_purchase')
         .eq('seller_id', pioneer.id)
         .gte('created_at', thirtyDaysAgo.toISOString())
 

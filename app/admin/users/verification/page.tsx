@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getVerificationQueueData } from '@/lib/utils/admin-verification-queue'
@@ -25,7 +26,7 @@ export default async function VerificationQueuePage() {
     redirect('/')
   }
 
-  const { verifications } = await getVerificationQueueData(supabase)
+  const { verifications } = await getVerificationQueueData(createAdminClient())
 
   const getTimeAgo = (date: string) => {
     const now = new Date()

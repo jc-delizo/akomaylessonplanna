@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -17,7 +17,7 @@ export async function POST(
     }
 
     const { id: conversationId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get conversation
     const { data: conversation, error: convError } = await supabase

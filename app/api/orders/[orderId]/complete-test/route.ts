@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -27,10 +28,12 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
+
     // Get order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
-      .select('id, buyer_id, payment_status, total_amount')
+      .select('id, buyer_id, payment_status, payment_method, total_amount')
       .eq('id', orderId)
       .single()
 
@@ -51,24 +54,24 @@ export async function POST(request: Request, { params }: RouteParams) {
       )
     }
 
-    // Update order status to completed (simulating payment webhook)
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        payment_status: 'completed',
-        payment_reference: `TEST-${Date.now()}`,
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', orderId)
+    // Reuse the same atomic transition as verified provider callbacks.
+    const { data: completed, error: updateError } = await adminClient.rpc(
+      'complete_order_payment',
+      {
+        p_order_id: orderId,
+        p_payment_reference: `TEST-${Date.now()}`,
+        p_payment_method: order.payment_method,
+        p_total_amount: order.total_amount,
+      }
+    )
 
-    if (updateError) {
+    if (updateError || completed !== true) {
       console.error('Error updating order:', updateError)
       return NextResponse.json({ error: 'Failed to complete order' }, { status: 500 })
     }
 
     // Get order items with IDs
-    const { data: orderItems, error: itemsError } = await supabase
+    const { data: orderItems, error: itemsError } = await adminClient
       .from('order_items')
       .select('id, product_id, seller_id')
       .eq('order_id', orderId)
@@ -76,34 +79,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (itemsError) {
       console.error('Error fetching order items:', itemsError)
     } else if (orderItems && orderItems.length > 0) {
-      // Add products to user library
-      const libraryEntries = orderItems.map((item) => ({
-        user_id: order.buyer_id,
-        product_id: item.product_id,
-        order_item_id: item.id,
-      }))
-
-      const { error: libraryError } = await supabase
-        .from('user_library')
-        .insert(libraryEntries)
-
-      if (libraryError) {
-        console.error('Error adding to library:', libraryError)
-        // Don't fail, just log
-      }
-
-      // Update product sales counts
-      for (const item of orderItems) {
-        const { error: salesError } = await supabase.rpc('increment_product_sales', {
-          product_id: item.product_id,
-        })
-        if (salesError) {
-          console.error('Error incrementing sales:', salesError)
-        }
-      }
-
       // Send order confirmation email (if email system is set up)
-      const { data: buyer } = await supabase
+      const { data: buyer } = await adminClient
         .from('users')
         .select('email, first_name, last_name')
         .eq('id', order.buyer_id)
@@ -114,7 +91,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           const { sendOrderConfirmationEmail, sendNewSaleEmail } = await import('@/lib/emails/notifications')
           
           // Get order items for email
-          const { data: itemsForEmail } = await supabase
+          const { data: itemsForEmail } = await adminClient
             .from('order_items')
             .select('product_title, price_at_purchase')
             .eq('order_id', orderId)
@@ -134,7 +111,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           // Send seller notifications
           const sellerIds = [...new Set(orderItems.map((item) => item.seller_id))]
           for (const sellerId of sellerIds) {
-            const { data: seller } = await supabase
+            const { data: seller } = await adminClient
               .from('users')
               .select('email')
               .eq('id', sellerId)
@@ -143,14 +120,14 @@ export async function POST(request: Request, { params }: RouteParams) {
             if (seller) {
               const sellerItems = orderItems.filter((item) => item.seller_id === sellerId)
               for (const item of sellerItems) {
-                const { data: product } = await supabase
+                const { data: product } = await adminClient
                   .from('products')
                   .select('title')
                   .eq('id', item.product_id)
                   .single()
 
                 if (product) {
-                  const { data: orderItemData } = await supabase
+                  const { data: orderItemData } = await adminClient
                     .from('order_items')
                     .select('price_at_purchase, net_earnings')
                     .eq('id', item.id)

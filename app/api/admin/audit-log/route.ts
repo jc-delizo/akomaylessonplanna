@@ -1,7 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 import { getAuditLogData } from '@/lib/utils/admin-audit-log'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/admin/audit-log
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const sp = request.nextUrl.searchParams
     const filterByAdminId =
       authResult.admin.adminRole !== 'super_admin' ? authResult.admin.userId : undefined
@@ -35,8 +36,8 @@ export async function GET(request: NextRequest) {
         entity_type: sp.get('entity_type') || undefined,
         startDate: sp.get('startDate') || undefined,
         endDate: sp.get('endDate') || undefined,
-        page: parseInt(sp.get('page') || '1', 10),
-        limit: parseInt(sp.get('limit') || '50', 10),
+        page: parseBoundedInteger(sp.get('page'), 1, 1, 10_000),
+        limit: parseBoundedInteger(sp.get('limit'), 50, 1, 100),
       },
       { filterByAdminId }
     )

@@ -123,7 +123,7 @@ export function MainNav({ user }: MainNavProps) {
         
         const { data, error } = await supabase
           .from('users')
-          .select('id, first_name, last_name, email, avatar_url, role, can_sell, profile_completion_percent')
+          .select('id, first_name, last_name, avatar_url, role, can_sell, profile_completion_percent')
           .eq('id', user.id)
           .single()
 
@@ -139,7 +139,7 @@ export function MainNav({ user }: MainNavProps) {
           const profileData: UserProfile = {
             avatar_url: data.avatar_url,
             name: fullName,
-            email: data.email || user.email,
+            email: user.email,
             role: data.role,
             can_sell: data.can_sell,
             profile_completion_percent: data.profile_completion_percent || 0,

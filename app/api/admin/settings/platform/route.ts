@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { getPlatformSettingsData } from '@/lib/utils/admin-platform-settings'
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const staticSettings = getPlatformSettingsData()
     const marketplaceClosed = await getMarketplaceClosed(supabase)
     return NextResponse.json({ ...staticSettings, marketplaceClosed })
@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     if (typeof body.marketplaceClosed === 'boolean') {
       const { error } = await supabase

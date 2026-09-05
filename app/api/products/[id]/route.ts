@@ -1,21 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { toPromise } from '@/lib/utils/supabase-promise'
 
 /**
  * GET /api/products/[id]
  * Get product details by ID
  * Tracks view in product_views table
  */
-const TRAFFIC_SOURCE_VALUES = ['search', 'marketplace', 'direct', 'profile', 'category', 'other'] as const
-
-function normalizeSource(raw: string | null): string | null {
-  if (!raw || typeof raw !== 'string') return 'direct'
-  const lower = raw.trim().toLowerCase()
-  if (TRAFFIC_SOURCE_VALUES.includes(lower as (typeof TRAFFIC_SOURCE_VALUES)[number])) return lower
-  return 'other'
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,9 +13,6 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
-    const { searchParams } = new URL(request.url)
-    const sourceParam = searchParams.get('source')
-    const source = normalizeSource(sourceParam)
 
     // Get current user (if authenticated)
     const {
@@ -107,41 +94,6 @@ export async function GET(
       }
     }
 
-    // Track product view (asynchronously, don't block response)
-    if (product.status === 'published') {
-      toPromise(
-        supabase
-          .from('product_views')
-          .insert({
-            product_id: id,
-            user_id: user?.id || null,
-            source,
-          })
-      )
-        .then(({ error: viewError }) => {
-          if (viewError) {
-            console.error('Failed to track product view:', viewError)
-          }
-        })
-        .catch((err) => {
-          console.error('Error tracking view:', err)
-        })
-
-      // Update views_count (optimistic update)
-      toPromise(
-        supabase
-          .from('products')
-          .update({
-            views_count: (product.views_count || 0) + 1,
-          })
-          .eq('id', id)
-      )
-        .then(() => {})
-        .catch((err) => {
-          console.error('Error updating views count:', err)
-        })
-    }
-
     // Phase B: add subject_ids from product_subjects (multiselect)
     const { data: psRows } = await supabase
       .from('product_subjects')
@@ -200,6 +152,13 @@ export async function PUT(
 
     // Parse request body
     const body = await request.json()
+
+    if (
+      body.status !== undefined &&
+      !['draft', 'pending_review', 'published', 'deleted'].includes(body.status)
+    ) {
+      return NextResponse.json({ error: 'Invalid product status' }, { status: 400 })
+    }
 
     // If product is published and files/content are being updated, create a version record
     const shouldCreateVersion =
@@ -319,7 +278,7 @@ export async function PUT(
     if (updateError) {
       console.error('Error updating product:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update product', details: updateError.message },
+        { error: 'Failed to update product' },
         { status: 500 }
       )
     }

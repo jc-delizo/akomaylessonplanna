@@ -31,37 +31,37 @@ A specialized e-commerce platform built for the Filipino K-12 education communit
 
 | Category | Technology | Version |
 |----------|-----------|---------|
-| **Framework** | Next.js | 16.1.1 |
+| **Framework** | Next.js | 16.3.4 |
 | **Language** | TypeScript | 5.x |
-| **UI Library** | React | 19.2.3 |
+| **UI Library** | React | 19.2.8 |
 | **Database** | Supabase (PostgreSQL) | 15 |
 | **Authentication** | Supabase Auth | Latest |
 | **Storage** | Supabase Storage | Latest |
 | **Styling** | Tailwind CSS | 4.x |
-| **Components** | @base-ui/react + shadcn | 1.0.0 + 3.6.3 |
-| **Email** | Resend | 6.7.0 |
-| **Payments** | GCash + Maya | API Integration |
+| **Components** | @base-ui/react + shadcn | 1.0.0 + 4.21.0 |
+| **Email** | Resend | 6.26.0 |
+| **Payments** | GCash + Maya | Integration scaffold |
 | **Hosting** | Vercel | Edge Network |
 
 ### Key Dependencies
 
 ```json
 {
-  "next": "16.1.1",
-  "react": "19.2.3",
+  "next": "^16.3.4",
+  "react": "^19.2.8",
   "@supabase/ssr": "0.8.0",
-  "@supabase/supabase-js": "2.90.1",
+  "@supabase/supabase-js": "^2.115.0",
   "@base-ui/react": "1.0.0",
   "tailwindcss": "^4.0.0",
   "typescript": "^5.0.0",
-  "resend": "6.7.0"
+  "resend": "^6.26.0"
 }
 ```
 
 ### Architecture
 
 - **App Router**: Next.js 16 App Router with server components
-- **State Management**: React hooks + Zustand (UI state)
+- **State Management**: React hooks and server state
 - **Data Fetching**: Next.js server components + Supabase client
 - **Component Registry**: Local shadcn/ui registry at `registry/`
 - **Styling**: Tailwind CSS with custom "base-mira" design system
@@ -72,7 +72,7 @@ A specialized e-commerce platform built for the Filipino K-12 education communit
 
 ### Prerequisites
 
-- Node.js 20+ (LTS recommended)
+- Node.js 20.9+ (LTS recommended)
 - Git
 - A Supabase account
 - A Vercel account (for deployment)
@@ -82,14 +82,14 @@ A specialized e-commerce platform built for the Filipino K-12 education communit
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/akomaylessonplanna.git
+git clone https://github.com/jc-delizo/akomaylessonplanna.git
 cd akomaylessonplanna
 ```
 
 2. **Install dependencies**
 
 ```bash
-npm install
+npm ci
 ```
 
 3. **Set up environment variables**
@@ -109,11 +109,10 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=noreply@akomaylessonplanna.com
 
-# Payment Integration (Optional for local dev)
-GCASH_MERCHANT_ID=your_gcash_merchant_id
-GCASH_SECRET_KEY=your_gcash_secret_key
-MAYA_API_KEY=your_maya_api_key
-MAYA_SECRET_KEY=your_maya_secret_key
+# Payment callbacks (keep checkout disabled until provider integration is complete)
+PAYMENTS_ENABLED=false
+GCASH_WEBHOOK_SECRET=replace-with-your-gcash-webhook-secret
+MAYA_WEBHOOK_SECRET=replace-with-your-maya-webhook-secret
 
 # OAuth (Optional)
 FACEBOOK_APP_SECRET=your_facebook_app_secret
@@ -210,10 +209,10 @@ akomaylessonplanna/
 
 ### Setup Guides
 
-- **[Configuration Setup](docs/implementationplan/CONFIGURATION-SETUP.md)** - Initial project setup with Vercel and Supabase
-- **[Environment Variables](docs/implementationplan/ENVIRONMENT-VARIABLES.md)** - Complete environment variables guide
-- **[Dev/Prod Setup](docs/implementationplan/DEV-PROD-SETUP-GUIDE.md)** - Isolated development and production environments
-- **[Deployment Workflow](docs/implementationplan/DEPLOYMENT-WORKFLOW.md)** - Branch-based deployment strategy
+- **[Configuration Setup](docs/implementationplan/^CONFIGURATION-SETUP.md)** - Initial project setup with Vercel and Supabase
+- **[Environment Variables](docs/implementationplan/^ENVIRONMENT-VARIABLES.md)** - Complete environment variables guide
+- **[Dev/Prod Setup](docs/implementationplan/^DEV-PROD-SETUP-GUIDE.md)** - Isolated development and production environments
+- **[Deployment Workflow](docs/implementationplan/^DEPLOYMENT-WORKFLOW.md)** - Branch-based deployment strategy
 
 ### OAuth Setup
 
@@ -222,6 +221,7 @@ akomaylessonplanna/
 
 ### Development
 
+- **[Engineering Audit (2026-09-05)](docs/ENGINEERING-AUDIT-2026-09-05.md)** - Security, reliability, verification, and remaining launch gates
 - **[Master Implementation Plan](docs/implementationplan/MASTER-IMPLEMENTATION-PLAN.md)** - Complete development roadmap
 - **[Database Schema](docs/implementationplan/database-schema-complete.md)** - Full database schema
 - **[UI Field Styling](docs/implementationplan/UI-FIELD-STYLING.md)** - Standard input field design (authoritative)
@@ -261,14 +261,14 @@ Run the test suite:
 # Unit tests
 npm test
 
-# E2E tests
-npm run test:e2e
-
 # Type checking
-npm run type-check
+npm run typecheck
 
 # Linting
 npm run lint
+
+# Run every local quality check
+npm run check
 ```
 
 See [TESTING-GUIDE.md](TESTING-GUIDE.md) for comprehensive testing information.
@@ -301,7 +301,7 @@ git merge dev
 git push origin main
 ```
 
-See [Deployment Workflow](docs/implementationplan/DEPLOYMENT-WORKFLOW.md) for details.
+See [Deployment Workflow](docs/implementationplan/^DEPLOYMENT-WORKFLOW.md) for details.
 
 ---
 
@@ -311,8 +311,13 @@ See [Deployment Workflow](docs/implementationplan/DEPLOYMENT-WORKFLOW.md) for de
 - **Environment variables** never committed to version control
 - **OAuth** for secure third-party authentication
 - **HTTPS** enforced in production
-- **Rate limiting** on API endpoints
-- **Input validation** with Zod schemas
+- **Signed webhook verification** for email and payment callbacks
+- **Fail-closed authorization** for privileged admin and cron operations
+
+> **Payment status:** The GCash and Maya callback scaffolding is secured, but the
+> provider-side payment initiation calls are still pending. Do not enable live
+> checkout (`PAYMENTS_ENABLED=true`) until those provider integrations and
+> end-to-end payment tests are complete.
 
 ---
 
@@ -356,6 +361,6 @@ Built with modern tools and best practices:
 
 ---
 
-**Version**: 1.0  
-**Last Updated**: January 2026  
+**Version**: 1.0<br>
+**Last Updated**: September 2026<br>
 **Status**: Active Development

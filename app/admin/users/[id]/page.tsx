@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminUser } from '@/lib/utils/admin-auth'
@@ -9,7 +10,7 @@ import { getFullName, getInitials } from '@/lib/utils/profile'
 import { ArrowLeft, Edit, Package, Flag, FileText } from 'lucide-react'
 import { UserDetailClient } from './user-detail-client'
 
-async function getUserDetail(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+async function getUserDetail(supabase: ReturnType<typeof createAdminClient>, userId: string) {
   const { data: user, error } = await supabase
     .from('users')
     .select('*')
@@ -64,7 +65,7 @@ export default async function AdminUserDetailPage({
     redirect('/')
   }
 
-  const data = await getUserDetail(supabase, userId)
+  const data = await getUserDetail(createAdminClient(), userId)
   if (!data) {
     notFound()
   }

@@ -646,7 +646,7 @@ export default function SellerEarningsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                     <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} width={50} />
-                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']} />
+                    <RechartsTooltip formatter={(value) => [value != null ? `₱${Number(value).toFixed(2)}` : '', 'Revenue']} />
                     <Bar dataKey="revenue" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -684,7 +684,7 @@ export default function SellerEarningsPage() {
                         <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']} />
+                    <RechartsTooltip formatter={(value) => [value != null ? `₱${Number(value).toFixed(2)}` : '', 'Revenue']} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -713,7 +713,7 @@ export default function SellerEarningsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} tick={{ fontSize: 11 }} />
                     <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} width={50} />
-                    <RechartsTooltip formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Earnings']} labelFormatter={(label) => (label != null ? new Date(label).toLocaleDateString('en-US') : '')} />
+                    <RechartsTooltip formatter={(value) => [value != null ? `₱${Number(value).toFixed(2)}` : '', 'Earnings']} labelFormatter={(label) => (label != null ? new Date(String(label)).toLocaleDateString('en-US') : '')} />
                     <Area type="monotone" dataKey="earnings" stroke="#7c3aed" strokeWidth={2} fill="url(#earningsGradient)" />
                   </AreaChart>
                 </ResponsiveContainer>

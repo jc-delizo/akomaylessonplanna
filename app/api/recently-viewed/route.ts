@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /** Shape of product from the recently_viewed select (FK returns single object, not array) */
 type RecentlyViewedProduct = {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseBoundedInteger(searchParams.get('limit'), 20, 1, 100)
     const filter = searchParams.get('filter') || 'all' // 'all', 'week', 'month'
 
     // Build date filter
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recently viewed items with product details
-    let query = supabase
+    const query = supabase
       .from('recently_viewed')
       .select(
         `

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
@@ -8,11 +9,11 @@ import { Check, X, Trash2 } from 'lucide-react'
 import { getFullName } from '@/lib/utils/profile'
 
 async function getFlaggedReviews(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   status: string = 'pending'
 ) {
   // Query flagged reviews directly from Supabase
-  let query = supabase
+  const query = supabase
     .from('review_flags')
     .select(`
       *,
@@ -76,7 +77,7 @@ export default async function FlaggedReviewsPage() {
     redirect('/')
   }
 
-  const flags = await getFlaggedReviews(supabase, 'pending')
+  const flags = await getFlaggedReviews(createAdminClient(), 'pending')
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {

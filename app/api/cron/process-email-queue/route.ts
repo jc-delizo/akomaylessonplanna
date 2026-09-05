@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processEmailQueue } from '@/lib/emails/queue-processor'
+import { hasValidBearerToken } from '@/lib/security/request-security'
+
+function authorizeCron(request: NextRequest): NextResponse | null {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error('CRON_SECRET is not configured')
+    return NextResponse.json({ error: 'Cron is not configured' }, { status: 503 })
+  }
+
+  if (!hasValidBearerToken(request.headers.get('authorization'), cronSecret)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  return null
+}
 
 /**
  * POST /api/cron/process-email-queue
@@ -12,20 +27,8 @@ import { processEmailQueue } from '@/lib/emails/queue-processor'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Optional: Verify cron secret token
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      // Allow if no secret is set (for development)
-      // In production, require the secret
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        )
-      }
-    }
+    const authError = authorizeCron(request)
+    if (authError) return authError
 
     // Process email queue
     const result = await processEmailQueue()
@@ -51,8 +54,11 @@ export async function POST(request: NextRequest) {
  * GET /api/cron/process-email-queue
  * Get queue status (for monitoring)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authError = authorizeCron(request)
+    if (authError) return authError
+
     const { createAdminClient } = await import('@/lib/supabase/admin')
     const supabase = createAdminClient()
 

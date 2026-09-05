@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 const TRAFFIC_SOURCE_VALUES = ['search', 'marketplace', 'direct', 'profile', 'category', 'other'] as const
@@ -42,7 +43,7 @@ export async function POST(
     // Verify product exists and is published
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, status, views_count')
+      .select('id, status')
       .eq('id', productId)
       .single()
 
@@ -72,22 +73,19 @@ export async function POST(
       return NextResponse.json({ message: 'View tracking unavailable (table not found)' })
     }
 
-    // Record in product_views for seller traffic analytics
-    const { error: viewInsertError } = await supabase
-      .from('product_views')
-      .insert({
-        product_id: productId,
-        user_id: user.id,
-        source,
-      })
+    // Record the event and update the cached count atomically. The database
+    // deduplicates repeated views from the same user for one hour.
+    const { error: viewInsertError } = await createAdminClient().rpc(
+      'record_product_view',
+      {
+        p_product_id: productId,
+        p_user_id: user.id,
+        p_source: source,
+      }
+    )
     if (viewInsertError) {
-      console.error('Error inserting product_views:', viewInsertError)
+      console.error('Error recording product view:', viewInsertError)
     }
-    // Increment views_count on product
-    await supabase
-      .from('products')
-      .update({ views_count: (product.views_count || 0) + 1 })
-      .eq('id', productId)
 
     if (existingView && !existingViewError) {
       // Update viewed_at timestamp (move to top)

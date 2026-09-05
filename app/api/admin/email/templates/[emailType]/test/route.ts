@@ -26,7 +26,7 @@ export async function POST(
     // Get admin email
     const { data: admin } = await supabase
       .from('users')
-      .select('email, name')
+      .select('email, first_name, last_name')
       .eq('id', authResult.admin.userId)
       .single()
 
@@ -35,6 +35,10 @@ export async function POST(
     }
 
     const recipientEmail = test_email || admin.email
+    const adminName = [admin.first_name, admin.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
 
     // Get template
     const { data: template, error: templateError } = await supabase
@@ -52,7 +56,7 @@ export async function POST(
 
     // Prepare sample template data
     const sampleData = prepareTemplateData({
-      user_name: admin.name || 'Test User',
+      user_name: adminName || 'Test User',
       user_email: recipientEmail,
       order_id: 'TEST-12345',
       order_total: '₱150.00',

@@ -10,7 +10,8 @@
 // User type based on database schema
 export type User = {
   id: string
-  email: string
+  /** Present only in authenticated/private profile responses. */
+  email?: string
   first_name: string
   last_name: string
   display_name?: string | null

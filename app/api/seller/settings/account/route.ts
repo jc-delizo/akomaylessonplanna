@@ -35,14 +35,27 @@ export async function PUT(request: NextRequest) {
     const { display_name, avatar_url, bio } = body
 
     // Build update object
-    const updates: any = {}
+    const updates: Record<string, string | null> = {}
     if (display_name !== undefined) {
-      updates.name = display_name.trim()
+      if (display_name !== null && typeof display_name !== 'string') {
+        return NextResponse.json({ error: 'display_name must be a string' }, { status: 400 })
+      }
+      updates.display_name = display_name?.trim() || null
     }
     if (avatar_url !== undefined) {
-      updates.avatar_url = avatar_url
+      if (avatar_url !== null && typeof avatar_url !== 'string') {
+        return NextResponse.json({ error: 'avatar_url must be a string' }, { status: 400 })
+      }
+      const normalizedAvatarUrl = avatar_url?.trim() || null
+      if (normalizedAvatarUrl && (normalizedAvatarUrl.length > 2048 || !/^https:\/\//i.test(normalizedAvatarUrl))) {
+        return NextResponse.json({ error: 'avatar_url must be a valid HTTPS URL' }, { status: 400 })
+      }
+      updates.avatar_url = normalizedAvatarUrl
     }
     if (bio !== undefined) {
+      if (bio !== null && typeof bio !== 'string') {
+        return NextResponse.json({ error: 'bio must be a string' }, { status: 400 })
+      }
       updates.bio = bio?.trim() || null
     }
 
@@ -54,7 +67,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate display name
-    if (updates.name && (updates.name.length < 2 || updates.name.length > 255)) {
+    if (
+      updates.display_name &&
+      (updates.display_name.length < 2 || updates.display_name.length > 255)
+    ) {
       return NextResponse.json(
         { error: 'Display name must be between 2 and 255 characters' },
         { status: 400 }
@@ -76,7 +92,7 @@ export async function PUT(request: NextRequest) {
       .from('users')
       .update(updates)
       .eq('id', user.id)
-      .select('id, first_name, last_name, username, avatar_url, bio')
+      .select('id, first_name, last_name, display_name, username, avatar_url, bio')
       .single()
 
     if (updateError) {

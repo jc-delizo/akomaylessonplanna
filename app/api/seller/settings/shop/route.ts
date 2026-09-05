@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -35,15 +36,29 @@ export async function PUT(request: NextRequest) {
     const { shop_name, shop_description, auto_publish } = body
 
     // Build update object
-    const updates: any = {}
+    const updates: {
+      shop_name?: string | null
+      shop_description?: string | null
+      auto_publish?: boolean
+      updated_at?: string
+    } = {}
     if (shop_name !== undefined) {
+      if (shop_name !== null && typeof shop_name !== 'string') {
+        return NextResponse.json({ error: 'shop_name must be a string' }, { status: 400 })
+      }
       updates.shop_name = shop_name?.trim() || null
     }
     if (shop_description !== undefined) {
+      if (shop_description !== null && typeof shop_description !== 'string') {
+        return NextResponse.json({ error: 'shop_description must be a string' }, { status: 400 })
+      }
       updates.shop_description = shop_description?.trim() || null
     }
     if (auto_publish !== undefined) {
-      updates.auto_publish = Boolean(auto_publish)
+      if (typeof auto_publish !== 'boolean') {
+        return NextResponse.json({ error: 'auto_publish must be a boolean' }, { status: 400 })
+      }
+      updates.auto_publish = auto_publish
     }
 
     if (Object.keys(updates).length === 0) {
@@ -72,7 +87,7 @@ export async function PUT(request: NextRequest) {
     updates.updated_at = new Date().toISOString()
 
     // Update user
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await createAdminClient()
       .from('users')
       .update(updates)
       .eq('id', user.id)

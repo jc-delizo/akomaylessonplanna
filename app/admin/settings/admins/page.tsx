@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getAdminsData } from '@/lib/utils/admin-admins'
@@ -22,7 +23,7 @@ export default async function AdminManagementPage() {
     redirect('/admin')
   }
 
-  const { admins } = await getAdminsData(supabase)
+  const { admins } = await getAdminsData(createAdminClient())
 
   const getRoleBadge = (role: string) => {
     const roleColors: Record<string, string> = {

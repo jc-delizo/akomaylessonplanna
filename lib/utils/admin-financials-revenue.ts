@@ -61,13 +61,13 @@ export async function getRevenueData(
 
   const { data: salesByCategory } = await supabase
     .from('order_items')
-    .select('price, product:products!order_items_product_id_fkey(product_type)')
+    .select('price:price_at_purchase, product:products!order_items_product_id_fkey(product_type)')
     .gte('created_at', startDate.toISOString())
 
   const { data: topSellers } = await supabase
     .from('order_items')
     .select(
-      'seller_id, price, seller:users!order_items_seller_id_fkey(id, first_name, last_name)'
+      'seller_id, price:price_at_purchase, seller:users!order_items_seller_id_fkey(id, first_name, last_name)'
     )
     .gte('created_at', startDate.toISOString())
 

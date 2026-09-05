@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getAuditLogData } from '@/lib/utils/admin-audit-log'
@@ -37,7 +38,7 @@ export default async function ActivityLogPage({
   })
 
   const filterByAdminId = adminUser.admin_role !== 'super_admin' ? authUser.id : undefined
-  const { logs, pagination } = await getAuditLogData(supabase, {
+  const { logs, pagination } = await getAuditLogData(createAdminClient(), {
     admin_id: params.admin_id,
     action: params.action,
     entity_type: params.entity_type,

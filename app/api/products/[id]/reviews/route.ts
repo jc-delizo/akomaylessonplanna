@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/products/[id]/reviews
@@ -21,8 +23,8 @@ export async function GET(
 
     // Parse query parameters
     const sort = searchParams.get('sort') || 'newest'
-    const limit = parseInt(searchParams.get('limit') || '10', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 10, 1, 100)
+    const offset = parseBoundedInteger(searchParams.get('offset'), 0, 0, 1_000_000)
 
     // Build query
     let query = supabase
@@ -221,7 +223,7 @@ export async function POST(
     
     if (flagResult) {
       // Flag the review
-      await supabase.rpc('auto_flag_review', {
+      await createAdminClient().rpc('auto_flag_review', {
         p_review_id: review.id,
         p_flag_type: flagResult.flagType,
         p_reason: flagResult.reason,

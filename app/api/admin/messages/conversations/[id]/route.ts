@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const { id: conversationId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get conversation with full details
     const { data: conversation, error: convError } = await supabase
@@ -46,7 +46,7 @@ export async function GET(
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url, email)
+        sender:sender_id(id, first_name, last_name, username, avatar_url, email)
       `
       )
       .eq('conversation_id', conversationId)

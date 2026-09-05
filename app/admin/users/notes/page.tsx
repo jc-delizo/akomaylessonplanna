@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { AdminNotesClient } from './admin-notes-client'
@@ -18,7 +19,7 @@ export default async function AdminNotesPage() {
     redirect('/')
   }
 
-  const { data: notes } = await supabase
+  const { data: notes } = await createAdminClient()
     .from('admin_notes')
     .select(`
       *,

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -18,7 +18,7 @@ export async function POST(
     }
 
     const { id: conversationId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { content } = body
 
@@ -65,7 +65,7 @@ export async function POST(
       .select(
         `
         *,
-        sender:sender_id(id, name, username, avatar_url)
+        sender:sender_id(id, first_name, last_name, username, avatar_url)
       `
       )
       .single()

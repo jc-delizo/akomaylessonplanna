@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Save, Eye, Mail, Clock, RotateCcw } from 'lucide-react'
+import { getFullName } from '@/lib/utils/profile'
 
 interface EmailTemplate {
   id: string
@@ -35,7 +36,8 @@ interface TemplateVersion {
   created_at: string
   created_by: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
     email: string
   } | null
 }
@@ -277,7 +279,7 @@ export function EmailTemplateEditorClient({
                     <div className="font-medium">Version {version.version}</div>
                     <div className="text-xs text-gray-500">
                       {new Date(version.created_at).toLocaleDateString()}
-                      {version.created_by && ` by ${version.created_by.name}`}
+                      {version.created_by && ` by ${getFullName(version.created_by)}`}
                     </div>
                   </div>
                 </div>

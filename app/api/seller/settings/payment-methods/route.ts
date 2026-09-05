@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -18,8 +19,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
+
     // Verify user is a seller
-    const { data: userData } = await supabase
+    const { data: userData } = await adminClient
       .from('users')
       .select('can_sell')
       .eq('id', user.id)
@@ -36,12 +39,22 @@ export async function PUT(request: NextRequest) {
     const { gcash_number, maya_number } = body
 
     // Build update object
-    const updates: any = {}
+    const updates: {
+      gcash_number?: string | null
+      maya_number?: string | null
+      updated_at?: string
+    } = {}
     if (gcash_number !== undefined) {
-      updates.gcash_number = gcash_number?.trim() || null
+      if (gcash_number !== null && typeof gcash_number !== 'string') {
+        return NextResponse.json({ error: 'gcash_number must be a string' }, { status: 400 })
+      }
+      updates.gcash_number = gcash_number?.replace(/[\s-]/g, '') || null
     }
     if (maya_number !== undefined) {
-      updates.maya_number = maya_number?.trim() || null
+      if (maya_number !== null && typeof maya_number !== 'string') {
+        return NextResponse.json({ error: 'maya_number must be a string' }, { status: 400 })
+      }
+      updates.maya_number = maya_number?.replace(/[\s-]/g, '') || null
     }
 
     if (Object.keys(updates).length === 0) {
@@ -51,8 +64,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Validate PH phone format (09XX-XXX-XXXX or 09XXXXXXXXX)
-    const phoneRegex = /^09\d{2}[\s-]?\d{3}[\s-]?\d{4}$|^09\d{9}$/
+    // Store a canonical PH mobile number so payout validation uses one format.
+    const phoneRegex = /^09\d{9}$/
     
     if (updates.gcash_number && !phoneRegex.test(updates.gcash_number)) {
       return NextResponse.json(
@@ -71,7 +84,7 @@ export async function PUT(request: NextRequest) {
     updates.updated_at = new Date().toISOString()
 
     // Update user
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await adminClient
       .from('users')
       .update(updates)
       .eq('id', user.id)

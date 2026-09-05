@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { Card } from '@/components/ui/card'
@@ -7,7 +8,7 @@ import { getFullName, getInitials } from '@/lib/utils/profile'
 import { UnbanUserDialog } from '@/components/admin/unban-user-dialog'
 
 async function getBannedUsers(
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createAdminClient>
 ) {
   // Query banned users directly from Supabase
   const { data: users, error } = await supabase
@@ -53,7 +54,7 @@ export default async function BannedUsersPage() {
     redirect('/')
   }
 
-  const bannedUsers = await getBannedUsers(supabase)
+  const bannedUsers = await getBannedUsers(createAdminClient())
 
   return (
     <div className="space-y-6">

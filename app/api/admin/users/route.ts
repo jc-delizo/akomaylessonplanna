@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 /**
  * GET /api/admin/users
@@ -24,18 +25,18 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const searchParams = request.nextUrl.searchParams
 
-    const search = searchParams.get('search')
+    const search = sanitizePostgrestSearchTerm(searchParams.get('search') || '')
     const role = searchParams.get('role')
     const verification = searchParams.get('verification')
     const tier = searchParams.get('tier')
     const banned = searchParams.get('banned')
     const signupDateFrom = searchParams.get('signupDateFrom')
     const signupDateTo = searchParams.get('signupDateTo')
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 50, 1, 100)
     const offset = (page - 1) * limit
 
     // Build query

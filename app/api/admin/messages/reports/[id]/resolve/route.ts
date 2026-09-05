@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const { id: reportId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { resolution, status } = body
 

@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 function getFileNameFromUrl(url: string): string {
   try {
@@ -28,10 +28,15 @@ export async function GET(
     if (!auth.success) return auth.response
 
     const { id: productId } = await params
-    const index = Math.max(0, parseInt(request.nextUrl.searchParams.get('index') ?? '0', 10))
+    const index = parseBoundedInteger(
+      request.nextUrl.searchParams.get('index'),
+      0,
+      0,
+      100
+    )
 
-    const supabase = await createClient()
-    const { data: product, error: productError } = await supabase
+    const adminSupabase = createAdminClient()
+    const { data: product, error: productError } = await adminSupabase
       .from('products')
       .select('file_urls')
       .eq('id', productId)
@@ -66,7 +71,6 @@ export async function GET(
     }
 
     // Use admin client so we can create signed URLs for private buckets (product-files)
-    const adminSupabase = createAdminClient()
     const { data: signed, error: urlError } = await adminSupabase.storage
       .from(bucket)
       .createSignedUrl(storagePath, 3600)

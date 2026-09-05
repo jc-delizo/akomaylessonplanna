@@ -8,6 +8,7 @@ import {
   setCachedSearchResults 
 } from '@/lib/cache/search-cache'
 import { trackSearchImpressions } from '@/lib/analytics/track-search-impressions'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
 
 /**
  * GET /api/search
@@ -39,9 +40,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
 
     // Parse query parameters (support both 'q' and 'query')
-    const query = searchParams.get('q') || searchParams.get('query') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '24')
+    const query = sanitizePostgrestSearchTerm(
+      searchParams.get('q') || searchParams.get('query') || ''
+    )
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 24, 1, 100)
     const gradeId = searchParams.get('grade_id')
     const subjectIdParam = searchParams.get('subject_id')
     const subjectIdsParam = searchParams.get('subject_ids')

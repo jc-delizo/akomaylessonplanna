@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/middleware/admin-auth'
 import { getRevenueData } from '@/lib/utils/admin-financials-revenue'
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const authResult = await requireSuperAdmin(request)
     if (!authResult.success) return authResult.response
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const timeRange = request.nextUrl.searchParams.get('timeRange') || 'last_30_days'
     const result = await getRevenueData(supabase, timeRange)
     return NextResponse.json(result)

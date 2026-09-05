@@ -375,8 +375,8 @@ export default function DashboardOverviewPage() {
                     width={50}
                   />
                   <Tooltip
-                    formatter={(value: number | undefined) => [value != null ? `₱${value.toFixed(2)}` : '', 'Revenue']}
-                    labelFormatter={(label) => (label != null ? new Date(label).toLocaleDateString('en-US') : '')}
+                    formatter={(value) => [value != null ? `₱${Number(value).toFixed(2)}` : '', 'Revenue']}
+                    labelFormatter={(label) => (label != null ? new Date(String(label)).toLocaleDateString('en-US') : '')}
                   />
                   <Area
                     type="monotone"

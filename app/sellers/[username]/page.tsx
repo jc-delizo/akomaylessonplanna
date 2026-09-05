@@ -64,7 +64,6 @@ export default async function SellerProfilePage({ params }: PageProps) {
       can_sell,
       subscription_tier,
       is_pioneer,
-      email,
       created_at
     `
     )

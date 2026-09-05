@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { parseAmountToCentavos } from '@/lib/security/request-security'
 
 export async function POST(request: Request) {
   try {
@@ -12,8 +14,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
+
     // Verify user is a seller
-    const { data: userData } = await supabase
+    const { data: userData } = await adminClient
       .from('users')
       .select('role, can_sell, gcash_number, maya_number')
       .eq('id', user.id)
@@ -26,7 +30,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { amount, payment_method } = body
 
-    if (!amount || isNaN(amount) || amount < 500) {
+    const amountCentavos = parseAmountToCentavos(amount)
+    if (amountCentavos === null || amountCentavos < 50_000) {
       return NextResponse.json(
         { error: 'Minimum withdrawal amount is ₱500' },
         { status: 400 }
@@ -36,54 +41,6 @@ export async function POST(request: Request) {
     if (!payment_method || !['gcash', 'maya'].includes(payment_method)) {
       return NextResponse.json(
         { error: 'payment_method must be "gcash" or "maya"' },
-        { status: 400 }
-      )
-    }
-
-    // Get available balance (calculate directly instead of making HTTP request)
-    const { data: orderItems } = await supabase
-      .from('order_items')
-      .select('net_earnings, created_at, order:orders!order_items_order_id_fkey(payment_status, completed_at)')
-      .eq('seller_id', user.id)
-
-    if (!orderItems) {
-      return NextResponse.json({ error: 'Failed to calculate balance' }, { status: 500 })
-    }
-
-    const now = new Date()
-    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
-
-    let availableBalance = 0
-    for (const item of orderItems) {
-      const order = Array.isArray(item.order) ? item.order[0] : item.order
-      if (order?.payment_status === 'completed') {
-        const itemDate = new Date(order.completed_at || item.created_at)
-        if (itemDate < threeDaysAgo) {
-          availableBalance += parseFloat(item.net_earnings.toString())
-        }
-      }
-    }
-
-    // Subtract withdrawn amounts
-    const { data: withdrawals } = await supabase
-      .from('withdrawal_requests')
-      .select('amount, status')
-      .eq('seller_id', user.id)
-      .in('status', ['processing', 'completed'])
-
-    if (withdrawals) {
-      const withdrawnAmount = withdrawals
-        .filter((w) => w.status === 'completed')
-        .reduce((sum, w) => sum + parseFloat(w.amount.toString()), 0)
-
-      availableBalance = Math.max(0, availableBalance - withdrawnAmount)
-    }
-
-    const earnings = { available_balance: availableBalance }
-
-    if (amount > earnings.available_balance) {
-      return NextResponse.json(
-        { error: 'Insufficient balance' },
         { status: 400 }
       )
     }
@@ -99,29 +56,53 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create withdrawal request
-    const { data: withdrawal, error: withdrawalError } = await supabase
-      .from('withdrawal_requests')
-      .insert({
-        seller_id: user.id,
-        amount: amount,
-        payment_method: payment_method,
-        payment_number: paymentNumber,
-        status: 'processing',
-      })
-      .select()
-      .single()
+    if (!/^09\d{9}$/.test(paymentNumber)) {
+      return NextResponse.json(
+        { error: `Please set a valid ${payment_method === 'gcash' ? 'GCash' : 'Maya'} number in your profile settings` },
+        { status: 400 }
+      )
+    }
+
+    // Reserve the balance and create the request in one locked transaction.
+    const normalizedAmount = amountCentavos / 100
+    const { data: reservation, error: withdrawalError } = await adminClient.rpc(
+      'request_withdrawal',
+      {
+        p_seller_id: user.id,
+        p_amount: normalizedAmount,
+        p_payment_method: payment_method,
+        p_payment_number: paymentNumber,
+      }
+    )
 
     if (withdrawalError) {
       console.error('Error creating withdrawal request:', withdrawalError)
+      if (withdrawalError.message.includes('insufficient_funds')) {
+        return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 })
+      }
       return NextResponse.json(
         { error: 'Failed to create withdrawal request' },
         { status: 500 }
       )
     }
 
-    // TODO: Process withdrawal via GCash/Maya Disbursement API
-    // For now, we'll just create the request
+    const reserved = Array.isArray(reservation) ? reservation[0] : null
+    if (!reserved?.withdrawal_id) {
+      return NextResponse.json({ error: 'Failed to create withdrawal request' }, { status: 500 })
+    }
+
+    const { data: withdrawal, error: fetchError } = await adminClient
+      .from('withdrawal_requests')
+      .select('*')
+      .eq('id', reserved.withdrawal_id)
+      .single()
+
+    if (fetchError || !withdrawal) {
+      console.error('Error loading created withdrawal request:', fetchError)
+      return NextResponse.json({ error: 'Failed to load withdrawal request' }, { status: 500 })
+    }
+
+    // TODO: Process the pending request via a verified GCash/Maya disbursement integration.
     // In production, you would:
     // 1. Call GCash/Maya Disbursement API
     // 2. Get transaction reference
@@ -135,7 +116,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        withdrawal: withdrawal,
+        withdrawal,
         message: 'Withdrawal request submitted. Processing time: 1-3 business days.',
       },
       { status: 201 }

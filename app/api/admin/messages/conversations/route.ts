@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { isUuid, parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/admin/messages/conversations
@@ -14,15 +15,15 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id')
     const productId = searchParams.get('product_id')
     const status = searchParams.get('status')
     const flagged = searchParams.get('flagged') === 'true'
-    const page = parseInt(searchParams.get('page') || '1')
-    const perPage = parseInt(searchParams.get('per_page') || '20')
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const perPage = parseBoundedInteger(searchParams.get('per_page'), 20, 1, 100)
     const offset = (page - 1) * perPage
 
     // Build query
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     if (userId) {
+      if (!isUuid(userId)) {
+        return NextResponse.json({ error: 'Invalid user_id' }, { status: 400 })
+      }
       query = query.or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     }
     if (productId) {

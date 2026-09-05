@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getGrowthAnalyticsData } from '@/lib/utils/admin-analytics-growth'
@@ -27,7 +28,7 @@ export default async function GrowthAnalyticsPage({
 
   const params = searchParams instanceof Promise ? await searchParams : searchParams
   const timeRange = params.timeRange || 'last_30_days'
-  const { metrics, charts } = await getGrowthAnalyticsData(supabase, timeRange)
+  const { metrics, charts } = await getGrowthAnalyticsData(createAdminClient(), timeRange)
 
   // Aggregate userGrowthOverTime (created_at[]) into { date, users }[] for AdminCharts
   const byDate: Record<string, number> = {}

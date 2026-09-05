@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -12,6 +13,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if (process.env.PAYMENTS_ENABLED !== 'true') {
+      return NextResponse.json(
+        { error: 'Checkout is temporarily unavailable while payments are being configured' },
+        { status: 503 }
+      )
+    }
+
+    const adminClient = createAdminClient()
     const body = await request.json()
     const { order_id, payment_method, mobile_number } = body
 
@@ -26,7 +35,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!mobile_number || mobile_number.length < 10) {
+    const normalizedMobileNumber =
+      typeof mobile_number === 'string' ? mobile_number.replace(/[\s-]/g, '') : ''
+    if (!/^09\d{9}$/.test(normalizedMobileNumber)) {
       return NextResponse.json(
         { error: 'Valid mobile_number is required' },
         { status: 400 }
@@ -34,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     // Verify order belongs to user
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('id, buyer_id, payment_status, payment_expires_at')
       .eq('id', order_id)
@@ -64,7 +75,7 @@ export async function POST(request: Request) {
       const now = new Date()
       if (expiresAt < now) {
         // Update order to failed
-        await supabase
+        await adminClient
           .from('orders')
           .update({ payment_status: 'failed' })
           .eq('id', order_id)
@@ -77,11 +88,11 @@ export async function POST(request: Request) {
     }
 
     // Update order with payment method and mobile number
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from('orders')
       .update({
         payment_method: payment_method,
-        buyer_mobile_number: mobile_number,
+        buyer_mobile_number: normalizedMobileNumber,
         updated_at: new Date().toISOString(),
       })
       .eq('id', order_id)

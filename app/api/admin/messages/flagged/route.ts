@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -14,26 +14,26 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'pending'
     const tableName = 'messages'
 
     // Build query
-    let query = supabase
+    const query = supabase
       .from(tableName)
       .select(
         `
         *,
-        sender:sender_id(id, name, username, email),
+        sender:sender_id(id, first_name, last_name, username, email),
         conversation:conversation_id(
           id,
           buyer_id,
           seller_id,
           product_id,
-          buyer:buyer_id(id, name, username),
-          seller:seller_id(id, name, username),
+          buyer:buyer_id(id, first_name, last_name, username),
+          seller:seller_id(id, first_name, last_name, username),
           product:product_id(id, title)
         )
       `

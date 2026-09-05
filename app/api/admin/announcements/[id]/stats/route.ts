@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/middleware/admin-auth'
 
 /**
  * GET /api/admin/announcements/[id]/stats
@@ -12,28 +13,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await requireAdmin(request)
+    if (!authResult.success) {
+      return authResult.response
     }
 
-    // Verify user is admin
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (userData?.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden. Admin access required' },
-        { status: 403 }
-      )
-    }
+    const supabase = createAdminClient()
 
     // Get announcement
     const { data: announcement, error: announcementError } = await supabase

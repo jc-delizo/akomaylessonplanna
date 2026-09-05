@@ -9,34 +9,22 @@ export async function GET(request: Request) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/seller/dashboard/overview/route.ts:GET',message:'getUser result',data:{hasUser:!!user,userId:user?.id?.slice(0,8)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Verify user is a seller
-    const { data: userData, error: userDataError } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('role, can_sell, subscription_tier')
       .eq('id', user.id)
       .single()
-
-    // #region agent log
-    fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/seller/dashboard/overview/route.ts:userData',message:'users select result',data:{userDataError:userDataError?.message??null,role:userData?.role,can_sell:userData?.can_sell,hasUserData:!!userData},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,C,E'})}).catch(()=>{});
-    // #endregion
 
     const allowed =
       userData &&
       (userData.role === 'admin' ||
         (userData.role === 'seller' && userData.can_sell))
     if (!allowed) {
-      // #region agent log
-      const reason = !userData ? 'noUserData' : userData.role !== 'seller' ? 'roleNotSeller' : 'can_sellFalse';
-      fetch('http://127.0.0.1:7248/ingest/00d5f2ca-d0b7-44d8-a520-af7d4c8e25e2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/seller/dashboard/overview/route.ts:403',message:'403 reason',data:{reason,role:userData?.role,can_sell:userData?.can_sell},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C,E'})}).catch(()=>{});
-      // #endregion
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

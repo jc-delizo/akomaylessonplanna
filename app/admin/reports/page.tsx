@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getReportsData } from '@/lib/utils/admin-reports'
@@ -23,7 +24,7 @@ export default async function UserReportsPage() {
     redirect('/')
   }
 
-  const { reports } = await getReportsData(supabase, { status: 'pending' })
+  const { reports } = await getReportsData(createAdminClient(), { status: 'pending' })
 
   const getTypeIcon = (type: string) => {
     switch (type) {

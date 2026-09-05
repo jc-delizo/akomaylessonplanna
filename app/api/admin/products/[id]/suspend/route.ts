@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
+import { requirePermission, logAdminAction } from '@/lib/middleware/admin-auth'
 
 /**
  * POST /api/admin/products/[id]/suspend
@@ -14,17 +14,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'suspend_products')
     if (!authResult.success) {
       return authResult.response
     }
 
     const { id: productId } = await params
-    const supabase = await createClient()
-    const body = await request.json()
-    const { reason } = body
+    const supabase = createAdminClient()
+    const body: unknown = await request.json()
+    const input = body && typeof body === 'object' ? body as Record<string, unknown> : {}
+    const reason = typeof input.reason === 'string' ? input.reason.trim() : ''
 
-    if (!reason || reason.trim().length === 0) {
+    if (!reason || reason.length > 2000) {
       return NextResponse.json({ error: 'Suspension reason is required' }, { status: 400 })
     }
 
@@ -44,10 +45,10 @@ export async function POST(
       .from('products')
       .update({
         status: 'suspended',
-        suspension_reason: reason.trim(),
-        suspended_at: new Date().toISOString(),
+        suspension_reason: reason,
       })
       .eq('id', productId)
+      .eq('status', product.status)
       .select()
       .single()
 
@@ -64,9 +65,9 @@ export async function POST(
       productId,
       {
         status: { from: product.status, to: 'suspended' },
-        reason: reason.trim(),
+        reason,
       },
-      reason.trim()
+      reason
     )
 
     // TODO: Send email notification to seller

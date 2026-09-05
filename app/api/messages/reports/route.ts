@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        reported_user:reported_user_id(id, name, username),
-        reviewed_by_user:reviewed_by(id, name, username)
+        reported_user:reported_user_id(id, first_name, last_name, username),
+        reviewed_by_user:reviewed_by(id, first_name, last_name, username)
       `
       )
       .eq('reporter_id', user.id)

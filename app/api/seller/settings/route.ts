@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user is a seller
-    const { data: userData, error: userError } = await supabase
+    const { data: userData, error: userError } = await createAdminClient()
       .from('users')
       .select(
         'id, first_name, last_name, username, avatar_url, bio, gcash_number, maya_number, shop_name, shop_description, auto_publish, subscription_tier, can_sell'

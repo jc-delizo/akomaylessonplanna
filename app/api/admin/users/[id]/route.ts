@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const { id: userId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get user data
     const { data: user, error: userError } = await supabase
@@ -54,8 +54,9 @@ export async function GET(
           id,
           order_id,
           product_id,
-          price,
-          commission,
+          price:price_at_purchase,
+          commission:commission_amount,
+          net_earnings,
           created_at,
           order:orders!order_items_order_id_fkey(id, buyer_id, payment_status)
         `)
@@ -85,7 +86,7 @@ export async function GET(
         .from('admin_notes')
         .select(`
           *,
-          admin:users!admin_notes_admin_id_fkey(id, name, email)
+          admin:users!admin_notes_admin_id_fkey(id, first_name, last_name, email)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false }),

@@ -56,35 +56,47 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const matchesPathSegment = (path: string) =>
+    request.nextUrl.pathname === path ||
+    request.nextUrl.pathname.startsWith(`${path}/`)
+
+  const redirectWithSessionCookies = (url: URL) => {
+    const redirectResponse = NextResponse.redirect(url)
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie)
+    })
+    return redirectResponse
+  }
+
   // Redirect root path to /marketplace (unless it's an OAuth callback)
   if (request.nextUrl.pathname === '/') {
     const code = request.nextUrl.searchParams.get('code')
     const error = request.nextUrl.searchParams.get('error')
     // Only redirect if it's not an OAuth callback
     if (!code && !error) {
-      return NextResponse.redirect(new URL('/marketplace', request.url))
+      return redirectWithSessionCookies(new URL('/marketplace', request.url))
     }
   }
 
   // Redirect old /dashboard/* routes to /shop/*
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (matchesPathSegment('/dashboard')) {
     const newPath = request.nextUrl.pathname.replace(/^\/dashboard/, '/shop')
     const newUrl = new URL(newPath, request.url)
     newUrl.search = request.nextUrl.search // Preserve query parameters
-    return NextResponse.redirect(newUrl)
+    return redirectWithSessionCookies(newUrl)
   }
 
   // Protected routes that require authentication
   const isProtectedRoute =
-    request.nextUrl.pathname.startsWith('/shop') ||
-    request.nextUrl.pathname.startsWith('/admin') ||
-    request.nextUrl.pathname.startsWith('/checkout') ||
-    request.nextUrl.pathname.startsWith('/seller')
+    matchesPathSegment('/shop') ||
+    matchesPathSegment('/admin') ||
+    matchesPathSegment('/checkout') ||
+    matchesPathSegment('/seller')
 
   // Auth routes (login, signup)
   const isAuthRoute =
-    request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/signup')
+    matchesPathSegment('/login') ||
+    matchesPathSegment('/signup')
 
   // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !user) {
@@ -92,52 +104,37 @@ export async function proxy(request: NextRequest) {
     // Preserve full pathname and query params in redirect
     const fullPath = request.nextUrl.pathname + request.nextUrl.search
     redirectUrl.searchParams.set('redirect', fullPath)
-    return NextResponse.redirect(redirectUrl)
+    return redirectWithSessionCookies(redirectUrl)
   }
 
   // Redirect to marketplace if accessing auth route with session
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/marketplace', request.url))
+    return redirectWithSessionCookies(new URL('/marketplace', request.url))
   }
 
   // Admin routes - check role
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  if (matchesPathSegment('/admin')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return redirectWithSessionCookies(new URL('/login', request.url))
     }
 
-    // Check if user is admin - first check role (always exists)
-    const { data: roleData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    const { data: adminRole, error: adminError } = await supabase.rpc('current_admin_role')
 
-    // If not admin role, redirect
-    if (!roleData || roleData.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-
-    // User has admin role - try to get admin_role (may not exist if migration not applied)
-    let adminRole: string | null = 'super_admin' // Default if column missing
-    const { data: adminRoleData } = await supabase
-      .from('users')
-      .select('admin_role')
-      .eq('id', user.id)
-      .single()
-
-    if (adminRoleData?.admin_role) {
-      adminRole = adminRoleData.admin_role
+    const validAdminRoles = ['super_admin', 'moderator', 'content_manager']
+    if (
+      adminError ||
+      typeof adminRole !== 'string' ||
+      !validAdminRoles.includes(adminRole)
+    ) {
+      return redirectWithSessionCookies(new URL('/', request.url))
     }
 
     // Super Admin only routes
     const superAdminOnlyRoutes = ['/admin/financials']
-    const isSuperAdminOnlyRoute = superAdminOnlyRoutes.some((route) =>
-      request.nextUrl.pathname.startsWith(route)
-    )
+    const isSuperAdminOnlyRoute = superAdminOnlyRoutes.some(matchesPathSegment)
 
     if (isSuperAdminOnlyRoute && adminRole !== 'super_admin') {
-      return NextResponse.redirect(new URL('/admin', request.url))
+      return redirectWithSessionCookies(new URL('/admin', request.url))
     }
   }
 

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, logAdminAction } from '@/lib/middleware/admin-auth'
 import { hasPermission } from '@/lib/utils/admin-permissions'
@@ -39,7 +39,7 @@ export async function POST(
     }
 
     const { id: reportId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const {
       resolution_type,
@@ -69,6 +69,24 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid resolution_type' }, { status: 400 })
     }
 
+    const actionPermission = resolution_type === 'user_banned'
+      ? 'ban_user'
+      : resolution_type === 'user_warned'
+        ? 'warn_user'
+        : resolution_type === 'product_suspended'
+          ? 'suspend_products'
+          : resolution_type === 'review_deleted'
+            ? 'delete_reviews'
+            : 'resolve_reports'
+
+    if (!hasPermission(authResult.admin.adminRole, actionPermission)) {
+      return NextResponse.json({ error: 'Insufficient permissions for this resolution' }, { status: 403 })
+    }
+
+    if (ban_reviewer && !hasPermission(authResult.admin.adminRole, 'ban_user')) {
+      return NextResponse.json({ error: 'Insufficient permission to ban reviewer' }, { status: 403 })
+    }
+
     // Get report
     const { data: report, error: reportError } = await supabase
       .from('reports')
@@ -87,6 +105,20 @@ export async function POST(
       const targetUserId = user_id || report.reported_item_id
       if (!targetUserId) {
         return NextResponse.json({ error: 'user_id required for user_banned' }, { status: 400 })
+      }
+      const { data: targetUser } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', targetUserId)
+        .single()
+      if (!targetUser) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+      if (targetUser.role === 'admin' || targetUserId === authResult.admin.userId) {
+        return NextResponse.json(
+          { error: 'Administrator accounts cannot be banned through report resolution' },
+          { status: 403 }
+        )
       }
       const { error: banError } = await supabase
         .from('users')
@@ -137,7 +169,6 @@ export async function POST(
         .update({
           status: 'suspended',
           suspension_reason: actionReason,
-          suspended_at: new Date().toISOString(),
         })
         .eq('id', targetProductId)
       if (suspendError) {
@@ -169,10 +200,17 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to delete review' }, { status: 500 })
       }
       if (ban_reviewer && review?.buyer_id) {
-        await supabase
+        const { data: reviewer } = await supabase
           .from('users')
-          .update({ is_banned: true, ban_reason: 'Repeated review violations' })
+          .select('role')
           .eq('id', review.buyer_id)
+          .single()
+        if (reviewer?.role !== 'admin') {
+          await supabase
+            .from('users')
+            .update({ is_banned: true, ban_reason: 'Repeated review violations' })
+            .eq('id', review.buyer_id)
+        }
       }
       await logAdminAction(
         authResult.admin.userId,

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getPioneersCandidatesData, getPioneersData } from '@/lib/utils/admin-pioneers'
@@ -22,9 +23,10 @@ export default async function PioneerCandidatesPage() {
     redirect('/')
   }
 
+  const adminClient = createAdminClient()
   const [{ candidates }, { availableSlots }] = await Promise.all([
-    getPioneersCandidatesData(supabase),
-    getPioneersData(supabase),
+    getPioneersCandidatesData(adminClient),
+    getPioneersData(adminClient),
   ])
 
   const getScoreColor = (score: number) => {

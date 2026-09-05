@@ -1,7 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/middleware/admin-auth'
 import { getWithdrawalsData } from '@/lib/utils/admin-withdrawals'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/admin/financials/withdrawals
@@ -12,12 +13,12 @@ export async function GET(request: NextRequest) {
     const authResult = await requireSuperAdmin(request)
     if (!authResult.success) return authResult.response
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const sp = request.nextUrl.searchParams
     const result = await getWithdrawalsData(supabase, {
       status: sp.get('status') || 'pending',
-      page: parseInt(sp.get('page') || '1', 10),
-      limit: parseInt(sp.get('limit') || '50', 10),
+      page: parseBoundedInteger(sp.get('page'), 1, 1, 10_000),
+      limit: parseBoundedInteger(sp.get('limit'), 50, 1, 100),
     })
     return NextResponse.json(result)
   } catch (error) {

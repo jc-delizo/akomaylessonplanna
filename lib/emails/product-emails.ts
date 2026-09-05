@@ -81,7 +81,7 @@ export async function sendProductRejectedEmail(
     // Get seller info
     const { data: seller } = await supabase
       .from('users')
-      .select('id, name, email')
+      .select('id, first_name, last_name, email')
       .eq('id', sellerId)
       .single()
 
@@ -91,8 +91,12 @@ export async function sendProductRejectedEmail(
     }
 
     // Build template data
+    const sellerFullName = [seller.first_name, seller.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
     const templateData = buildProductRejectedData({
-      userName: seller.name || 'Seller',
+      userName: sellerFullName || 'Seller',
       userEmail: seller.email,
       userId: seller.id,
       productTitle,

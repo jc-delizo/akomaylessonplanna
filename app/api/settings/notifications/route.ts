@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -28,7 +29,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user's email notification preference
-    const { data: updatedUser, error } = await supabase
+    const { data: updatedUser, error } = await createAdminClient()
       .from('users')
       .update({ email_notifications })
       .eq('id', user.id)

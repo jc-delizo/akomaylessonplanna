@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 
@@ -17,7 +17,7 @@ export async function DELETE(
     }
 
     const { id: messageId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Check if Super Admin (not just any admin)
     const { data: userData } = await supabase

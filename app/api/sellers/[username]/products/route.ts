@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/sellers/[username]/products
@@ -33,8 +34,8 @@ export async function GET(
     }
 
     // Parse query parameters
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = parseInt(searchParams.get('limit') || '12', 10)
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 12, 1, 100)
     const sort = searchParams.get('sort') || 'newest'
     const subject = searchParams.get('subject')
     const grade = searchParams.get('grade')

@@ -5,7 +5,8 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { getAdminRole, isAdmin } from '@/lib/utils/admin-auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getAdminRole } from '@/lib/utils/admin-auth'
 import { hasPermission, type Permission } from '@/lib/utils/admin-permissions'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -36,25 +37,20 @@ export async function requireAdmin(
     }
   }
   
-  // Check if user is admin
-  const isUserAdmin = await isAdmin(user.id)
-  if (!isUserAdmin) {
+  // A missing, invalid, or unreadable role must never grant elevated access.
+  const adminRole = await getAdminRole(user.id)
+  if (!adminRole) {
     return {
       success: false,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     }
   }
   
-  // Get admin role (will default to 'super_admin' if column doesn't exist)
-  const adminRole = await getAdminRole(user.id)
-  // adminRole will always be non-null now (defaults to 'super_admin')
-  // but we check anyway for safety
-  
   return {
     success: true,
     admin: {
       userId: user.id,
-      adminRole: adminRole || 'super_admin', // Fallback to super_admin
+      adminRole,
     },
   }
 }
@@ -124,9 +120,9 @@ export async function logAdminAction(
   ipAddress?: string,
   userAgent?: string
 ): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
-  await supabase.from('audit_log').insert({
+  const { error } = await supabase.from('audit_log').insert({
     admin_id: adminId,
     action,
     entity_type: entityType,
@@ -136,4 +132,13 @@ export async function logAdminAction(
     ip_address: ipAddress || null,
     user_agent: userAgent || null,
   })
+
+  if (error) {
+    console.error('Failed to persist admin audit event', {
+      action,
+      entityType,
+      entityId,
+      error,
+    })
+  }
 }

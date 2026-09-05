@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/utils/admin-auth'
 import { getQuickActionsCounts } from '@/lib/utils/admin-quick-actions'
@@ -13,7 +14,7 @@ import { RefreshCw } from 'lucide-react'
 import { getFullName } from '@/lib/utils/profile'
 
 async function getRecentActivity() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
   // Get recent audit log entries (last 20)
   const { data: auditLogs } = await supabase
@@ -70,8 +71,8 @@ export default async function AdminDashboardPage({
 
   // Fetch data in same server context — no self-fetch, avoids prod failures
   const [metrics, quickActions, activities] = await Promise.all([
-    getDashboardMetricsData(supabase, timeRange),
-    getQuickActionsCounts(supabase),
+    getDashboardMetricsData(createAdminClient(), timeRange),
+    getQuickActionsCounts(createAdminClient()),
     getRecentActivity(),
   ])
 

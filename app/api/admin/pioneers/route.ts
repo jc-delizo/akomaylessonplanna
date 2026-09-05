@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 import { getPioneersData } from '@/lib/utils/admin-pioneers'
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const authResult = await requireAdmin(request)
     if (!authResult.success) return authResult.response
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const result = await getPioneersData(supabase)
     return NextResponse.json(result)
   } catch (error) {

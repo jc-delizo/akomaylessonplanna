@@ -553,7 +553,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="period" tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} tick={{ fontSize: 11 }} />
                     <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} width={50} />
-                    <Tooltip formatter={(value: number | undefined) => [`₱${(value ?? 0).toFixed(2)}`, 'Revenue']} labelFormatter={(label) => new Date(label).toLocaleDateString('en-US')} />
+                    <Tooltip formatter={(value) => [`₱${Number(value ?? 0).toFixed(2)}`, 'Revenue']} labelFormatter={(label) => new Date(String(label)).toLocaleDateString('en-US')} />
                     <Area type="monotone" dataKey="revenue" stroke="#7c3aed" strokeWidth={2} fill="url(#analyticsRevenueGradient)" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -572,7 +572,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis type="number" tickFormatter={(v) => `₱${v}`} tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="title" width={75} tick={{ fontSize: 10 }} tickFormatter={(v) => v.length > 20 ? v.slice(0, 20) + '…' : v} />
-                    <Tooltip formatter={(value: number | undefined) => [`₱${(value ?? 0).toFixed(2)}`, 'Revenue']} />
+                    <Tooltip formatter={(value) => [`₱${Number(value ?? 0).toFixed(2)}`, 'Revenue']} />
                     <Bar dataKey="revenue" fill="#7c3aed" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -602,7 +602,7 @@ export default function AnalyticsPage() {
                         <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number | undefined) => [`₱${(value ?? 0).toFixed(2)}`, 'Revenue']} />
+                    <Tooltip formatter={(value) => [`₱${Number(value ?? 0).toFixed(2)}`, 'Revenue']} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -620,7 +620,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Count']} />
+                    <Tooltip formatter={(value) => [Number(value ?? 0).toLocaleString(), 'Count']} />
                     <Bar dataKey="value" fill="#7c3aed" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -650,7 +650,7 @@ export default function AnalyticsPage() {
                         <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Views']} />
+                    <Tooltip formatter={(value) => [Number(value ?? 0).toLocaleString(), 'Views']} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -673,7 +673,7 @@ export default function AnalyticsPage() {
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                             <XAxis dataKey="grade" tick={{ fontSize: 10 }} />
                             <YAxis tick={{ fontSize: 11 }} width={30} />
-                            <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Orders']} />
+                            <Tooltip formatter={(value) => [Number(value ?? 0), 'Orders']} />
                             <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -700,7 +700,7 @@ export default function AnalyticsPage() {
                                 <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Orders']} />
+                            <Tooltip formatter={(value) => [Number(value ?? 0), 'Orders']} />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>

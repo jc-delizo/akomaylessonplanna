@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/middleware/admin-auth'
 import { getDashboardMetricsData } from '@/lib/utils/admin-dashboard-metrics'
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const searchParams = request.nextUrl.searchParams
     const timeRange = searchParams.get('timeRange') || 'last_30_days'
     const startDate = searchParams.get('startDate') ?? undefined

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { autoFlagMessage, flagMessage } from '@/lib/messaging/moderation-utils'
 import { createMessageNotification } from '@/lib/messaging/notification-integration'
+import { parseBoundedInteger } from '@/lib/utils/query-params'
 
 /**
  * GET /api/messages/conversations/[id]/messages
@@ -24,7 +25,7 @@ export async function GET(
     }
     const { searchParams } = new URL(request.url)
     const before = searchParams.get('before') // timestamp
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 50, 1, 100)
 
     // Verify user is participant
     const { data: conversation } = await supabase

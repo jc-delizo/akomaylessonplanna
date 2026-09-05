@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateProfileCompletion, validateUsername } from '@/lib/utils/profile'
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch full user profile
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError } = await createAdminClient()
       .from('users')
       .select('*')
       .eq('id', authUser.id)
@@ -67,6 +68,8 @@ export async function PUT(request: NextRequest) {
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const adminClient = createAdminClient()
 
     // Parse request body
     const body = await request.json()
@@ -237,7 +240,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user profile
-    const { data: updatedUser, error: updateError } = await supabase
+    const { data: updatedUser, error: updateError } = await adminClient
       .from('users')
       .update(updateData)
       .eq('id', authUser.id)
@@ -253,7 +256,7 @@ export async function PUT(request: NextRequest) {
     const completionPercent = calculateProfileCompletion(updatedUser as any)
 
     // Update profile_completion_percent
-    await supabase
+    await adminClient
       .from('users')
       .update({ profile_completion_percent: completionPercent })
       .eq('id', authUser.id)

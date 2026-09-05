@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { hasPermission } from '@/lib/utils/admin-permissions'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -14,29 +16,13 @@ export async function PUT(
   { params }: { params: Promise<{ reviewId: string }> }
 ) {
   try {
+    const authResult = await requireAdmin(request)
+    if (!authResult.success) {
+      return authResult.response
+    }
+
     const { reviewId } = await params
-    const supabase = await createClient()
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify user is admin
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || userData.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const supabase = createAdminClient()
 
     // Parse request body
     const body = await request.json()
@@ -47,6 +33,13 @@ export async function PUT(
         { error: 'Action must be "approve" or "delete"' },
         { status: 400 }
       )
+    }
+
+    const requiredPermission = action === 'delete'
+      ? 'delete_reviews'
+      : 'dismiss_review_flags'
+    if (!hasPermission(authResult.admin.adminRole, requiredPermission)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Get review
@@ -91,7 +84,7 @@ export async function PUT(
           .from('review_flags')
           .update({
             status: 'approved',
-            reviewed_by: user.id,
+            reviewed_by: authResult.admin.userId,
             reviewed_at: new Date().toISOString(),
           })
           .in('id', flags.map(f => f.id))
@@ -119,7 +112,7 @@ export async function PUT(
           .from('review_flags')
           .update({
             status: 'dismissed',
-            reviewed_by: user.id,
+            reviewed_by: authResult.admin.userId,
             reviewed_at: new Date().toISOString(),
           })
           .in('id', flags.map(f => f.id))

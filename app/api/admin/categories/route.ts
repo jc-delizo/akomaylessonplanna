@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/middleware/admin-auth'
+import { requirePermission } from '@/lib/middleware/admin-auth'
 import { getCategoriesData } from '@/lib/utils/admin-categories'
 
 /**
@@ -9,12 +9,12 @@ import { getCategoriesData } from '@/lib/utils/admin-categories'
  */
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'view_catalog')
     if (!authResult.success) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const result = await getCategoriesData(supabase)
     return NextResponse.json(result)
   } catch (error) {
@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdmin(request)
+    const authResult = await requirePermission(request, 'view_catalog')
     if (!authResult.success) {
       return authResult.response
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const {
       name,

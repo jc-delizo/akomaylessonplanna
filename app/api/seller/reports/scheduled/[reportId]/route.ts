@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     // Calculate next_send_at if frequency changed
-    let updateData: any = {}
+    const updateData: any = {}
     if (frequency !== undefined) updateData.frequency = frequency
     if (format !== undefined) updateData.format = format
     if (is_active !== undefined) updateData.is_active = is_active

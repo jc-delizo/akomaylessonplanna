@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -17,6 +18,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const adminClient = createAdminClient()
     const body = await request.json()
     const { action, message } = body // action: 'approve', 'dispute', 'offer_fix'
 
@@ -28,7 +30,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Get order and verify seller owns products in this order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('id, buyer_id, refund_status, refund_reason, total_amount, payment_method, payment_reference')
       .eq('id', orderId)
@@ -39,7 +41,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Verify seller owns products in this order
-    const { data: orderItems, error: itemsError } = await supabase
+    const { data: orderItems, error: itemsError } = await adminClient
       .from('order_items')
       .select('seller_id')
       .eq('order_id', orderId)
@@ -60,7 +62,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (action === 'approve') {
       // Process refund automatically
       // Update order status
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminClient
         .from('orders')
         .update({
           refund_status: 'approved',
@@ -79,20 +81,20 @@ export async function POST(request: Request, { params }: RouteParams) {
       // await supabase.from('orders').update({ refund_reference: refundReference }).eq('id', orderId)
 
       // Remove products from user library
-      const { data: libraryItems } = await supabase
+      const { data: libraryItems } = await adminClient
         .from('user_library')
         .select('id')
         .eq('user_id', order.buyer_id)
 
       if (libraryItems) {
-        const { data: orderItemsForLibrary } = await supabase
+        const { data: orderItemsForLibrary } = await adminClient
           .from('order_items')
           .select('product_id')
           .eq('order_id', orderId)
 
         if (orderItemsForLibrary) {
           const productIds = orderItemsForLibrary.map((item) => item.product_id)
-          await supabase
+          await adminClient
             .from('user_library')
             .delete()
             .eq('user_id', order.buyer_id)
@@ -101,7 +103,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
 
       // Send refund approved email to buyer
-      const { data: buyer } = await supabase
+      const { data: buyer } = await adminClient
         .from('users')
         .select('email')
         .eq('id', order.buyer_id)
@@ -119,7 +121,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ message: 'Refund approved and processed' })
     } else if (action === 'dispute') {
       // Seller disputes the refund
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminClient
         .from('orders')
         .update({
           refund_status: 'rejected',

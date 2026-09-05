@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { parseAmountToCentavos } from '@/lib/security/request-security'
+import { parseBoundedInteger, sanitizePostgrestSearchTerm } from '@/lib/utils/query-params'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 /**
  * GET /api/products
@@ -21,14 +25,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
 
     // Parse query parameters
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '24')
+    const page = parseBoundedInteger(searchParams.get('page'), 1, 1, 10_000)
+    const limit = parseBoundedInteger(searchParams.get('limit'), 24, 1, 100)
     const status = searchParams.get('status') || 'published'
     const gradeId = searchParams.get('grade_id')
     const subjectId = searchParams.get('subject_id')
     const productType = searchParams.get('product_type')
     const sort = searchParams.get('sort') || 'newest'
-    const search = searchParams.get('search')
+    const search = sanitizePostgrestSearchTerm(searchParams.get('search') || '')
 
     // Start building query
     let query = supabase
@@ -213,21 +217,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Basic validation
-    if (!body.title || body.title.length < 5 || body.title.length > 255) {
+    if (typeof body.title !== 'string' || body.title.trim().length < 5 || body.title.length > 255) {
       return NextResponse.json(
         { error: 'Title must be between 5 and 255 characters' },
         { status: 400 }
       )
     }
 
-    if (!body.description || body.description.length < 50 || body.description.length > 2000) {
+    if (
+      typeof body.description !== 'string' ||
+      body.description.trim().length < 50 ||
+      body.description.length > 2000
+    ) {
       return NextResponse.json(
         { error: 'Description must be between 50 and 2000 characters' },
         { status: 400 }
       )
     }
 
-    if (!body.price || body.price < 50) {
+    const priceCentavos = parseAmountToCentavos(body.price)
+    if (priceCentavos === null || priceCentavos < 5_000 || priceCentavos > 9_999_999_999) {
       return NextResponse.json(
         { error: 'Price must be at least ₱50' },
         { status: 400 }
@@ -236,28 +245,44 @@ export async function POST(request: NextRequest) {
 
     // Phase B: accept subject_ids[] or legacy subject_id; at least one subject required
     const subjectIds = Array.isArray(body.subject_ids) && body.subject_ids.length > 0
-      ? body.subject_ids.filter((s: string) => typeof s === 'string' && s)
-      : body.subject_id
+      ? [...new Set(body.subject_ids.filter((subjectId: unknown) =>
+          typeof subjectId === 'string' && UUID_PATTERN.test(subjectId)
+        ))]
+      : typeof body.subject_id === 'string' && UUID_PATTERN.test(body.subject_id)
         ? [body.subject_id]
         : []
-    if (subjectIds.length === 0 || !body.product_type) {
+    if (
+      subjectIds.length === 0 ||
+      subjectIds.length > 20 ||
+      typeof body.product_type !== 'string' ||
+      body.product_type.trim().length === 0
+    ) {
       return NextResponse.json(
         { error: 'At least one subject (subject_ids or subject_id) and product_type are required' },
         { status: 400 }
       )
     }
-    if (!body.grade_id) {
+    if (typeof body.grade_id !== 'string' || !UUID_PATTERN.test(body.grade_id)) {
       return NextResponse.json(
         { error: 'Grade level is required' },
         { status: 400 }
       )
     }
 
-    if (!body.file_urls || !Array.isArray(body.file_urls) || body.file_urls.length === 0) {
+    if (
+      !Array.isArray(body.file_urls) ||
+      body.file_urls.length === 0 ||
+      body.file_urls.length > 20 ||
+      body.file_urls.some((url: unknown) => typeof url !== 'string' || url.length > 2048)
+    ) {
       return NextResponse.json(
         { error: 'At least one file is required' },
         { status: 400 }
       )
+    }
+
+    if (body.status !== undefined && !['draft', 'pending_review', 'published'].includes(body.status)) {
+      return NextResponse.json({ error: 'Invalid product status' }, { status: 400 })
     }
 
     // Cover image required when publishing (not when saving as draft)
@@ -269,7 +294,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique slug from title
-    const baseSlug = body.title
+    const normalizedTitle = body.title.trim()
+    const normalizedDescription = body.description.trim()
+    const baseSlug = normalizedTitle
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
@@ -307,17 +334,19 @@ export async function POST(request: NextRequest) {
     }
 
     const publishedCount = publishedProducts?.length || 0
-    const initialStatus = publishedCount < 3 ? 'pending_review' : 'published'
+    const initialStatus = body.status === 'draft'
+      ? 'draft'
+      : publishedCount < 3 ? 'pending_review' : 'published'
 
     // Insert product. subject_id = first of subject_ids for backward compat.
     const { data: product, error: insertError } = await supabase
       .from('products')
       .insert({
         seller_id: user.id,
-        title: body.title,
-        description: body.description,
+        title: normalizedTitle,
+        description: normalizedDescription,
         slug,
-        price: body.price,
+        price: priceCentavos / 100,
         grade_id: body.grade_id ?? null,
         subject_id: subjectIds[0],
         quarter: body.quarter || null,
@@ -365,7 +394,7 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Error creating product:', insertError)
       return NextResponse.json(
-        { error: 'Failed to create product', details: insertError.message },
+        { error: 'Failed to create product' },
         { status: 500 }
       )
     }
@@ -412,16 +441,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         product,
-        message: initialStatus === 'pending_review' 
-          ? 'Product created and submitted for review'
-          : 'Product created and published successfully'
+        message: initialStatus === 'draft'
+          ? 'Product draft saved successfully'
+          : initialStatus === 'pending_review'
+            ? 'Product created and submitted for review'
+            : 'Product created and published successfully'
       },
       { status: 201 }
     )
   } catch (error) {
     console.error('Error in POST /api/products:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

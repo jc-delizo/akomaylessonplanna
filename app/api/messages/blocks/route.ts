@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        blocked_user:blocked_id(id, name, username, avatar_url)
+        blocked_user:blocked_id(id, first_name, last_name, username, avatar_url)
       `
       )
       .eq('blocker_id', user.id)
