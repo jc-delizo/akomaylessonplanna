@@ -8,27 +8,29 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { GlareButton } from '@/components/ui/glare-button'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react'
 import { getGuestCartProductIds, clearGuestCart } from '@/lib/utils/guest-cart'
 import { getSafeRedirectPath } from '@/lib/utils/safe-redirect'
 
+const googleOAuthEnabled = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === 'true'
+
 export function LoginForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => searchParams.get('error'))
   const { login, signInWithOAuth } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
 
   // Check for OAuth error in URL parameters
   useEffect(() => {
     const oauthError = searchParams.get('error')
     if (oauthError) {
-      setError(oauthError)
       // Clear the error from URL
       router.replace('/login', { scroll: false })
     }
@@ -94,108 +96,117 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md ring-0">
-      <CardHeader className="space-y-4 text-center">
-        <div className="flex justify-center">
-          <GlareButton>
-            <Image
-              src="/akomaylogo.png"
-              alt="Ako may lesson plan na! Logo"
-              width={120}
-              height={120}
-              className="h-auto w-auto"
-              priority
-            />
-          </GlareButton>
+    <Card className="mx-auto w-full max-w-md gap-0 rounded-3xl border border-slate-200 bg-white py-0 shadow-[0_24px_70px_-35px_rgba(15,23,42,0.45)] ring-0">
+      <CardHeader className="space-y-2 px-6 pb-4 pt-7 text-left sm:px-8 sm:pt-8">
+        <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
+          <LockKeyhole className="size-5" aria-hidden="true" />
         </div>
-        <div className="space-y-2">
-          <CardTitle className="text-2xl font-bold">Ako may lesson plan na!</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
-        </div>
+        <CardTitle className="text-3xl font-black tracking-tight text-slate-950">Welcome back</CardTitle>
+        <CardDescription className="text-sm leading-6 text-slate-600">
+          Sign in to continue to your marketplace account.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* OAuth Buttons */}
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="w-full border-2 border-black dark:border-white gap-2 text-lg h-11"
-          onClick={() => handleOAuth('google')}
-          disabled={loading}
-        >
-          <Image src="/google-g.svg" alt="" width={20} height={20} className="shrink-0" />
-          Continue with Gmail
-        </Button>
+      <CardContent className="space-y-5 px-6 pb-7 sm:px-8 sm:pb-8">
+        {googleOAuthEnabled && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-12 w-full gap-2 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 hover:bg-slate-50"
+              onClick={() => handleOAuth('google')}
+              disabled={loading}
+            >
+              <Image src="/google-g.svg" alt="" width={20} height={20} className="shrink-0" />
+              Continue with Google
+            </Button>
+            <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              Or use email
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+          </>
+        )}
 
-        <div className="flex justify-center text-xs uppercase text-muted-foreground py-2">
-          Or continue with email
-        </div>
-
-        {/* Email/Password Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-800 dark:text-red-200">
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-5 text-red-700">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-semibold text-slate-800">Email address</Label>
             <Input
               id="email"
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              aria-invalid={Boolean(error)}
               required
               disabled={loading}
+              className="h-12 rounded-xl border border-slate-300 bg-white px-3 text-base shadow-sm focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-100 md:text-sm"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-semibold text-slate-800">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-primary hover:underline"
+                className="text-xs font-semibold text-orange-700 hover:underline"
               >
                 Forgot password?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                aria-invalid={Boolean(error)}
+                required
+                disabled={loading}
+                className="h-12 rounded-xl border border-slate-300 bg-white px-3 pr-12 text-base shadow-sm focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-100 md:text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                className="absolute right-1 top-1 flex size-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="size-4.5" aria-hidden="true" /> : <Eye className="size-4.5" aria-hidden="true" />}
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2.5 py-1">
             <Checkbox 
               id="rememberMe" 
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked === true)}
               disabled={loading}
             />
-            <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+            <Label htmlFor="rememberMe" className="cursor-pointer text-sm font-normal text-slate-600">
               Remember me for 90 days
             </Label>
           </div>
 
-          <Button type="submit" className="w-full uppercase text-lg h-11" size="lg" disabled={loading}>
-            {loading ? 'SIGNING IN...' : 'SIGN IN'}
+          <Button type="submit" className="h-12 w-full gap-2 rounded-xl bg-[#f36d21] text-sm font-bold text-white shadow-lg shadow-orange-100 hover:bg-[#dc5d16]" size="lg" disabled={loading}>
+            {loading && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {loading ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-slate-600">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="auth-link-jump text-primary hover:underline font-medium">
-            Sign up
+          <Link href="/signup" className="font-bold text-orange-700 hover:underline">
+            Create one
           </Link>
         </p>
       </CardContent>

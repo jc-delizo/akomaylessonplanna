@@ -91,7 +91,8 @@ export function SearchBar({
               }, 200)
             }}
             placeholder={placeholder}
-            className="pl-10 pr-10 h-10 text-base"
+            aria-label={placeholder}
+            className="h-11 rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-base shadow-sm transition focus-visible:border-orange-400 focus-visible:ring-2 focus-visible:ring-orange-100 md:text-sm"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"

@@ -1,162 +1,86 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Facebook, Instagram, Youtube } from 'lucide-react'
+import { ArrowUpRight, BadgeCheck, Mail } from 'lucide-react'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  const paymentsEnabled = process.env.PAYMENTS_ENABLED === 'true'
 
   return (
-    <footer className="border-t bg-gray-100 shadow-sm mt-auto w-full relative z-50">
-      <div className="container mx-auto px-4 py-4">
-        {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {/* Platform Info */}
-          <div>
-            <h3 className="font-semibold text-base mb-1.5">Ako may lesson plan na!</h3>
-            <p className="text-gray-600 text-xs mb-2">
-              A marketplace for Filipino K-12 teachers to buy and sell educational resources.
+    <footer className="relative z-40 mt-auto w-full border-t border-slate-800 bg-slate-950 text-slate-300">
+      <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.5fr_0.8fr_0.8fr_1fr]">
+          <div className="max-w-sm">
+            <Link href="/" className="inline-flex items-center gap-3 text-white">
+              <Image
+                src="/android-chrome-192x192.png"
+                alt=""
+                width={42}
+                height={42}
+                className="size-10 rounded-xl"
+              />
+              <span className="text-lg font-black tracking-tight">Ako may lesson plan na!</span>
+            </Link>
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              A growing marketplace where Filipino K–12 educators can share practical resources and discover new ideas for the classroom.
             </p>
-            <a 
-              href="mailto:support@akomaylessonplanna.com" 
-              className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors"
+            <Link
+              href="/contact"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-orange-300 transition hover:text-orange-200"
             >
-              support@akomaylessonplanna.com
-            </a>
+              <Mail className="size-4" aria-hidden="true" />
+              Contact support
+            </Link>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="font-semibold text-base mb-1.5">Quick Links</h3>
-            <ul className="space-y-1">
-              <li>
-                <Link href="/marketplace" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Marketplace
-                </Link>
-              </li>
-              <li>
-                <Link href="/sellers" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Browse Sellers
-                </Link>
-              </li>
-              <li>
-                <Link href="/become-seller" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Become a Seller
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/how-it-works" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  How It Works
-                </Link>
-              </li>
-              <li>
-                <Link href="/for-teachers" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  For Teachers
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Contact
-                </Link>
-              </li>
+          <nav aria-label="Marketplace links">
+            <h2 className="text-sm font-bold text-white">Explore</h2>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li><Link href="/marketplace" className="transition hover:text-white">Marketplace</Link></li>
+              <li><Link href="/sellers" className="transition hover:text-white">Browse sellers</Link></li>
+              <li><Link href="/become-seller" className="transition hover:text-white">Become a seller</Link></li>
+              <li><Link href="/for-teachers" className="transition hover:text-white">For teachers</Link></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Legal */}
-          <div>
-            <h3 className="font-semibold text-base mb-1.5">Legal</h3>
-            <ul className="space-y-1">
-              <li>
-                <Link href="/terms" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/refund-policy" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Refund Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/seller-agreement" className="text-gray-600 hover:text-[#ff7200] text-xs transition-colors">
-                  Seller Agreement
-                </Link>
-              </li>
+          <nav aria-label="Company and legal links">
+            <h2 className="text-sm font-bold text-white">Company</h2>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li><Link href="/about" className="transition hover:text-white">About</Link></li>
+              <li><Link href="/how-it-works" className="transition hover:text-white">How it works</Link></li>
+              <li><Link href="/privacy" className="transition hover:text-white">Privacy</Link></li>
+              <li><Link href="/terms" className="transition hover:text-white">Terms</Link></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Payment Methods */}
           <div>
-            <h3 className="font-semibold text-base mb-1.5">Payment Methods</h3>
-            <div className="flex flex-col items-start gap-2">
-              {/* GCash Logo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/gcashlogo.png"
-                alt="GCash"
-                className="h-8 w-auto object-contain"
-              />
-              {/* Maya Logo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/Maya_logo.png"
-                alt="Maya"
-                className="h-8 w-auto object-contain"
-              />
-            </div>
+            {paymentsEnabled ? (
+              <>
+                <h2 className="text-sm font-bold text-white">Secure payments</h2>
+                <p className="mt-3 text-xs leading-5 text-slate-400">Supported payment providers</p>
+                <div className="mt-4 flex items-center gap-3 rounded-xl bg-white p-3">
+                  <Image src="/gcashlogo.png" alt="GCash" width={70} height={28} className="h-6 w-auto object-contain" />
+                  <Image src="/Maya_logo.png" alt="Maya" width={70} height={28} className="h-6 w-auto object-contain" />
+                </div>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <BadgeCheck className="size-5 text-orange-300" aria-hidden="true" />
+                <h2 className="mt-3 text-sm font-bold text-white">Seller onboarding is open</h2>
+                <p className="mt-2 text-xs leading-5 text-slate-400">
+                  Payments and checkout are being prepared for launch.
+                </p>
+                <Link href="/become-seller" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-orange-300 hover:text-orange-200">
+                  Get started <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t pt-3 flex flex-col md:flex-row justify-between items-center gap-2">
-          <p className="text-gray-600 text-xs">
-            © {currentYear} Ako may lesson plan na! All rights reserved.
-          </p>
-          <div className="flex items-center gap-2">
-            <a 
-              href="#" 
-              className="text-gray-500 hover:text-[#ff7200] transition-colors"
-              aria-label="Facebook"
-            >
-              <Facebook className="w-5 h-5" />
-            </a>
-            <a 
-              href="#" 
-              className="text-gray-500 hover:text-[#ff7200] transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a 
-              href="#" 
-              className="text-gray-500 hover:text-[#ff7200] transition-colors"
-              aria-label="X"
-            >
-              <svg 
-                className="w-5 h-5" 
-                viewBox="0 0 24 24" 
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-            <a 
-              href="#" 
-              className="text-gray-500 hover:text-[#ff7200] transition-colors"
-              aria-label="YouTube"
-            >
-              <Youtube className="w-5 h-5" />
-            </a>
-          </div>
+        <div className="mt-10 flex flex-col gap-3 border-t border-slate-800 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {currentYear} Ako may lesson plan na! All rights reserved.</p>
+          <p>Made for Filipino educators.</p>
         </div>
       </div>
     </footer>

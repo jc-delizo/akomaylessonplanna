@@ -6,8 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SearchBar } from '@/components/search/search-bar'
-import { AnimatedNavText } from '@/components/navigation/animated-nav-text'
-import { MessageSquare, Shield, User, LogOut, ShoppingCart, Loader2, BookOpen, Package } from 'lucide-react'
+import { MessageSquare, Shield, User, LogOut, ShoppingCart, Loader2, BookOpen, Package, Menu, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { GlareButton } from '@/components/ui/glare-button'
 import { useAdminAuth } from '@/lib/hooks/useAdminAuth'
@@ -94,7 +93,7 @@ export function MainNav({ user }: MainNavProps) {
     }
     return null
   })
-  const { isAdmin, loading: adminLoading } = useAdminAuth()
+  const { isAdmin } = useAdminAuth()
   const { cartCount: guestCartCount } = useGuestCart()
   
   // Track mount state to prevent hydration mismatches
@@ -312,20 +311,22 @@ export function MainNav({ user }: MainNavProps) {
   }
 
   return (
-    <nav className="bg-white border-b sticky top-0 z-50">
+    <nav className="relative sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur-xl" aria-label="Main navigation">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/" className="flex flex-shrink-0 items-center gap-2.5" aria-label="Ako may lesson plan na! home">
             <Image
               src="/android-chrome-192x192.png"
-              alt="Ako may lesson plan na! Logo"
+              alt=""
               width={32}
               height={32}
-              className="w-8 h-8"
+              className="size-8 rounded-lg"
               priority
             />
-            <AnimatedNavText />
+            <span className="whitespace-nowrap text-sm font-black tracking-tight text-slate-900 sm:text-base lg:text-lg">
+              Ako may <span className="text-orange-600">lesson plan</span> na!
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -340,6 +341,7 @@ export function MainNav({ user }: MainNavProps) {
               <TooltipTrigger asChild>
                 <Link
                   href="/marketplace"
+                  aria-current={(pathname === '/marketplace' || (pathname.startsWith('/marketplace/') && !pathname.startsWith('/marketplace/browse'))) ? 'page' : undefined}
                   className={`text-sm font-medium transition-colors hover:text-orange-600 ${
                     (pathname === '/marketplace' || (pathname.startsWith('/marketplace/') && !pathname.startsWith('/marketplace/browse'))) ? 'text-orange-600' : 'text-gray-700'
                   }`}
@@ -355,6 +357,7 @@ export function MainNav({ user }: MainNavProps) {
               <TooltipTrigger asChild>
                 <Link
                   href="/marketplace/browse"
+                  aria-current={isActive('/marketplace/browse') ? 'page' : undefined}
                   className={`text-sm font-medium transition-colors hover:text-orange-600 ${
                     isActive('/marketplace/browse') ? 'text-orange-600' : 'text-gray-700'
                   }`}
@@ -375,6 +378,7 @@ export function MainNav({ user }: MainNavProps) {
                       <TooltipTrigger asChild>
                         <Link
                           href="/shop"
+                          aria-current={pathname.startsWith('/shop') ? 'page' : undefined}
                           className={`text-sm font-medium transition-colors hover:text-orange-600 ${
                             pathname.startsWith('/shop') ? 'text-orange-600' : 'text-gray-700'
                           }`}
@@ -395,7 +399,7 @@ export function MainNav({ user }: MainNavProps) {
           {/* Right Side Actions */}
           <div className="hidden md:flex items-center gap-3" suppressHydrationWarning>
             {/* Only render user-dependent content after mount to prevent hydration mismatch */}
-            {mounted && user ? (
+            {user && mounted ? (
               <>
                 <GlareButton>
                   <Tooltip>
@@ -426,6 +430,7 @@ export function MainNav({ user }: MainNavProps) {
                   <TooltipTrigger asChild>
                     <Link
                       href="/messages"
+                      aria-label="Messages"
                       className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       <MessageSquare className="size-5" />
@@ -448,6 +453,7 @@ export function MainNav({ user }: MainNavProps) {
                   <TooltipTrigger asChild>
                     <Link
                       href="/cart"
+                      aria-label="Shopping cart"
                       className="relative flex items-center justify-center h-9 w-9 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       <ShoppingCart className="size-5" />
@@ -552,7 +558,7 @@ export function MainNav({ user }: MainNavProps) {
                   </DropdownMenu>
                 )}
               </>
-            ) : mounted && !user ? (
+            ) : !user ? (
               <Link
                 href="/login"
                 onClick={handleSignInClick}
@@ -570,54 +576,39 @@ export function MainNav({ user }: MainNavProps) {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2"
+            type="button"
+            className="flex size-11 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation-menu"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
+            {mobileMenuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
           </button>
         </div>
 
           {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col gap-3">
+          <div id="mobile-navigation-menu" className="absolute inset-x-0 top-full border-y border-slate-200 bg-white p-4 shadow-2xl md:hidden">
+            <div className="mx-auto flex max-w-screen-sm flex-col gap-2">
               {/* Mobile Search Bar */}
-              <div className="px-2">
+              <div className="mb-2">
                 <SearchBar 
                   placeholder="Search lesson plans..."
                 />
               </div>
               <Link
                 href="/marketplace"
-                className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors py-2"
+                aria-current={pathname === '/marketplace' ? 'page' : undefined}
+                className={`flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold transition-colors ${pathname === '/marketplace' ? 'bg-orange-50 text-orange-700' : 'text-slate-700 hover:bg-slate-50 hover:text-orange-700'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Marketplace
               </Link>
               <Link
                 href="/marketplace/browse"
-                className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors py-2"
+                aria-current={isActive('/marketplace/browse') ? 'page' : undefined}
+                className={`flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold transition-colors ${isActive('/marketplace/browse') ? 'bg-orange-50 text-orange-700' : 'text-slate-700 hover:bg-slate-50 hover:text-orange-700'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Browse
@@ -699,19 +690,28 @@ export function MainNav({ user }: MainNavProps) {
                   </GlareButton>
                 </>
               )}
-              {mounted && !user && (
-                <Link
-                  href="/login"
-                  onClick={handleSignInClick}
-                  className="px-4 py-2 min-h-[2.25rem] min-w-[5.5rem] bg-[#ff7200] text-white rounded-lg hover:bg-[#e66500] text-sm font-medium text-center transition-colors mt-2 flex items-center justify-center gap-2"
-                  aria-busy={navigatingToLogin}
-                >
-                  {navigatingToLogin ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : (
-                    'Sign In'
-                  )}
-                </Link>
+              {!user && (
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4">
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+                  >
+                    Create account
+                  </Link>
+                  <Link
+                    href="/login"
+                    onClick={handleSignInClick}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#f36d21] px-4 text-sm font-bold text-white transition-colors hover:bg-[#dc5d16]"
+                    aria-busy={navigatingToLogin}
+                  >
+                    {navigatingToLogin ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      'Sign in'
+                    )}
+                  </Link>
+                </div>
               )}
               </div>
             </div>

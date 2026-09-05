@@ -22,12 +22,12 @@ export default async function MarketplaceLayout({
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[#fbfaf8]">
       {/* Main Navigation */}
       <MainNav user={mainNavUser} />
 
       {/* Page Content */}
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {children}
       </main>
 

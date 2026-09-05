@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { ProductTabs } from '@/components/products/product-tabs'
 import { CurvedLoopHero } from '@/components/curved-loop-hero'
+import { MarketplaceEmptyState } from '@/components/marketplace/marketplace-empty-state'
 import { getMarketplaceClosed } from '@/lib/utils/marketplace-status'
-import Link from 'next/link'
 
 // Attach subject_ids to all product groups in one query (for "Multiple Subjects" on cards).
 async function attachSubjectIds(
@@ -248,51 +248,30 @@ export default async function MarketplacePage() {
   const transformedTrendingProducts = transformProducts(withSubjectIdsTrending)
   const transformedBestsellerProducts = transformProducts(withSubjectIdsBestseller)
   const transformedRecommendedProducts = transformProducts(withSubjectIdsRecommended)
+  const hasProducts = [
+    transformedFeaturedProducts,
+    transformedNewProducts,
+    transformedTrendingProducts,
+    transformedBestsellerProducts,
+    transformedRecommendedProducts,
+  ].some((products) => products.length > 0)
 
   const content = (
     <>
-      {/* CurvedLoop Hero Section */}
-      <CurvedLoopHero />
+      <CurvedLoopHero hasProducts={hasProducts} />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Product Tabs - Featured, New Arrivals, Trending, Best Sellers, Recommended */}
-        <ProductTabs
-          featuredProducts={transformedFeaturedProducts}
-          newProducts={transformedNewProducts}
-          trendingProducts={transformedTrendingProducts}
-          bestsellerProducts={transformedBestsellerProducts}
-          recommendedProducts={transformedRecommendedProducts}
-          teachingComplete={teachingComplete}
-        />
-
-        {/* Empty state */}
-        {(!transformedNewProducts || transformedNewProducts.length === 0) && (
-          <div className="text-center py-12">
-            <svg
-              className="mx-auto w-24 h-24 text-gray-400 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
-            <h3 className="text-xl font-semibold mb-2">No products yet</h3>
-            <p className="text-gray-600 mb-4">
-              Be the first to upload educational resources!
-            </p>
-            {user && (
-              <Link href="/shop/products/new">
-                <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                  Upload Product
-                </button>
-              </Link>
-            )}
-          </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {hasProducts ? (
+          <ProductTabs
+            featuredProducts={transformedFeaturedProducts}
+            newProducts={transformedNewProducts}
+            trendingProducts={transformedTrendingProducts}
+            bestsellerProducts={transformedBestsellerProducts}
+            recommendedProducts={transformedRecommendedProducts}
+            teachingComplete={teachingComplete}
+          />
+        ) : (
+          <MarketplaceEmptyState isSignedIn={Boolean(user)} />
         )}
       </div>
     </>
